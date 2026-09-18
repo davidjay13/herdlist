@@ -31,7 +31,7 @@
   }
   function field(label, name, value, extra) {
     extra = extra || "";
-    return '<div class="field"><label>' + label + '</label><input name="' + name + '" value="' + String(value || "").replace(/"/g, "&quot;") + '" ' + extra + '></div>';
+    return '<div class="field"><label>' + label + '</label><input name="' + name + '" value="' + String(value || "").replace(/"/g, """) + '" ' + extra + '></div>';
   }
   function render(pack) {
     var app = document.getElementById("app");
@@ -40,11 +40,16 @@
     var p = pack.producer || {};
     var listings = pack.listings || [];
     var avatar = p.avatar || "";
+    var cover = p.cover || "";
     app.innerHTML =
       '<div class="form-page" style="max-width:980px">' +
       '<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px">' +
       '<div><p class="sub">Dashboard → Profile</p><h2 class="page-title" style="margin-top:4px">Profile</h2></div>' +
       (p.slug ? '<a class="btn btn-outline" href="#/ranch/' + p.slug + '">View public ranch page</a>' : '') +
+      '</div>' +
+      '<div id="cover-drop" style="border:2px dashed #1b6b45;background:' + (cover ? "url('" + cover + '") center/cover no-repeat" : "#e6f2ea") + ';border-radius:16px;min-height:160px;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;margin-bottom:16px;position:relative">' +
+      '<div id="cover-hint" style="' + (cover ? "display:none;" : "") + 'color:#0f3f28"><strong style="display:block;font-size:1.05rem">Drop header image here</strong><span style="font-size:.88rem">or click to upload a cover photo</span></div>' +
+      '<div id="cover-change" style="' + (cover ? "" : "display:none;") + 'position:absolute;bottom:10px;right:10px;background:rgba(255,252,247,.92);border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:600">Change header</div>' +
       '</div>' +
       '<div class="panel" style="display:flex;gap:18px;align-items:center;margin-bottom:18px">' +
       '<button type="button" id="avatar-btn" style="width:92px;height:92px;border:0;border-radius:16px;background:#e6e2d8 center/cover no-repeat;cursor:pointer;font-size:2rem;color:#6b7a6e;' +
@@ -68,14 +73,16 @@
       '<button class="btn btn-ghost" type="button" id="out-btn">Sign out</button></div></form>' +
       '<div class="panel" style="margin-top:22px"><h3 style="margin:0 0 12px">Account</h3>' +
       '<div class="row"><span>Listings</span><b>' + listings.length + '</b></div>' +
-      '<div class="row"><span>Subscription</span><b>No subscription · current</b></div>' +
+      '<div class="row"><span>Subscription</span><b>No subscription \u00b7 current</b></div>' +
       '<div class="row"><span>Plan available</span><b>Producer</b></div></div>' +
       '<form id="pw-form" class="panel" style="margin-top:16px"><h3 style="margin:0 0 12px">Update password</h3>' +
       '<div class="form-grid"><div class="field"><label>Current password</label><input name="current" type="password" required></div>' +
       '<div class="field"><label>New password</label><input name="next" type="password" required minlength="4"></div></div>' +
       '<button class="btn btn-outline" style="margin-top:12px" type="submit">Update password</button></form>' +
-      '<input id="avatar-file" type="file" accept="image/*" style="display:none"></div>';
+      '<input id="avatar-file" type="file" accept="image/*" style="display:none">' +
+      '<input id="cover-file" type="file" accept="image/*" style="display:none"></div>';
     var avatarData = null;
+    var coverData = null;
     document.getElementById("avatar-btn").onclick = function () { document.getElementById("avatar-file").click(); };
     document.getElementById("avatar-file").onchange = function (e) {
       var f = e.target.files && e.target.files[0];
@@ -88,10 +95,36 @@
         btn.style.color = "transparent";
       });
     };
+    function setCover(data) {
+      coverData = data;
+      var zone = document.getElementById("cover-drop");
+      zone.style.background = "url('" + data + "') center/cover no-repeat";
+      document.getElementById("cover-hint").style.display = "none";
+      document.getElementById("cover-change").style.display = "block";
+    }
+    var coverZone = document.getElementById("cover-drop");
+    coverZone.onclick = function () { document.getElementById("cover-file").click(); };
+    document.getElementById("cover-file").onchange = function (e) {
+      var f = e.target.files && e.target.files[0];
+      if (!f) return;
+      compressImage(f, 1600).then(function (data) { if (data) setCover(data); });
+    };
+    ["dragenter", "dragover"].forEach(function (evt) {
+      coverZone.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); coverZone.style.borderColor = "#0f3f28"; });
+    });
+    ["dragleave", "drop"].forEach(function (evt) {
+      coverZone.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); coverZone.style.borderColor = "#1b6b45"; });
+    });
+    coverZone.addEventListener("drop", function (e) {
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!f) return;
+      compressImage(f, 1600).then(function (data) { if (data) setCover(data); });
+    });
     document.getElementById("profile-form").onsubmit = function (e) {
       e.preventDefault();
       var body = Object.fromEntries(new FormData(e.target).entries());
       if (avatarData) body.avatar = avatarData;
+      if (coverData) body.cover = coverData;
       fetch("/api/profile", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
         .then(function (res) { return res.json().then(function (data) { if (!res.ok) throw new Error(data.error || "Save failed"); return data; }); })
         .then(function () { toast("Profile saved."); })
