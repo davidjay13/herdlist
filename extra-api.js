@@ -19,7 +19,7 @@ module.exports = async function extraApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword } = ctx;
   const ADMINS = ["david@davidjay.com"];
   const COW = "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80";
-  const LOGO = "/logo.svg?v=24";
+  const LOGO = "/logo.svg?v=27";
   function isPlaceholderAvatar(v) {
     if (!v) return true;
     var s = String(v);
