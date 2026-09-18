@@ -123,15 +123,27 @@
       };
     });
     if (q.view !== "list" && window.L) {
-      mapInst = L.map("map", { scrollWheelZoom: true }).setView([39.5, -98.3], 4);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap" }).addTo(mapInst);
+      const USA = [[24.5, -125.0], [49.4, -66.9]];
+      mapInst = L.map("map", { scrollWheelZoom: true, worldCopyJump: false, minZoom: 3, maxZoom: 12 });
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap &copy; CARTO",
+        subdomains: "abcd",
+        maxZoom: 12
+      }).addTo(mapInst);
       const icon = L.divIcon({ className: "hy-pin", html: `<div class="hy-dot"></div>`, iconSize: [22, 22], iconAnchor: [11, 11] });
       items.forEach((l) => {
         const xy = listingCoords(l);
+        if (!xy || xy[0] < 18 || xy[0] > 72 || xy[1] < -170 || xy[1] > -60) return;
         L.marker(xy, { icon }).addTo(mapInst).bindPopup(`<b>${priceLabel(l)}</b><br>${l.breed || ""} · ${l.klass || ""}<br>${l.location || ""}<br><a href="#/listing/${l.id}">Open listing</a>`);
       });
-      setTimeout(() => { if (mapInst) mapInst.invalidateSize(); }, 60);
-      setTimeout(() => { if (mapInst) mapInst.invalidateSize(); }, 300);
+      function refit() {
+        if (!mapInst) return;
+        mapInst.invalidateSize();
+        mapInst.fitBounds(USA, { padding: [12, 12], maxZoom: 5, animate: false });
+      }
+      refit();
+      setTimeout(refit, 80);
+      setTimeout(refit, 350);
     }
   }
   function listingView(id) {
