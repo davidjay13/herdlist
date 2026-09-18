@@ -1,5 +1,11 @@
 module.exports = async function extraApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword } = ctx;
+
+  function withProducer(listing) {
+    const p = db.data.producers.find((x) => x.id === listing.producerId);
+    return Object.assign({}, listing, { producer: p || null });
+  }
+
   if (url === "/api/profile" && method === "POST") {
     const u = userFromCookie(req);
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
@@ -50,6 +56,7 @@ module.exports = async function extraApi(ctx) {
     send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "" }, producer });
     return true;
   }
+
   if (url === "/api/password" && method === "POST") {
     const u = userFromCookie(req);
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
@@ -63,5 +70,40 @@ module.exports = async function extraApi(ctx) {
     send(res, 200, { ok: true });
     return true;
   }
+
+  const listingMatch = url.match(/^\/api\/listings\/([^/]+)$/);
+  if (listingMatch && (method === "POST" || method === "PATCH" || method === "PUT" || method === "DELETE")) {
+    const u = userFromCookie(req);
+    if (!u) return send(res, 401, { error: "Sign in required" }), true;
+    const listing = db.data.listings.find((l) => l.id === listingMatch[1]);
+    if (!listing) return send(res, 404, { error: "Listing not found" }), true;
+    if (listing.userId !== u.id) return send(res, 403, { error: "You can only change your own listings." }), true;
+    if (method === "DELETE") {
+      db.data.listings = db.data.listings.filter((l) => l.id !== listing.id);
+      await db.save();
+      send(res, 200, { ok: true });
+      return true;
+    }
+    const b = await readBody(req);
+    if (b.title != null) listing.title = String(b.title).trim() || listing.title;
+    if (b.breed != null) listing.breed = String(b.breed);
+    if (b.klass != null) listing.klass = String(b.klass);
+    if (b.category != null) listing.category = String(b.category);
+    if (b.head != null) listing.head = Number(b.head || listing.head);
+    if (b.location != null) listing.location = String(b.location);
+    if (b.description != null) listing.description = String(b.description);
+    if (b.status === "sold" || b.status === "active") listing.status = b.status;
+    if (b.price === "" || b.price === null) {
+      listing.price = null;
+      listing.priceType = "contact";
+    } else if (b.price != null) {
+      listing.price = Number(b.price);
+      listing.priceType = "per_head";
+    }
+    await db.save();
+    send(res, 200, { listing: withProducer(listing) });
+    return true;
+  }
+
   return false;
 };
