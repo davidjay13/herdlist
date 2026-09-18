@@ -34,7 +34,7 @@
     return '<div class="field"><label>' + label + '</label><input name="' + name + '" value="' + String(value || "").replace(/"/g, """) + '" ' + extra + '></div>';
   }
   function render(pack) {
-    var app = document.getElementById("app");
+    var app = document.getElementById("dash-main") || document.getElementById("app");
     if (!app) return;
     var user = pack.user || {};
     var p = pack.producer || {};
@@ -42,7 +42,7 @@
     var avatar = p.avatar || "";
     var cover = p.cover || "";
     app.innerHTML =
-      '<div class="form-page" style="max-width:980px">' +
+      '<div class="form-page" style="max-width:980px;padding:0">' +
       '<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px">' +
       '<div><p class="sub">Dashboard → Profile</p><h2 class="page-title" style="margin-top:4px">Profile</h2></div>' +
       (p.slug ? '<a class="btn btn-outline" href="#/ranch/' + p.slug + '">View public ranch page</a>' : '') +
@@ -143,7 +143,7 @@
     };
   }
   function load() {
-    if ((location.hash || "") !== "#/account") return;
+    if ((location.hash || "") !== "#/account/profile") return;
     Promise.all([
       fetch("/api/me", { credentials: "include" }).then(function (r) { return r.json(); }),
       fetch("/api/my/listings", { credentials: "include" }).then(function (r) { return r.json(); }).catch(function () { return { listings: [] }; })
@@ -154,5 +154,6 @@
     });
   }
   window.addEventListener("hashchange", function () { setTimeout(load, 40); });
+  window.addEventListener("herd-profile-ready", function () { setTimeout(load, 10); });
   setTimeout(load, 250);
 })();
