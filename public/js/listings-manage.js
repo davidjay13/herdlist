@@ -12,16 +12,19 @@
   }
   function esc(v) { return String(v || "").split("<").join(" "); }
   function hash() { return location.hash || ""; }
+  function param(name, fallback) {
+    var m = hash().match(new RegExp("[?&]" + name + "=([^&]+)"));
+    return m ? decodeURIComponent(m[1]) : fallback;
+  }
   function editId() {
     var m = hash().match(/^#\/account\/edit\/([^/?]+)/);
     return m ? decodeURIComponent(m[1]) : null;
   }
-  function statusFilter() {
-    var m = hash().match(/[?&]status=([^&]+)/);
-    return m ? decodeURIComponent(m[1]) : "all";
-  }
   function photo(l) {
     return l.image || (l.images && l.images[0]) || COW;
+  }
+  function isGlobal() {
+    return hash().indexOf("#/account/global") === 0 || hash().indexOf("#/account/visibility") === 0;
   }
 
   function ensureNav() {
@@ -37,35 +40,37 @@
       if (profile && profile.parentNode) profile.parentNode.insertBefore(a, profile.nextSibling);
       else aside.appendChild(a);
     }
-    if (admin && !document.getElementById("nav-visibility")) {
-      var v = document.createElement("a");
-      v.id = "nav-visibility";
-      v.href = "#/account/visibility";
-      v.textContent = "Show / Hide";
-      v.style.cssText = "display:block;padding:10px 12px;border-radius:10px;margin:2px 8px;font-weight:560;color:#3a4a3e";
-      var listNav = document.getElementById("nav-listings");
-      if (listNav && listNav.parentNode) listNav.parentNode.insertBefore(v, listNav.nextSibling);
+    var old = document.getElementById("nav-visibility");
+    if (old && old.parentNode && old.parentNode.id !== "admin-controls") old.parentNode.removeChild(old);
+    if (!admin) {
+      var wrap = document.getElementById("admin-controls");
+      if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+      return;
     }
+    if (document.getElementById("admin-controls")) return;
+    var box = document.createElement("div");
+    box.id = "admin-controls";
+    box.style.cssText = "margin:8px 8px 4px;padding:8px 8px 6px;border-radius:12px;background:#eef4ef";
+    box.innerHTML =
+      "<div style='font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5c6f62;padding:4px 6px 6px'>Admin Controls</div>" +
+      "<a id='nav-global' href='#/account/global' style='display:block;padding:8px 10px;border-radius:8px;font-weight:560;color:#3a4a3e'>Global Listings</a>";
+    var browse = aside.querySelector("a[href='#/browse']");
+    if (browse && browse.parentNode) browse.parentNode.insertBefore(box, browse.nextSibling);
+    else aside.appendChild(box);
   }
 
   function markNav() {
-    ["nav-listings", "nav-visibility"].forEach(function (id) {
-      var a = document.getElementById(id);
-      if (!a) return;
-      var on = (id === "nav-listings" && hash().indexOf("#/account/listings") === 0) ||
-        (id === "nav-visibility" && hash().indexOf("#/account/visibility") === 0);
-      a.style.background = on ? "#e6f2ea" : "transparent";
-      a.style.color = on ? "#0f3f28" : "#3a4a3e";
-    });
-  }
-
-  function setHidden(id, hide) {
-    return fetch("/api/listings/" + id, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hidden: hide })
-    }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Update failed"); }); });
+    var listings = document.getElementById("nav-listings");
+    if (listings) {
+      var onL = hash().indexOf("#/account/listings") === 0;
+      listings.style.background = onL ? "#e6f2ea" : "transparent";
+      listings.style.color = onL ? "#0f3f28" : "#3a4a3e";
+    }
+    var g = document.getElementById("nav-global");
+    if (g) {
+      g.style.background = isGlobal() ? "#d7eadc" : "transparent";
+      g.style.color = isGlobal() ? "#0f3f28" : "#3a4a3e";
+    }
   }
 
   function bindDeletes(root) {
@@ -96,7 +101,7 @@
   function paintBoard(listings) {
     var main = document.getElementById("dash-main");
     if (!main) return;
-    var st = statusFilter();
+    var st = param("status", "all");
     var filtered = listings.filter(function (l) {
       if (st === "all") return true;
       if (st === "hidden") return !!l.hidden;
@@ -118,40 +123,55 @@
     bindDeletes(main);
   }
 
-  function paintVisibility(listings) {
+  function sortList(list, sort) {
+    var copy = list.slice();
+    copy.sort(function (a, b) {
+      if (sort === "price-high") return (Number(b.price) || 0) - (Number(a.price) || 0);
+      if (sort === "price-low") return (Number(a.price) || 0) - (Number(b.price) || 0);
+      if (sort === "title") return String(a.title || "").localeCompare(String(b.title || ""));
+      if (sort === "status") return String(a.status || "").localeCompare(String(b.status || ""));
+      if (sort === "date-old") return String(a.listedAt || "").localeCompare(String(b.listedAt || ""));
+      return String(b.listedAt || "").localeCompare(String(a.listedAt || ""));
+    });
+    return copy;
+  }
+
+  function paintGlobal(listings) {
     var main = document.getElementById("dash-main");
     if (!main) return;
-    var hiddenCount = listings.filter(function (l) { return l.hidden; }).length;
-    var rows = listings.map(function (l) {
-      return "<div class='row' style='align-items:center;gap:12px'>" +
-        "<img src='" + String(photo(l)).split("'").join("") + "' alt='' style='width:72px;height:52px;object-fit:cover;border-radius:8px'>" +
-        "<span style='flex:1'>" + esc(l.title) + "<div class='sub'>" + (l.hidden ? "Hidden from public" : "Visible") + "</div></span>" +
-        "<button type='button' class='btn btn-outline' data-vis='" + l.id + "' data-hide='" + (l.hidden ? "0" : "1") + "'>" +
-        (l.hidden ? "Show" : "Hide") + "</button></div>";
-    }).join("");
+    var sort = param("sort", "date-new");
+    var rows = sortList(listings, sort);
+    function opt(key, label) {
+      return "<option value='" + key + "'" + (sort === key ? " selected" : "") + ">" + label + "</option>";
+    }
     main.innerHTML =
-      "<h2 class='page-title'>Show / Hide listings</h2>" +
-      "<p class='sub'>Admin only. Hidden listings do not appear on Browse or the homepage.</p>" +
-      "<div style='display:flex;gap:8px;margin:16px 0'>" +
-      "<button type='button' class='btn btn-outline' id='hide-all'>Hide all</button>" +
-      "<button type='button' class='btn btn-primary' id='show-all'>Show all</button></div>" +
-      "<div class='panel'>" + hiddenCount + " hidden now</div>" +
-      "<div class='panel' style='margin-top:12px'>" + (rows || "<p class='sub'>No listings</p>") + "</div>";
-    document.getElementById("hide-all").onclick = function () {
-      fetch("/api/admin/visibility", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hide: true }) })
-        .then(function (r) { return r.json(); }).then(function () { toast("All listings hidden."); setTimeout(load, 200); });
+      "<h2 class='page-title'>Global Listings</h2>" +
+      "<p class='sub'>Every listing on the site. Sort and open any record.</p>" +
+      "<div class='panel' style='display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0'>" +
+      "<label style='font-weight:600'>Sort</label>" +
+      "<select id='global-sort'>" +
+      opt("date-new", "Date posted (newest)") +
+      opt("date-old", "Date posted (oldest)") +
+      opt("price-high", "Price (high to low)") +
+      opt("price-low", "Price (low to high)") +
+      opt("title", "Title A-Z") +
+      opt("status", "Status") +
+      "</select></div>" +
+      "<div class='panel'>" +
+      (rows.length ? rows.map(function (l) {
+        var price = l.price == null ? "Contact" : ("$" + Number(l.price).toLocaleString());
+        return "<div class='row' style='align-items:center;gap:12px'>" +
+          "<img src='" + String(photo(l)).split("'").join("") + "' alt='' style='width:72px;height:52px;object-fit:cover;border-radius:8px'>" +
+          "<span style='flex:1'><b>" + esc(l.title) + "</b><div class='sub'>" +
+          esc(l.listedAt || "") + " · " + price + " · " + esc(l.status || "active") +
+          (l.hidden ? " · hidden" : "") + "</div></span>" +
+          "<a class='btn btn-outline' href='#/listing/" + l.id + "'>Open</a>" +
+          "<a class='btn btn-outline' href='#/account/edit/" + l.id + "'>Edit</a></div>";
+      }).join("") : "<p class='sub'>No listings</p>") +
+      "</div>";
+    document.getElementById("global-sort").onchange = function () {
+      location.hash = "#/account/global?sort=" + this.value;
     };
-    document.getElementById("show-all").onclick = function () {
-      fetch("/api/admin/visibility", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hide: false }) })
-        .then(function (r) { return r.json(); }).then(function () { toast("All listings visible."); setTimeout(load, 200); });
-    };
-    main.querySelectorAll("[data-vis]").forEach(function (btn) {
-      btn.onclick = function () {
-        setHidden(btn.getAttribute("data-vis"), btn.getAttribute("data-hide") === "1")
-          .then(function () { setTimeout(load, 150); })
-          .catch(function (e) { toast(e.message); });
-      };
-    });
   }
 
   function paintEdit(listing) {
@@ -198,13 +218,13 @@
         return;
       }
       if (hash().indexOf("#/account/listings") === 0) return paintBoard(cache);
-      if (hash().indexOf("#/account/visibility") === 0) {
+      if (isGlobal()) {
         if (!admin) {
           var main = document.getElementById("dash-main");
           if (main) main.innerHTML = "<p>Admin only.</p>";
           return;
         }
-        return paintVisibility(cache);
+        return paintGlobal(cache);
       }
     }).catch(function () {});
   }
