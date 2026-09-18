@@ -248,6 +248,7 @@ button, input, select, textarea { font-family: inherit; }
   overflow: hidden;
 }
 .browse-layout.view-map .listings-grid { display: none; }
+.browse-layout.view-map .listings-col { display: none; }
 .browse-layout.view-list .map-wrap { display: none; }
 .map-wrap {
   height: 100%;
@@ -287,6 +288,9 @@ button, input, select, textarea { font-family: inherit; }
 }
 .browse-layout.view-split .listings-grid {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
 }
 .leaflet-container { height: 100%; width: 100%; background: #dce8d8; }
 .hy-pin { background: transparent; border: 0; }
