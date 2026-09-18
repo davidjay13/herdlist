@@ -19,6 +19,20 @@ module.exports = async function extraApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword } = ctx;
   const ADMINS = ["david@davidjay.com"];
   const COW = "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80";
+  const LOGO = "/logo.svg?v=24";
+  function isPlaceholderAvatar(v) {
+    if (!v) return true;
+    var s = String(v);
+    if (s.indexOf("unsplash.com") >= 0) return true;
+    return false;
+  }
+  function avatarSrc(v) {
+    return isPlaceholderAvatar(v) ? LOGO : v;
+  }
+
+  (db.data.producers || []).forEach(function (p) {
+    if (isPlaceholderAvatar(p.avatar)) p.avatar = LOGO;
+  });
 
   function isAdmin(u) {
     return !!(u && ADMINS.indexOf(String(u.email || "").toLowerCase()) >= 0);
@@ -64,7 +78,7 @@ module.exports = async function extraApi(ctx) {
         operations: "",
         associations: [],
         cover: row.cover || COW,
-        avatar: row.avatar || COW,
+        avatar: row.avatar || LOGO,
         imported: true,
         hyId: row.hyId,
       };
@@ -142,9 +156,18 @@ module.exports = async function extraApi(ctx) {
     await db.save();
   }
 
+  if (!db.data.logoAvatarSep18) {
+    (db.data.producers || []).forEach(function (p) {
+      if (isPlaceholderAvatar(p.avatar)) p.avatar = LOGO;
+    });
+    db.data.logoAvatarSep18 = true;
+    await db.save();
+  }
+
   function withProducer(listing) {
     const p = db.data.producers.find((x) => x.id === listing.producerId);
-    return Object.assign({}, listing, { producer: p || null });
+    if (!p) return Object.assign({}, listing, { producer: null });
+    return Object.assign({}, listing, { producer: Object.assign({}, p, { avatar: avatarSrc(p.avatar) }) });
   }
 
   if (url === "/api/me" && method === "GET") {
@@ -154,7 +177,7 @@ module.exports = async function extraApi(ctx) {
     const follows = db.data.follows.filter((f) => f.userId === u.id).map((f) => f.producerId);
     send(res, 200, {
       user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "", admin: isAdmin(u) },
-      producer,
+      producer: producer ? Object.assign({}, producer, { avatar: avatarSrc(producer.avatar) }) : null,
       follows,
       admin: isAdmin(u),
     });
@@ -162,7 +185,9 @@ module.exports = async function extraApi(ctx) {
   }
 
   if (url === "/api/producers" && method === "GET") {
-    send(res, 200, { producers: db.data.producers });
+    send(res, 200, { producers: db.data.producers.map(function (p) {
+      return Object.assign({}, p, { avatar: avatarSrc(p.avatar) });
+    }) });
     return true;
   }
 
@@ -185,7 +210,7 @@ module.exports = async function extraApi(ctx) {
         location: producer ? producer.location : "",
         listingCount: listingCount,
         sold: producer ? producer.sold || 0 : 0,
-        avatar: producer ? producer.avatar : "",
+        avatar: avatarSrc(producer ? producer.avatar : ""),
       };
     });
     send(res, 200, { accounts: accounts, count: accounts.length });
@@ -216,7 +241,7 @@ module.exports = async function extraApi(ctx) {
     if (b.phone !== undefined) u.phone = String(b.phone || "").trim();
     let producer = db.data.producers.find((p) => p.userId === u.id);
     if (!producer) {
-      producer = { id: "u" + u.id, userId: u.id, slug: slugify(u.name) + "-" + u.id, name: u.name, owner: u.name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", operations: "", associations: [], cover: COW, avatar: COW };
+      producer = { id: "u" + u.id, userId: u.id, slug: slugify(u.name) + "-" + u.id, name: u.name, owner: u.name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", operations: "", associations: [], cover: COW, avatar: LOGO };
       db.data.producers.push(producer);
     }
     if (b.ranchName) producer.name = String(b.ranchName).trim();
@@ -230,7 +255,17 @@ module.exports = async function extraApi(ctx) {
     if (typeof b.avatar === "string" && (b.avatar.startsWith("data:image") || b.avatar.startsWith("http"))) producer.avatar = b.avatar;
     if (typeof b.cover === "string" && (b.cover.startsWith("data:image") || b.cover.startsWith("http"))) producer.cover = b.cover;
     await db.save();
-    send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "" }, producer });
+    send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "" }, producer: Object.assign({}, producer, { avatar: avatarSrc(producer.avatar) }) });
+    return true;
+  }
+
+  const prodMatch = url.match(/^\/api\/producers\/([^/]+)$/);
+  if (prodMatch && method === "GET") {
+    const key = decodeURIComponent(prodMatch[1]);
+    const p = db.data.producers.find((x) => x.slug === key || x.id === key);
+    if (!p) return send(res, 404, { error: "Ranch not found" }), true;
+    const listings = db.data.listings.filter((l) => l.producerId === p.id).map(withProducer);
+    send(res, 200, { producer: Object.assign({}, p, { avatar: avatarSrc(p.avatar) }), listings });
     return true;
   }
 
