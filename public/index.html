@@ -22,18 +22,18 @@
     <meta name="twitter:description" content="Connecting buyers and sellers nationwide. No commission on private-treaty cattle." />
     <meta name="twitter:image" content="https://herd-yard.com/og.jpg" />
     <link rel="image_src" href="https://herd-yard.com/og.jpg" />
-    <link rel="icon" type="image/svg+xml" href="logo.svg?v=50" />
+    <link rel="icon" type="image/svg+xml" href="logo.svg?v=51" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600;650&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="css/styles.css?v=50" />
-    <link rel="stylesheet" href="css/mobile.css?v=50" />
+    <link rel="stylesheet" href="css/styles.css?v=51" />
+    <link rel="stylesheet" href="css/mobile.css?v=51" />
   </head>
   <body>
     <header class="app-header">
       <a class="brand" href="#/">
-        <img src="logo.svg?v=50" alt="Herd Yard" width="36" height="50" style="display:block;object-fit:contain;background:transparent" />
+        <img src="logo.svg?v=51" alt="Herd Yard" width="36" height="50" style="display:block;object-fit:contain;background:transparent" />
         Herd Yard
       </a>
       <nav class="nav-links">
@@ -47,25 +47,38 @@
       <div class="header-actions">
         <button class="btn btn-ghost" id="acct-btn"><span id="acct-label">Log in</span></button>
         <button class="btn btn-primary" id="sell-btn">List Cattle</button>
+        <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </header>
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="#/browse">Browse</a>
+      <a href="#/producers">Producers</a>
+      <a href="#/pricing">Plans</a>
+      <a href="#/faq">FAQ</a>
+      <a href="#/list">Sell</a>
+      <a href="#/account">Account</a>
+      <a href="#/signin" id="mobile-login">Log in</a>
+      <a class="menu-cta" href="#/list">List Cattle</a>
+    </div>
     <main id="app"></main>
     <footer class="app-footer">
       <div><b>Herd Yard</b><div>Selling cattle online. Connecting buyers and sellers nationwide.</div></div>
-      <div>Map tiles Esri / OpenStreetMap.<div class="site-version">v0.4.8</div></div>
+      <div>Map tiles Esri / OpenStreetMap.<div class="site-version">v0.4.9</div></div>
     </footer>
     <div class="toast" id="toast"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/data.js?v=50"></script>
-    <script src="js/client.js?v=50"></script>
-    <script src="js/photos.js?v=50"></script>
-    <script src="js/dashboard.js?v=50"></script>
-    <script src="js/listings-manage.js?v=50"></script>
-    <script src="js/admin-producers.js?v=50"></script>
-    <script src="js/ranch-public.js?v=50"></script>
-    <script src="js/cover-label.js?v=50"></script>
-    <script src="js/producers-page.js?v=50"></script>
-    <script src="js/updates-page.js?v=50"></script>
+    <script src="js/data.js?v=51"></script>
+    <script src="js/client.js?v=51"></script>
+    <script src="js/photos.js?v=51"></script>
+    <script src="js/dashboard.js?v=51"></script>
+    <script src="js/listings-manage.js?v=51"></script>
+    <script src="js/admin-producers.js?v=51"></script>
+    <script src="js/ranch-public.js?v=51"></script>
+    <script src="js/cover-label.js?v=51"></script>
+    <script src="js/producers-page.js?v=51"></script>
+    <script src="js/updates-page.js?v=51"></script>
     <script>
       (function () {
         function toTop() {
@@ -75,13 +88,31 @@
           var app = document.getElementById("app");
           if (app) app.scrollTop = 0;
         }
+        function closeMenu() {
+          var m = document.getElementById("mobile-menu");
+          var t = document.getElementById("menu-toggle");
+          if (m) m.classList.remove("open");
+          if (t) t.setAttribute("aria-expanded", "false");
+        }
         function fix() {
           var h = document.querySelector(".hero h1");
           if (h) h.textContent = "Zillow For Cattle";
           var a = document.getElementById("acct-label");
           if (a && (a.textContent === "Account")) a.textContent = "Log in";
         }
+        var toggle = document.getElementById("menu-toggle");
+        var menu = document.getElementById("mobile-menu");
+        if (toggle && menu) {
+          toggle.onclick = function () {
+            var open = menu.classList.toggle("open");
+            toggle.setAttribute("aria-expanded", open ? "true" : "false");
+          };
+          menu.querySelectorAll("a").forEach(function (a) {
+            a.addEventListener("click", closeMenu);
+          });
+        }
         window.addEventListener("hashchange", function () {
+          closeMenu();
           toTop();
           setTimeout(toTop, 30);
           setTimeout(toTop, 200);
