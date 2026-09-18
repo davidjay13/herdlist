@@ -1,0 +1,353 @@
+function seed(db) {
+
+const PRODUCERS = [
+  {
+    id: "p1",
+    slug: "sutter-ridge-cattle",
+    name: "Sutter Ridge Cattle",
+    owner: "Maya Delgado",
+    location: "Auburn, CA",
+    state: "CA",
+    lat: 38.8966,
+    lng: -121.077,
+    rating: 5,
+    reviews: 12,
+    sold: 86,
+    followers: 214,
+    founded: 1998,
+    about:
+      "Fourth-generation foothill ranch running Angus and Red Angus pairs on irrigated pasture above the American River.",
+    associations: ["California Cattlemen's Association", "Red Angus Association"],
+    cover:
+      "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "p2",
+    slug: "high-plains-angus",
+    name: "High Plains Angus",
+    owner: "Cole Brennan",
+    location: "Linton, ND",
+    state: "ND",
+    lat: 46.2666,
+    lng: -100.2329,
+    rating: 4.9,
+    reviews: 31,
+    sold: 420,
+    followers: 508,
+    founded: 2004,
+    about: "Commercial Angus operation focused on early-bred heifers and cow-calf pairs.",
+    associations: ["American Angus Association"],
+    cover:
+      "https://images.unsplash.com/photo-1516466723877-e4ec1d736c8a?auto=format&fit=crop&w=1600&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "p3",
+    slug: "oak-hollow-wagyu",
+    name: "Oak Hollow Wagyu",
+    owner: "Kenji & Lauren Mori",
+    location: "Ivanhoe, TX",
+    state: "TX",
+    lat: 33.4371,
+    lng: -96.1389,
+    rating: 5,
+    reviews: 9,
+    sold: 44,
+    followers: 176,
+    founded: 2013,
+    about: "Fullblood and F1 Wagyu genetics. Semen, embryos, and seedstock bulls.",
+    associations: ["American Wagyu Association"],
+    cover:
+      "https://images.unsplash.com/photo-1570042223119-0d2d2d6c1384?auto=format&fit=crop&w=1600&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "p4",
+    slug: "rio-verde-ranch",
+    name: "Rio Verde Ranch",
+    owner: "Elena Vasquez",
+    location: "Marfa, TX",
+    state: "TX",
+    lat: 30.3072,
+    lng: -104.0245,
+    rating: 4.8,
+    reviews: 7,
+    sold: 63,
+    followers: 98,
+    founded: 2009,
+    about: "Drought-hardy Brangus and Beefmaster pairs raised on open range.",
+    associations: ["International Brangus Breeders"],
+    cover:
+      "https://images.unsplash.com/photo-1484557985045-edf25e08da73?auto=format&fit=crop&w=1600&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "p5",
+    slug: "blue-stem-herefords",
+    name: "Blue Stem Herefords",
+    owner: "Hank Schroer",
+    location: "Nelson, NE",
+    state: "NE",
+    lat: 40.2017,
+    lng: -98.0678,
+    rating: 4.9,
+    reviews: 18,
+    sold: 155,
+    followers: 241,
+    founded: 1976,
+    about: "Horned and polled Hereford bulls selected for calving ease and forage conversion.",
+    associations: ["American Hereford Association"],
+    cover:
+      "https://images.unsplash.com/photo-1596733439284-f58b3c1d9858?auto=format&fit=crop&w=1600&q=80",
+    avatar:
+      "https://images.unsplash.com/photo-1477764250597-dffe9f113bdc?auto=format&fit=crop&w=400&q=80",
+  },
+];
+
+const LISTINGS = [
+  {
+    id: "l1",
+    producerId: "p1",
+    title: "Bred Angus pairs — Sierra foothills",
+    breed: "Angus",
+    klass: "Cow-Calf Pair",
+    category: "Cattle",
+    head: 42,
+    unit: "Head",
+    price: 4850,
+    priceType: "per_head",
+    daysLeft: 47,
+    listedAt: "2026-08-12",
+    location: "Auburn, CA",
+    lat: 38.8966,
+    lng: -121.077,
+    image:
+      "https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&w=1200&q=80",
+    description:
+      "42 black Angus cow-calf pairs. Cows 4–7 years, moderate frame, good feet. Calves born Feb–April 2026.",
+    details: { Age: "Cows 4–7 yrs", Delivery: "150 miles included" },
+  },
+  {
+    id: "l2",
+    producerId: "p2",
+    title: "Early-bred Angus heifers",
+    breed: "Angus",
+    klass: "Bred - Early",
+    category: "Cattle",
+    head: 90,
+    unit: "Head",
+    price: 4065,
+    priceType: "per_head",
+    daysLeft: 22,
+    listedAt: "2026-08-28",
+    location: "Linton, ND",
+    lat: 46.2666,
+    lng: -100.2329,
+    image:
+      "https://images.unsplash.com/photo-1516466723877-e4ec1d736c8a?auto=format&fit=crop&w=1200&q=80",
+    description: "90 home-raised Angus heifers, AI-bred to calving-ease sires. Ultrasound confirmed.",
+    details: { Breeding: "AI, calving-ease" },
+  },
+  {
+    id: "l3",
+    producerId: "p3",
+    title: "Akaushi semen — Ivanhoe line",
+    breed: "Akaushi",
+    klass: "Semen",
+    category: "Genetics",
+    head: 25,
+    unit: "Units",
+    price: null,
+    priceType: "contact",
+    daysLeft: 39,
+    listedAt: "2026-08-01",
+    location: "Ivanhoe, TX",
+    lat: 33.4371,
+    lng: -96.1389,
+    image:
+      "https://images.unsplash.com/photo-1570042223119-0d2d2d6c1384?auto=format&fit=crop&w=1200&q=80",
+    description: "Conventionally frozen Akaushi semen from a proven Ivanhoe-line sire.",
+    details: { Type: "Conventional semen" },
+  },
+  {
+    id: "l4",
+    producerId: "p2",
+    title: "Red Angus cow-calf pairs",
+    breed: "Red Angus",
+    klass: "Cow-Calf Pair",
+    category: "Cattle",
+    head: 70,
+    unit: "Head",
+    price: 5300,
+    priceType: "per_head",
+    daysLeft: 19,
+    listedAt: "2026-09-01",
+    location: "Napoleon, ND",
+    lat: 46.5047,
+    lng: -99.7696,
+    image:
+      "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80",
+    description: "70 Red Angus pairs. Cows 3–8 years, calves at side averaging 280 lbs.",
+    details: { "Calf wt": "~280 lbs" },
+  },
+  {
+    id: "l5",
+    producerId: "p5",
+    title: "Hereford yearling bulls",
+    breed: "Hereford",
+    klass: "Bull",
+    category: "Cattle",
+    head: 20,
+    unit: "Head",
+    price: null,
+    priceType: "contact",
+    daysLeft: 54,
+    listedAt: "2026-07-28",
+    location: "Nelson, NE",
+    lat: 40.2017,
+    lng: -98.0678,
+    image:
+      "https://images.unsplash.com/photo-1596733439284-f58b3c1d9858?auto=format&fit=crop&w=1200&q=80",
+    description: "20 coming two-year-old Hereford bulls. Fertility tested.",
+    details: { Age: "Coming twos" },
+  },
+  {
+    id: "l6",
+    producerId: "p4",
+    title: "Brangus open heifers",
+    breed: "Brangus",
+    klass: "Heifer",
+    category: "Cattle",
+    head: 55,
+    unit: "Head",
+    price: 2180,
+    priceType: "per_head",
+    daysLeft: 11,
+    listedAt: "2026-09-06",
+    location: "Marfa, TX",
+    lat: 30.3072,
+    lng: -104.0245,
+    image:
+      "https://images.unsplash.com/photo-1484557985045-edf25e08da73?auto=format&fit=crop&w=1200&q=80",
+    description: "55 open Brangus heifers, 14–16 months.",
+    details: { Age: "14–16 months" },
+  },
+  {
+    id: "l7",
+    producerId: "p3",
+    title: "Fullblood Wagyu herd sire",
+    breed: "Wagyu",
+    klass: "Bull",
+    category: "Cattle",
+    head: 1,
+    unit: "Head",
+    price: 12500,
+    priceType: "per_head",
+    daysLeft: 33,
+    listedAt: "2026-08-20",
+    location: "Ivanhoe, TX",
+    lat: 33.4371,
+    lng: -96.1389,
+    image:
+      "https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=1200&q=80",
+    description: "Proven fullblood Wagyu herd sire. Registration papers included.",
+    details: { Status: "Fullblood" },
+  },
+  {
+    id: "l8",
+    producerId: "p1",
+    title: "Black Angus stocker steers",
+    breed: "Black Angus",
+    klass: "Stocker",
+    category: "Cattle",
+    head: 120,
+    unit: "Head",
+    price: 1890,
+    priceType: "per_head",
+    daysLeft: 8,
+    listedAt: "2026-09-10",
+    location: "Shingle Springs, CA",
+    lat: 38.6657,
+    lng: -120.9263,
+    image:
+      "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1200&q=80",
+    description: "120 weaned black Angus steers, 520–560 lbs. Backgrounded 45 days.",
+    details: { Weight: "520–560 lbs" },
+  },
+  {
+    id: "l9",
+    producerId: "p2",
+    title: "Mid-bred commercial cows",
+    breed: "Angus",
+    klass: "Bred - Mid",
+    category: "Cattle",
+    head: 150,
+    unit: "Head",
+    price: 3925,
+    priceType: "per_head",
+    daysLeft: 27,
+    listedAt: "2026-08-22",
+    location: "Wilton, ND",
+    lat: 47.1586,
+    lng: -100.7837,
+    image:
+      "https://images.unsplash.com/photo-1560493676-04071c5f750f?auto=format&fit=crop&w=1200&q=80",
+    description: "150 mid-bred commercial Angus cows, 4–9 years. Due March–April.",
+    details: { Due: "March–April" },
+  },
+  {
+    id: "l10",
+    producerId: "p4",
+    title: "Beefmaster pairs — West Texas",
+    breed: "Beefmaster",
+    klass: "Cow-Calf Pair",
+    category: "Cattle",
+    head: 38,
+    unit: "Head",
+    price: 3100,
+    priceType: "per_head",
+    daysLeft: 41,
+    listedAt: "2026-08-05",
+    location: "Marfa, TX",
+    lat: 30.309,
+    lng: -104.03,
+    image:
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1200&q=80",
+    description: "38 Beefmaster pairs adapted to dry country. Calves 2–4 months.",
+    details: { "Calf age": "2–4 months" },
+  },
+];
+
+  const n = db.prepare("SELECT COUNT(*) AS c FROM producers").get().c;
+  if (n > 0) return;
+  const insP = db.prepare(`
+    INSERT INTO producers (id, slug, name, owner, location, state, lat, lng, rating, reviews, sold, followers, founded, about, associations, cover, avatar)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const insL = db.prepare(`
+    INSERT INTO listings (id, producer_id, title, breed, klass, category, head, unit, price, price_type, days_left, listed_at, location, lat, lng, status, image, images, description, details)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)
+  `);
+  for (const p of PRODUCERS) {
+    insP.run(
+      p.id, p.slug, p.name, p.owner, p.location, p.state, p.lat, p.lng,
+      p.rating, p.reviews, p.sold, p.followers, p.founded, p.about,
+      JSON.stringify(p.associations), p.cover, p.avatar
+    );
+  }
+  for (const l of LISTINGS) {
+    insL.run(
+      l.id, l.producerId, l.title, l.breed, l.klass, l.category, l.head, l.unit,
+      l.price, l.priceType, l.daysLeft, l.listedAt, l.location, l.lat, l.lng,
+      l.image, JSON.stringify([l.image]), l.description, JSON.stringify(l.details || {})
+    );
+  }
+  console.log("Seeded producers and listings");
+}
+
+module.exports = { seed };

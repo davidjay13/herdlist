@@ -1,32 +1,49 @@
 # RangeList
 
-A farm-to-farm cattle marketplace demo inspired by [Herd Yard](https://herdyard.com) (“the Zillow of cattle”).
+Farm-to-farm cattle marketplace with real accounts and a shared database file.
 
-This is an original frontend: new name, layout, copy, and sample ranches. It is not affiliated with Herd Yard.
+## Run locally
 
-## What it includes
-
-- Landing page with recent listings, stats, plans, and testimonials
-- Browse view with breed / class / category filters
-- Nationwide map (Leaflet + OpenStreetMap) with listing pins
-- Listing detail, photo gallery, contact + follow (gated to signed-in buyers)
-- Producer / ranch profile pages
-- List-cattle form (saves to `localStorage`)
-- Sign up / sign in / account dashboard (browser-only)
-- Pricing and FAQ
-
-## Run it
-
-Open `index.html` in a browser, or from this folder:
+Needs Node 18+. No `npm install` required.
 
 ```bash
-python3 -m http.server 8080
+cd rangelist
+node http-server.js
 ```
 
-Then visit http://localhost:8080
+Open http://localhost:8080
 
-Needs internet for fonts, Leaflet, map tiles, and Unsplash photos.
+## What is real now
 
-## Not included (on purpose)
+- Email + password accounts (passwords hashed with scrypt)
+- Session cookie
+- Users, ranches, listings, follows, and messages saved in `data/store.json`
+- Same data on every device that hits this server
 
-Payments, real messaging, verification, and a backend. Those would be the next build step (auth + Postgres + object storage + Stripe).
+## DigitalOcean — replace the static site
+
+The static App Platform app cannot run this. Use a **Web Service** or a Droplet.
+
+### App Platform Web Service
+
+1. Push this folder to GitHub (`http-server.js`, `store.js`, `seed-json.js`, `public/`).
+2. Create App → GitHub → this repo.
+3. Resource type: **Web Service**
+4. Build command: leave empty
+5. Run command: `node http-server.js`
+6. HTTP port: `8080`
+
+Live URL will be `https://….ondigitalocean.app`.
+
+App Platform disks reset on deploy, so accounts created before a redeploy can disappear. For a durable demo use a Droplet.
+
+### Droplet
+
+```bash
+sudo apt update && sudo apt install -y git nodejs
+git clone https://github.com/YOUR_USER/rangelist.git
+cd rangelist
+PORT=8080 node http-server.js
+```
+
+Or keep it running with pm2: `pm2 start http-server.js --name rangelist`

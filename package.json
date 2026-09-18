@@ -1,0 +1,21 @@
+{
+  "name": "rangelist",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Farm-to-farm cattle marketplace",
+  "main": "server.js",
+  "scripts": {
+    "start": "node http-server.js",
+    "dev": "node http-server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "sql.js": "^1.13.0",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "multer": "^2.0.2"
+  }
+}
