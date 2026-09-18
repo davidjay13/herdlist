@@ -17,6 +17,13 @@
       '<div class="meta"><span>' + (l.breed || "") + '</span><span>' + (l.klass || "") + '</span><span>' + (l.head || "") + ' ' + (l.unit || "") + '</span></div>' +
       '<div class="meta" style="margin-top:4px">' + (l.location || "") + '</div></div></article>';
   }
+  function stat(label, value, extra) {
+    return '<div style="flex:1;min-width:0;text-align:center;padding:10px 6px">' +
+      '<div style="font-size:0.68rem;letter-spacing:.08em;text-transform:uppercase;color:#6b7a6e">' + label + '</div>' +
+      '<div style="font-family:Fraunces,Georgia,serif;font-size:1.35rem;line-height:1.2;margin-top:2px">' + value + '</div>' +
+      (extra ? '<div class="sub" style="font-size:.75rem">' + extra + '</div>' : '') +
+      '</div>';
+  }
   function render(pack) {
     var app = document.getElementById("app");
     if (!app) return;
@@ -38,11 +45,12 @@
       '<button class="btn btn-outline" id="pub-follow">Follow ranch</button>' +
       '<button class="btn btn-ghost" id="pub-share">Copy profile link</button>' +
       '</div></div>' +
-      '<div class="stats-grid" style="margin-top:18px">' +
-      '<div class="panel"><div class="label">Listings</div><div class="stat-num">' + items.length + '</div></div>' +
-      '<div class="panel"><div class="label">Sold</div><div class="stat-num">' + (p.sold || 0) + '</div></div>' +
-      '<div class="panel"><div class="label">Rating</div><div class="stat-num">' + (p.rating || "\u2014") + '</div><div class="sub">' + (p.reviews || 0) + ' reviews</div></div>' +
-      '<div class="panel"><div class="label">Followers</div><div class="stat-num">' + (p.followers || 0) + '</div></div></div>' +
+      '<div class="panel" style="margin-top:14px;display:flex;align-items:center;padding:8px 10px">' +
+      stat("Listings", items.length) +
+      stat("Sold", p.sold || 0) +
+      stat("Rating", p.rating || "\u2014", (p.reviews || 0) + " reviews") +
+      stat("Followers", p.followers || 0) +
+      '</div>' +
       '<div class="stats-grid" style="margin-top:18px">' +
       '<div class="panel"><h2 style="margin:0 0 10px">About the ranch</h2><p style="margin:0;white-space:pre-wrap">' + (p.about || "This producer has not added an about section yet.") + '</p></div>' +
       '<div class="panel"><h2 style="margin:0 0 10px">Operations</h2><p style="margin:0;white-space:pre-wrap">' + (p.operations || "Herd size, grazing program, and how they work with buyers will show here.") + '</p></div></div>' +
