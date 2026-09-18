@@ -1,10 +1,13 @@
 const importedProducers = (() => {
-  try {
-    const rows = require("./import-producers.json");
-    return Array.isArray(rows) ? rows : [];
-  } catch (e) {
-    return [];
-  }
+  const files = ["./import-producers.json", "./import-producers-b.json"];
+  const rows = [];
+  files.forEach(function (f) {
+    try {
+      const part = require(f);
+      if (Array.isArray(part)) part.forEach(function (r) { rows.push(r); });
+    } catch (e) {}
+  });
+  return rows;
 })();
 
 module.exports = async function extraApi(ctx) {
@@ -24,14 +27,17 @@ module.exports = async function extraApi(ctx) {
       user = {
         id: userId,
         name: row.owner || row.name,
-        email: row.email || ("imported+" + row.hyId + "@herd-yard.local"),
+        email: row.email || "imported+" + row.hyId + "@herd-yard.local",
         passwordHash: hashPassword("imported-" + row.hyId),
         imported: true,
         phone: row.phone || "",
       };
       db.data.users.push(user);
     } else {
-      if (row.email) user.email = row.email;
+      const clash = (db.data.users || []).find(
+        (u) => u.id !== userId && row.email && String(u.email || "").toLowerCase() === String(row.email).toLowerCase() && !u.imported
+      );
+      if (row.email && !clash) user.email = row.email;
       if (row.phone) user.phone = row.phone;
       if (row.owner) user.name = row.owner;
       user.imported = true;
@@ -46,9 +52,9 @@ module.exports = async function extraApi(ctx) {
         owner: row.owner || row.name,
         location: row.location || "",
         rating: row.rating || 5,
-        reviews: 0,
+        reviews: row.reviews || 0,
         sold: row.sold || 0,
-        followers: 0,
+        followers: row.followers || 0,
         about: row.about || "",
         operations: "",
         associations: [],
@@ -69,15 +75,69 @@ module.exports = async function extraApi(ctx) {
     if (row.phone) producer.phone = row.phone;
     if (row.website) producer.website = row.website;
     if (row.photos && row.photos.length) producer.photos = row.photos;
+    if (row.reviews) producer.reviews = row.reviews;
+    if (row.followers) producer.followers = row.followers;
+    if (row.sold != null) producer.sold = row.sold;
+    if (row.rating) producer.rating = row.rating;
     producer.imported = true;
     producer.hyId = row.hyId;
     producer.userId = userId;
+
+    const listings = Array.isArray(row.listings) ? row.listings : [];
+    listings.forEach(function (L) {
+      if (!L || !L.hyListingId) return;
+      const lid = "hyL" + L.hyListingId;
+      const image = L.image || (L.images && L.images[0]) || row.cover || row.avatar || COW;
+      const images = Array.isArray(L.images) && L.images.length ? L.images : [image];
+      let existing = db.data.listings.find((x) => x.id === lid || x.hyListingId === L.hyListingId);
+      if (!existing) {
+        db.data.listings.push({
+          id: lid,
+          hyListingId: L.hyListingId,
+          producerId: id,
+          userId: userId,
+          title: L.title || row.name + " listing",
+          breed: L.breed || "",
+          klass: L.klass || "",
+          category: L.category || "Cattle",
+          head: L.head || 1,
+          unit: String(L.category || "").toLowerCase().indexOf("genetic") >= 0 ? "Units" : "Head",
+          price: L.price == null || L.price === "" ? null : Number(L.price),
+          priceType: L.price == null || L.price === "" ? "contact" : "per_head",
+          daysLeft: 60,
+          listedAt: L.listedAt || new Date().toISOString().slice(0, 10),
+          location: L.location || row.location || "",
+          status: L.status === "sold" ? "sold" : "active",
+          image: image,
+          images: images,
+          description: L.description || "",
+          imported: true,
+          hidden: false,
+        });
+      } else {
+        existing.image = image;
+        existing.images = images;
+        existing.title = L.title || existing.title;
+        existing.breed = L.breed || existing.breed;
+        existing.klass = L.klass || existing.klass;
+        existing.location = L.location || existing.location;
+        existing.description = L.description || existing.description;
+        if (L.price != null && L.price !== "") {
+          existing.price = Number(L.price);
+          existing.priceType = "per_head";
+        }
+        existing.producerId = id;
+        existing.userId = userId;
+        existing.imported = true;
+      }
+    });
   }
 
-  if (!db.data.importedHyContact && importedProducers.length && importedProducers[0].hyId) {
+  if (!db.data.importedHyMediaSep18 && importedProducers.length && importedProducers[0].hyId) {
     importedProducers.forEach(applyImportedRow);
     db.data.importedHy = true;
     db.data.importedHyContact = true;
+    db.data.importedHyMediaSep18 = true;
     await db.save();
   }
 
@@ -124,6 +184,7 @@ module.exports = async function extraApi(ctx) {
         location: producer ? producer.location : "",
         listingCount: listingCount,
         sold: producer ? producer.sold || 0 : 0,
+        avatar: producer ? producer.avatar : "",
       };
     });
     send(res, 200, { accounts: accounts, count: accounts.length });

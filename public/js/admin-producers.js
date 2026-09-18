@@ -45,10 +45,13 @@
       "<div class='panel' style='margin-top:16px'>" +
       (rows.length ? rows.map(function (p) {
         var img = p.avatar || p.cover || "";
+        var contact = [p.phone, p.email].filter(Boolean).join(" \u00b7 ");
         return "<div class='row' style='align-items:center;gap:12px'>" +
           (img ? "<img src='" + String(img).split("'").join("") + "' alt='' style='width:52px;height:52px;object-fit:cover;border-radius:10px'>" : "") +
           "<span style='flex:1'><b>" + esc(p.name) + "</b><div class='sub'>" +
-          esc(p.location) + " · sold " + (p.sold || 0) + "</div></span>" +
+          esc(p.location) + " \u00b7 sold " + (p.sold || 0) + "</div>" +
+          (contact ? "<div class='sub'>" + esc(contact) + "</div>" : "") +
+          "</span>" +
           "<a class='btn btn-outline' href='#/ranch/" + esc(p.slug) + "'>View public profile</a></div>";
       }).join("") : "<p class='sub'>No producers yet.</p>") +
       "</div>";
@@ -79,8 +82,9 @@
       (rows.length ? rows.map(function (a) {
         var badge = a.admin ? "Admin" : (a.imported ? "Imported" : "Signed up");
         return "<div class='row' style='align-items:center;gap:12px'>" +
+          (a.avatar ? "<img src='" + String(a.avatar).split("'").join("") + "' alt='' style='width:40px;height:40px;object-fit:cover;border-radius:8px'>" : "") +
           "<span style='flex:1'><b>" + esc(a.name) + "</b>" +
-          "<div class='sub'>" + esc(a.email) + " · id " + a.id + "</div></span>" +
+          "<div class='sub'>" + esc(a.email) + (a.phone ? " \u00b7 " + esc(a.phone) : "") + " \u00b7 id " + a.id + "</div></span>" +
           "<span class='sub'>" + esc(a.producerName || "no ranch") + "<br>" + esc(a.location) + "</span>" +
           "<span class='sub'>" + a.listingCount + " listings</span>" +
           "<span class='sub'>" + badge + "</span>" +

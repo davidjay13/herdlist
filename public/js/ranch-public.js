@@ -9,8 +9,9 @@
   }
   function card(l) {
     var p = l.producer;
+    var img = l.image || (l.images && l.images[0]) || "";
     return '<article class="listing-card" onclick="location.hash=\'#/listing/' + l.id + '\'">' +
-      '<div class="thumb" style="background-image:url(\'' + (l.image || "") + '\')">' +
+      '<div class="thumb"><img src="' + img + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block">' +
       '<span class="badge">' + (p && p.name ? p.name : "Ranch") + '</span>' +
       '<span class="days">' + (l.daysLeft || 0) + 'd left</span></div>' +
       '<div class="listing-body"><div class="price">' + priceLabel(l) + '</div>' +
@@ -24,17 +25,28 @@
       (extra ? '<div class="sub" style="font-size:.75rem">' + extra + '</div>' : '') +
       '</div>';
   }
+  function contactLine(label, value, href) {
+    if (!value) return "";
+    var inner = href ? '<a href="' + href + '" style="color:#0f3f28">' + value + '</a>' : value;
+    return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #e6eee8">' +
+      '<span class="sub" style="min-width:78px">' + label + '</span><span>' + inner + '</span></div>';
+  }
   function render(pack) {
     var app = document.getElementById("app");
     if (!app) return;
     var p = pack.producer;
-    var items = pack.listings || [];
+    var items = (pack.listings || []).filter(function (l) { return l.status !== "sold" && !l.hidden; });
     var assoc = p.associations || [];
+    var contactHtml = contactLine("Phone", p.phone, p.phone ? "tel:" + String(p.phone).replace(/[^\d+]/g, "") : "") +
+      contactLine("Email", p.email, p.email ? "mailto:" + p.email : "") +
+      contactLine("Website", p.website, p.website) +
+      contactLine("Owner", p.owner);
+    if (!contactHtml) contactHtml = "<p class='sub'>This ranch has not published contact details yet.</p>";
     app.innerHTML =
-      '<div class="profile-hero" style="height:340px;background-image:url(\'' + (p.cover || p.avatar || "") + '\')"></div>' +
+      '<div class="profile-hero" style="height:340px;background-image:url(\'' + (p.cover || p.avatar || "") + '\');background-size:cover;background-position:center"></div>' +
       '<div style="max-width:1100px;margin:-110px auto 0;padding:0 20px 72px;position:relative">' +
       '<div class="panel" style="display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center">' +
-      '<img class="av" src="' + (p.avatar || "") + '" alt="" style="width:112px;height:112px;border-radius:22px;object-fit:cover;border:4px solid #fffcf7">' +
+      '<img class="av" src="' + (p.avatar || "") + '" alt="" style="width:112px;height:112px;border-radius:22px;object-fit:cover;border:4px solid #fffcf7;background:#fff">' +
       '<div><div class="kicker" style="color:#1b6b45">Public ranch profile</div>' +
       '<h1 style="font-family:Fraunces,Georgia,serif;font-size:clamp(2rem,4vw,3rem);margin:4px 0 6px;letter-spacing:-.03em">' + (p.name || "Ranch") + '</h1>' +
       '<p class="sub" style="margin:0">' + (p.location || "") + (p.owner ? " \u00b7 " + p.owner : "") + '</p>' +
@@ -53,7 +65,7 @@
       '</div>' +
       '<div class="stats-grid" style="margin-top:18px">' +
       '<div class="panel"><h2 style="margin:0 0 10px">About the ranch</h2><p style="margin:0;white-space:pre-wrap">' + (p.about || "This producer has not added an about section yet.") + '</p></div>' +
-      '<div class="panel"><h2 style="margin:0 0 10px">Operations</h2><p style="margin:0;white-space:pre-wrap">' + (p.operations || "Herd size, grazing program, and how they work with buyers will show here.") + '</p></div></div>' +
+      '<div class="panel"><h2 style="margin:0 0 10px">Contact</h2>' + contactHtml + '</div></div>' +
       '<section style="margin-top:28px"><div class="section-head"><div><h2>Current listings</h2><p class="sub">Live groups from this ranch.</p></div></div>' +
       '<div class="cards-3">' + (items.length ? items.map(card).join("") : "<p class='sub'>No active listings.</p>") + '</div></section></div>';
     document.getElementById("pub-msg").onclick = function () {
