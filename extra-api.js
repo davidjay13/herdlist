@@ -157,12 +157,13 @@ module.exports = async function extraApi(ctx) {
     });
   }
 
-  if (!db.data.importedHyRefreshSep18d && importedProducers.length && importedProducers[0].hyId) {
+  if (!db.data.importedHyRefreshSep18e && importedProducers.length && importedProducers[0].hyId) {
     importedProducers.forEach(applyImportedRow);
     db.data.importedHy = true;
     db.data.importedHyContact = true;
     db.data.importedHyMediaSep18 = true;
     db.data.importedHyRefreshSep18d = true;
+    db.data.importedHyRefreshSep18e = true;
     await db.save();
   }
 
