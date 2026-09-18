@@ -27,6 +27,35 @@
     return hash().indexOf("#/account/global") === 0 || hash().indexOf("#/account/visibility") === 0;
   }
 
+  function compressImage(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file || !String(file.type).startsWith("image/")) return resolve(null);
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        var max = 1280;
+        var w = img.width;
+        var h = img.height;
+        if (w > max || h > max) {
+          var scale = Math.min(max / w, max / h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/jpeg", 0.72));
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not read photo"));
+      };
+      img.src = url;
+    });
+  }
+
   function ensureNav() {
     var aside = document.querySelector(".dash-shell aside");
     if (!aside) return;
@@ -177,10 +206,19 @@
   function paintEdit(listing) {
     var main = document.getElementById("dash-main");
     if (!main) return;
+    var pendingPhotos = [];
+    var currentSrc = photo(listing);
     main.innerHTML =
       "<h2 class='page-title'>Edit listing</h2>" +
-      "<img src='" + String(photo(listing)).split("'").join("") + "' alt='cattle' style='width:100%;max-height:220px;object-fit:cover;border-radius:16px;margin:0 0 16px'>" +
       "<form id='listing-edit-form' class='panel'><div class='form-grid'>" +
+      "<div class='field full'><label>Photo</label>" +
+      "<img id='edit-photo-preview' src='" + String(currentSrc).split("'").join("") + "' alt='listing photo' style='width:100%;max-height:260px;object-fit:cover;border-radius:16px;margin:0 0 12px;background:#dce8d8'>" +
+      "<div id='edit-dropzone' style='border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:16px;text-align:center;cursor:pointer'>" +
+      "<input id='edit-photo-input' type='file' accept='image/*' multiple style='display:none'>" +
+      "<strong style='display:block;color:#0f3f28'>Drop a new photo here</strong>" +
+      "<span style='display:block;font-size:0.88rem;color:#3a4a3e'>or click to choose from your computer</span></div>" +
+      "<div style='margin-top:10px'><label>Or paste an image URL</label>" +
+      "<input id='edit-photo-url' placeholder='https://...'></div></div>" +
       "<div class='field full'><label>Title</label><input name='title' value='" + esc(listing.title) + "' required></div>" +
       "<div class='field'><label>Breed</label><input name='breed' value='" + esc(listing.breed) + "'></div>" +
       "<div class='field'><label>Class</label><input name='klass' value='" + esc(listing.klass) + "'></div>" +
@@ -192,12 +230,68 @@
       "</div><div style='margin-top:14px;display:flex;gap:8px'>" +
       "<button class='btn btn-primary' type='submit'>Save listing</button>" +
       "<a class='btn btn-outline' href='#/account/listings'>Back</a></div></form>";
+
+    var zone = document.getElementById("edit-dropzone");
+    var input = document.getElementById("edit-photo-input");
+    var preview = document.getElementById("edit-photo-preview");
+    function useFiles(list) {
+      pendingPhotos = Array.prototype.slice.call(list || []).filter(function (f) {
+        return f && String(f.type).startsWith("image/");
+      }).slice(0, 4);
+      if (pendingPhotos[0]) preview.src = URL.createObjectURL(pendingPhotos[0]);
+    }
+    zone.onclick = function (e) {
+      if (e.target.closest("input")) return;
+      input.click();
+    };
+    input.onchange = function () { useFiles(input.files); input.value = ""; };
+    ["dragenter", "dragover", "dragleave", "drop"].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); });
+    });
+    zone.addEventListener("drop", function (e) { useFiles(e.dataTransfer && e.dataTransfer.files); });
+    document.getElementById("edit-photo-url").addEventListener("change", function () {
+      var v = this.value.trim();
+      if (v) preview.src = v;
+    });
+
     document.getElementById("listing-edit-form").onsubmit = function (e) {
       e.preventDefault();
       var body = Object.fromEntries(new FormData(e.target).entries());
-      fetch("/api/listings/" + listing.id, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Save failed"); toast("Listing saved."); location.hash = "#/account/listings"; }); })
-        .catch(function (err) { toast(err.message); });
+      var urlVal = (document.getElementById("edit-photo-url").value || "").trim();
+      var btn = e.target.querySelector("button[type=submit]");
+      if (btn) btn.disabled = true;
+      Promise.resolve()
+        .then(function () {
+          if (!pendingPhotos.length) return [];
+          return Promise.all(pendingPhotos.map(compressImage));
+        })
+        .then(function (images) {
+          images = (images || []).filter(Boolean);
+          if (images.length) {
+            body.image = images[0];
+            body.images = images;
+          } else if (urlVal) {
+            body.image = urlVal;
+            body.images = [urlVal];
+          }
+          return fetch("/api/listings/" + listing.id, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          }).then(function (r) {
+            return r.json().then(function (d) {
+              if (!r.ok) throw new Error(d.error || "Save failed");
+              return d;
+            });
+          });
+        })
+        .then(function () {
+          toast("Listing saved.");
+          location.hash = admin ? "#/account/global" : "#/account/listings";
+        })
+        .catch(function (err) { toast(err.message); })
+        .then(function () { if (btn) btn.disabled = false; });
     };
   }
 
