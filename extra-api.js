@@ -19,7 +19,7 @@ module.exports = async function extraApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword } = ctx;
   const ADMINS = ["david@davidjay.com"];
   const COW = "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80";
-  const LOGO = "/logo.svg?v=27";
+  const LOGO = "/logo.svg?v=28";
   function isPlaceholderAvatar(v) {
     if (!v) return true;
     var s = String(v);
@@ -31,6 +31,10 @@ module.exports = async function extraApi(ctx) {
   }
   function normName(s) {
     return String(s || "").toLowerCase().replace(/and/g, "").replace(/[^a-z0-9]/g, "");
+  }
+  function isImageValue(s) {
+    if (typeof s !== "string") return false;
+    return s.startsWith("data:image") || s.startsWith("http://") || s.startsWith("https://") || s.startsWith("/");
   }
 
   function isAdmin(u) {
@@ -143,8 +147,10 @@ module.exports = async function extraApi(ctx) {
           hidden: false,
         });
       } else {
-        existing.image = image;
-        existing.images = images;
+        if (!existing.imageLocked) {
+          existing.image = image;
+          existing.images = images;
+        }
         existing.title = L.title || existing.title;
         if (L.price != null && L.price !== "") {
           existing.price = Number(L.price);
@@ -237,6 +243,47 @@ module.exports = async function extraApi(ctx) {
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
     const list = isAdmin(u) ? db.data.listings : db.data.listings.filter((l) => l.userId === u.id);
     send(res, 200, { listings: list.map(withProducer), admin: isAdmin(u) });
+    return true;
+  }
+
+  const listingIdMatch = url.match(/^\/api\/listings\/([^/]+)$/);
+  if (listingIdMatch && (method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE")) {
+    const u = userFromCookie(req);
+    if (!u) return send(res, 401, { error: "Sign in required" }), true;
+    const listing = db.data.listings.find((l) => l.id === decodeURIComponent(listingIdMatch[1]));
+    if (!listing) return send(res, 404, { error: "Listing not found" }), true;
+    if (!isAdmin(u) && listing.userId !== u.id) return send(res, 403, { error: "Not your listing" }), true;
+    if (method === "DELETE") {
+      db.data.listings = db.data.listings.filter((l) => l.id !== listing.id);
+      await db.save();
+      return send(res, 200, { ok: true }), true;
+    }
+    const b = await readBody(req);
+    if (b.title != null) listing.title = String(b.title).trim() || listing.title;
+    if (b.breed != null) listing.breed = String(b.breed);
+    if (b.klass != null) listing.klass = String(b.klass);
+    if (b.head != null && b.head !== "") listing.head = Number(b.head);
+    if (b.price !== undefined) {
+      listing.price = b.price === "" || b.price == null ? null : Number(b.price);
+      listing.priceType = listing.price == null ? "contact" : "per_head";
+    }
+    if (b.location != null) listing.location = String(b.location);
+    if (b.status) listing.status = String(b.status);
+    if (b.description != null) listing.description = String(b.description);
+    if (b.hidden != null) listing.hidden = !!b.hidden;
+    const uploaded = Array.isArray(b.images) ? b.images.filter(isImageValue).slice(0, 4) : [];
+    if (isImageValue(b.image) && !uploaded.length) uploaded.push(b.image);
+    if (uploaded.length) {
+      listing.image = uploaded[0];
+      listing.images = uploaded;
+      listing.imageLocked = true;
+    } else if (isImageValue(b.image)) {
+      listing.image = b.image;
+      listing.images = [b.image].concat((listing.images || []).slice(1)).slice(0, 4);
+      listing.imageLocked = true;
+    }
+    await db.save();
+    send(res, 200, { listing: withProducer(listing) });
     return true;
   }
 
