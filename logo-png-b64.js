@@ -1,1 +1,1 @@
-module.exports = require("./logo-b64-1")+require("./logo-b64-2")+require("./logo-b64-3")+require("./logo-b64-4");
+module.exports = require("./logo-b64-1")+require("./logo-b64-2")+require("./logo-b64-3")+require("./logo-b64-4")+require("./logo-b64-5")+require("./logo-b64-6")+require("./logo-b64-7")+require("./logo-b64-8");
