@@ -4,20 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Herd Yard — The Zillow of Cattle</title>
-    <meta
-      name="description"
-      content="Herd Yard is an online platform for selling cattle. Connecting buyers and sellers nationwide."
-    />
+    <meta name="description" content="Herd Yard is an online platform for selling cattle. Connecting buyers and sellers nationwide." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600;650&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600;650&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
@@ -34,30 +25,24 @@
         <a href="#/pricing">Plans</a>
         <a href="#/faq">FAQ</a>
         <a href="#/list">Sell</a>
+        <a href="#/account">Profile</a>
       </nav>
       <div class="header-actions">
         <button class="btn btn-ghost" id="acct-btn"><span id="acct-label">Account</span></button>
         <button class="btn btn-primary" id="sell-btn">List Cattle</button>
       </div>
     </header>
-
     <main id="app"></main>
-
     <footer class="app-footer">
-      <div>
-        <b>Herd Yard</b>
-        <div>Selling cattle online. Connecting buyers and sellers nationwide.</div>
-      </div>
-      <div>
-        Photos stored with each listing. Map © OpenStreetMap.
-      </div>
+      <div><b>Herd Yard</b><div>Selling cattle online. Connecting buyers and sellers nationwide.</div></div>
+      <div>Photos stored with each listing. Map © OpenStreetMap.</div>
     </footer>
     <div class="toast" id="toast"></div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/data.js"></script>
     <script src="js/client.js"></script>
     <script src="js/photos.js"></script>
+    <script src="js/profile.js"></script>
     <script>
       (function () {
         function patch() {
