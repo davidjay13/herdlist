@@ -27,6 +27,7 @@ module.exports = async function extraApi(ctx) {
           name: row.name,
           email: "imported+" + row.hyId + "@herd-yard.local",
           passwordHash: hashPassword("imported-" + row.hyId),
+          imported: true,
         });
       }
       db.data.producers.push({
@@ -74,6 +75,30 @@ module.exports = async function extraApi(ctx) {
 
   if (url === "/api/producers" && method === "GET") {
     send(res, 200, { producers: db.data.producers });
+    return true;
+  }
+
+  if (url === "/api/admin/accounts" && method === "GET") {
+    const u = userFromCookie(req);
+    if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
+    const accounts = (db.data.users || []).map(function (user) {
+      const producer = db.data.producers.find((p) => p.userId === user.id) || null;
+      const listingCount = (db.data.listings || []).filter((l) => l.userId === user.id).length;
+      const email = String(user.email || "");
+      return {
+        id: user.id,
+        name: user.name || "",
+        email: email,
+        admin: isAdmin(user),
+        imported: !!user.imported || email.indexOf("@herd-yard.local") >= 0,
+        producerName: producer ? producer.name : "",
+        slug: producer ? producer.slug : "",
+        location: producer ? producer.location : "",
+        listingCount: listingCount,
+        sold: producer ? producer.sold || 0 : 0,
+      };
+    });
+    send(res, 200, { accounts: accounts, count: accounts.length });
     return true;
   }
 
