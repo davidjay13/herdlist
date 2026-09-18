@@ -77,20 +77,22 @@ async function init(seedFn) {
         ssl: { rejectUnauthorized: false },
       });
       await pgClient.connect();
+      await pgClient.query("CREATE SCHEMA IF NOT EXISTS herd");
+      await pgClient.query("SET search_path TO herd");
       await pgClient.query(`
-        CREATE TABLE IF NOT EXISTS app_state (
+        CREATE TABLE IF NOT EXISTS herd.app_state (
           id integer PRIMARY KEY,
           payload jsonb NOT NULL
         )
       `);
-      const row = await pgClient.query("SELECT payload FROM app_state WHERE id = 1");
+      const row = await pgClient.query("SELECT payload FROM herd.app_state WHERE id = 1");
       let data;
       if (row.rows[0]) {
         data = row.rows[0].payload;
       } else {
         data = emptyData();
         seedFn(data);
-        await pgClient.query("INSERT INTO app_state (id, payload) VALUES (1, $1)", [JSON.stringify(data)]);
+        await pgClient.query("INSERT INTO herd.app_state (id, payload) VALUES (1, $1)", [JSON.stringify(data)]);
       }
       console.log("Store: postgres");
       return {
@@ -98,7 +100,7 @@ async function init(seedFn) {
         persist: "postgres",
         async save() {
           await pgClient.query(
-            "INSERT INTO app_state (id, payload) VALUES (1, $1) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload",
+            "INSERT INTO herd.app_state (id, payload) VALUES (1, $1) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload",
             [JSON.stringify(data)]
           );
         },
