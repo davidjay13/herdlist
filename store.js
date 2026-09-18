@@ -69,7 +69,13 @@ async function init(seedFn) {
   if (url) {
     try {
       const { Client } = require("pg");
-      const pgClient = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+      let conn = String(url);
+      if (/sslmode=/i.test(conn)) conn = conn.replace(/sslmode=[^&]*/i, "sslmode=no-verify");
+      else conn += (conn.includes("?") ? "&" : "?") + "sslmode=no-verify";
+      const pgClient = new Client({
+        connectionString: conn,
+        ssl: { rejectUnauthorized: false },
+      });
       await pgClient.connect();
       await pgClient.query(`
         CREATE TABLE IF NOT EXISTS app_state (
