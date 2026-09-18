@@ -53,7 +53,7 @@ button, input, select, textarea { font-family: inherit; }
   letter-spacing: -0.03em;
   font-size: 1.15rem;
 }
-.brand svg { display: block; }
+.brand img { width: 42px; height: 42px; object-fit: contain; background: transparent; }
 .nav-links {
   display: flex;
   align-items: center;
@@ -237,7 +237,7 @@ button, input, select, textarea { font-family: inherit; }
 .browse-stage { display: block; min-height: 0; flex: 1; }
 .browse-layout.view-split .browse-stage {
   display: grid;
-  grid-template-columns: minmax(380px, 1.1fr) minmax(300px, 1fr);
+  grid-template-columns: minmax(380px, 1.1fr) minmax(320px, 1fr);
   height: calc(100vh - 126px);
   max-height: calc(100vh - 126px);
   overflow: hidden;
@@ -287,11 +287,13 @@ button, input, select, textarea { font-family: inherit; }
   align-content: start;
 }
 .browse-layout.view-split .listings-grid {
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: 1fr;
   min-height: 0;
   height: 100%;
   overflow: auto;
 }
+.browse-layout.view-split .listing-card .thumb { height: 160px; }
+.browse-layout.view-split .listing-body { display: block; }
 .leaflet-container { height: 100%; width: 100%; background: #dce8d8; }
 .hy-pin { background: transparent; border: 0; }
 .hy-dot {
