@@ -1,4 +1,6 @@
 (function () {
+  var picked = [];
+
   function compressImage(file) {
     return new Promise(function (resolve, reject) {
       if (!file || !String(file.type).startsWith("image/")) return resolve(null);
@@ -28,36 +30,108 @@
     });
   }
 
+  function addFiles(list) {
+    Array.prototype.forEach.call(list || [], function (f) {
+      if (!f || !String(f.type).startsWith("image/")) return;
+      if (picked.length >= 4) return;
+      var exists = picked.some(function (p) {
+        return p.name === f.name && p.size === f.size;
+      });
+      if (!exists) picked.push(f);
+    });
+    renderPreview();
+  }
+
+  function renderPreview() {
+    var preview = document.getElementById("photo-preview");
+    var hint = document.getElementById("drop-hint");
+    if (!preview) return;
+    preview.innerHTML = "";
+    picked.slice(0, 4).forEach(function (f, i) {
+      var u = URL.createObjectURL(f);
+      var box = document.createElement("div");
+      box.style.cssText =
+        "position:relative;width:84px;height:84px;border-radius:10px;overflow:hidden;background-size:cover;background-position:center;background-image:url('" +
+        u +
+        "')";
+      var x = document.createElement("button");
+      x.type = "button";
+      x.textContent = "\u00d7";
+      x.style.cssText =
+        "position:absolute;top:4px;right:4px;width:22px;height:22px;border:0;border-radius:50%;background:#142018;color:#fff;cursor:pointer;line-height:22px;padding:0";
+      x.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        picked.splice(i, 1);
+        renderPreview();
+      };
+      box.appendChild(x);
+      preview.appendChild(box);
+    });
+    if (hint) hint.style.display = picked.length ? "none" : "block";
+  }
+
   function enhance() {
     if ((location.hash || "").indexOf("#/list") !== 0) return;
     var form = document.getElementById("list-form");
     if (!form || form.getAttribute("data-photos") === "1") return;
     form.setAttribute("data-photos", "1");
+    picked = [];
     var grid = form.querySelector(".form-grid");
     if (!grid) return;
     var wrap = document.createElement("div");
     wrap.className = "field full";
     wrap.innerHTML =
       '<label>Photos (up to 4)</label>' +
-      '<input id="photos" type="file" accept="image/*" multiple>' +
-      '<div id="photo-preview" class="thumbs" style="margin-top:8px"></div>';
+      '<div id="dropzone">' +
+      '<input id="photos" type="file" accept="image/*" multiple style="display:none">' +
+      '<div id="drop-hint">' +
+      "<strong>Drop photos here</strong>" +
+      "<span>or click to browse from your phone or computer</span>" +
+      "</div>" +
+      '<div id="photo-preview" class="thumbs" style="margin-top:10px;flex-wrap:wrap"></div>' +
+      "</div>";
     var desc = grid.querySelector("textarea") && grid.querySelector("textarea").closest(".field");
     if (desc) grid.insertBefore(wrap, desc);
     else grid.appendChild(wrap);
+
+    var zone = document.getElementById("dropzone");
     var input = document.getElementById("photos");
-    var preview = document.getElementById("photo-preview");
+    zone.style.cssText =
+      "border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:22px 18px;text-align:center;cursor:pointer;transition:0.15s ease";
+    var hint = document.getElementById("drop-hint");
+    hint.style.cssText = "color:#0f3f28";
+    hint.querySelector("strong").style.cssText = "display:block;font-size:1.05rem;margin-bottom:4px";
+    hint.querySelector("span").style.cssText = "display:block;font-size:0.88rem;color:#3a4a3e";
+
+    zone.addEventListener("click", function (e) {
+      if (e.target.closest("button")) return;
+      input.click();
+    });
     input.addEventListener("change", function () {
-      preview.innerHTML = "";
-      Array.prototype.slice.call(input.files, 0, 4).forEach(function (f) {
-        var u = URL.createObjectURL(f);
-        var box = document.createElement("div");
-        box.style.cssText =
-          "width:72px;height:72px;border-radius:8px;background-size:cover;background-position:center;background-image:url('" +
-          u +
-          "')";
-        preview.appendChild(box);
+      addFiles(input.files);
+      input.value = "";
+    });
+    ["dragenter", "dragover"].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.style.background = "#d5eadc";
+        zone.style.borderColor = "#0f3f28";
       });
     });
+    ["dragleave", "drop"].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.style.background = "#e6f2ea";
+        zone.style.borderColor = "#1b6b45";
+      });
+    });
+    zone.addEventListener("drop", function (e) {
+      addFiles(e.dataTransfer && e.dataTransfer.files);
+    });
+
     form.addEventListener(
       "submit",
       function (e) {
@@ -65,8 +139,7 @@
         e.stopImmediatePropagation();
         var btn = form.querySelector("button");
         if (btn) btn.disabled = true;
-        var files = Array.prototype.slice.call(input.files || [], 0, 4);
-        Promise.all(files.map(compressImage))
+        Promise.all(picked.slice(0, 4).map(compressImage))
           .then(function (images) {
             images = images.filter(Boolean);
             var body = {};
