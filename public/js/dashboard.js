@@ -1,4 +1,11 @@
 (function () {
+  function toast(msg) {
+    var el = document.getElementById("toast");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = "block";
+    setTimeout(function () { el.style.display = "none"; }, 2400);
+  }
   function section() {
     var hash = location.hash || "#/account";
     if (hash === "#/account" || hash === "#/account/") return "home";
@@ -15,6 +22,89 @@
   }
   function placeholder(title, copy) {
     return '<div class="panel"><h2 style="margin:0 0 8px">' + title + '</h2><p class="sub" style="margin:0">' + copy + '</p></div>';
+  }
+  function esc(v) { return String(v || "").replace(/"/g, """); }
+  function profileHtml(me, listings) {
+    var user = me.user || {};
+    var p = me.producer || {};
+    var cover = p.cover || "";
+    var avatar = p.avatar || "";
+    return '<div><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">' +
+      '<div><p class="sub" style="margin:0">Dashboard → Profile</p><h2 class="page-title" style="margin:4px 0 0">Profile settings</h2></div>' +
+      (p.slug ? '<a class="btn btn-outline" href="#/ranch/' + p.slug + '">View public ranch page</a>' : '') +
+      '</div>' +
+      '<div id="cover-drop" style="border:2px dashed #1b6b45;border-radius:16px;min-height:150px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:' +
+      (cover ? "#ccc url(\'' + cover + '\') center/cover no-repeat" : "#e6f2ea") + '">' +
+      '<div style="text-align:center;color:#0f3f28;background:rgba(255,252,247,.82);padding:8px 14px;border-radius:999px"><b>Drop header image here</b> or click to upload</div></div>' +
+      '<div class="panel" style="display:flex;gap:16px;align-items:center;margin-bottom:16px">' +
+      '<button type="button" id="avatar-btn" style="width:84px;height:84px;border:0;border-radius:16px;cursor:pointer;font-size:1.8rem;color:#6b7a6e;background:#e6e2d8 center/cover no-repeat;' +
+      (avatar ? "background-image:url(\'' + avatar + '\');color:transparent;" : '') + '">+</button>' +
+      '<div><b style="font-size:1.2rem">' + (user.name || "Your ranch") + '</b><div class="sub">' + (user.email || "") + '</div></div></div>' +
+      '<form id="dash-profile-form" class="panel"><div class="form-grid">' +
+      '<div class="field"><label>Full name</label><input name="name" value="' + esc(user.name) + '"></div>' +
+      '<div class="field"><label>Phone</label><input name="phone" value="' + esc(user.phone || p.phone) + '"></div>' +
+      '<div class="field full"><label>Email</label><input name="email" type="email" value="' + esc(user.email) + '"></div>' +
+      '<div class="field"><label>Ranch name</label><input name="ranchName" value="' + esc(p.name || user.name) + '"></div>' +
+      '<div class="field"><label>Owner / operator</label><input name="owner" value="' + esc(p.owner || user.name) + '"></div>' +
+      '<div class="field"><label>Location</label><input name="location" value="' + esc(p.location) + '" placeholder="City, State"></div>' +
+      '<div class="field"><label>Associations</label><input name="associations" value="' + esc((p.associations || []).join(", ")) + '"></div>' +
+      '<div class="field full"><label>About the ranch</label><textarea name="about" rows="4">' + (p.about || "") + '</textarea></div>' +
+      '<div class="field full"><label>Operations</label><textarea name="operations" rows="4">' + (p.operations || "") + '</textarea></div></div>' +
+      '<button class="btn btn-primary" style="margin-top:14px" type="submit">Save profile</button></form>' +
+      '<input id="avatar-file" type="file" accept="image/*" style="display:none">' +
+      '<input id="cover-file" type="file" accept="image/*" style="display:none"></div>';
+  }
+  function bindProfile() {
+    var avatarData = null, coverData = null;
+    function compress(file, max) {
+      return new Promise(function (resolve) {
+        if (!file || !String(file.type).startsWith("image/")) return resolve(null);
+        var img = new Image(); var url = URL.createObjectURL(file);
+        img.onload = function () {
+          var w = img.width, h = img.height, scale = Math.min(max / w, max / h, 1);
+          var c = document.createElement("canvas"); c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+          resolve(c.toDataURL("image/jpeg", 0.78));
+        };
+        img.src = url;
+      });
+    }
+    var av = document.getElementById("avatar-btn");
+    var af = document.getElementById("avatar-file");
+    var cz = document.getElementById("cover-drop");
+    var cf = document.getElementById("cover-file");
+    var form = document.getElementById("dash-profile-form");
+    if (!form) return;
+    if (av && af) {
+      av.onclick = function () { af.click(); };
+      af.onchange = function () {
+        var f = af.files && af.files[0]; if (!f) return;
+        compress(f, 600).then(function (d) { if (!d) return; avatarData = d; av.style.backgroundImage = "url(" + JSON.stringify(d) + ")"; av.style.color = "transparent"; });
+      };
+    }
+    if (cz && cf) {
+      cz.onclick = function () { cf.click(); };
+      cf.onchange = function () {
+        var f = cf.files && cf.files[0]; if (!f) return;
+        compress(f, 1600).then(function (d) { if (!d) return; coverData = d; cz.style.background = "#ccc url(" + JSON.stringify(d) + ") center/cover no-repeat"; });
+      };
+      cz.addEventListener("dragover", function (e) { e.preventDefault(); });
+      cz.addEventListener("drop", function (e) {
+        e.preventDefault();
+        var f = e.dataTransfer.files && e.dataTransfer.files[0]; if (!f) return;
+        compress(f, 1600).then(function (d) { if (!d) return; coverData = d; cz.style.background = "#ccc url(" + JSON.stringify(d) + ") center/cover no-repeat"; });
+      });
+    }
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      var body = Object.fromEntries(new FormData(form).entries());
+      if (avatarData) body.avatar = avatarData;
+      if (coverData) body.cover = coverData;
+      fetch("/api/profile", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then(function (res) { return res.json().then(function (data) { if (!res.ok) throw new Error(data.error || "Save failed"); return data; }); })
+        .then(function () { toast("Profile saved."); })
+        .catch(function (err) { toast(err.message); });
+    };
   }
   function home(me, listings) {
     var name = (me.user && me.user.name) || "Producer";
@@ -68,9 +158,9 @@
       if (!me.user) { location.hash = "#/signin"; return; }
       var listings = (pair[1] && pair[1].listings) || [];
       var s = section();
-      var inner = s === "home" ? home(me, listings) : s === "sold" ? placeholder("Sold", "Closed listings will show here.") : s === "orders" ? placeholder("Orders", "Buyer inquiries and deals will show here.") : s === "messages" ? placeholder("Messages", "Ranch messages will show here.") : "";
+      var inner = s === "home" ? home(me, listings) : s === "profile" ? profileHtml(me, listings) : s === "sold" ? placeholder("Sold", "Closed listings will show here.") : s === "orders" ? placeholder("Orders", "Buyer inquiries and deals will show here.") : placeholder("Messages", "Ranch messages will show here.");
       shell(inner, me);
-      if (s === "profile") setTimeout(function () { window.dispatchEvent(new Event("herd-profile-ready")); }, 10);
+      if (s === "profile") bindProfile();
     });
   }
   window.addEventListener("hashchange", function () { setTimeout(load, 20); });
