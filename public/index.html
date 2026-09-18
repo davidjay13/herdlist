@@ -57,5 +57,18 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/data.js"></script>
     <script src="js/client.js"></script>
+    <script>
+      (function () {
+        function patch() {
+          var h = document.querySelector(".hero h1");
+          if (h) h.textContent = "The Zillow of Cattle";
+          var lead = document.querySelector(".hero .lead");
+          if (lead) lead.textContent = "Connecting buyers and sellers nationwide. List your herd and sell off the ranch \u2014 no commission on private-treaty cattle.";
+        }
+        window.addEventListener("hashchange", function () { setTimeout(patch, 0); });
+        setTimeout(patch, 0);
+        setTimeout(patch, 200);
+      })();
+    </script>
   </body>
 </html>
