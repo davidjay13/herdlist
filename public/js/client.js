@@ -59,14 +59,14 @@
     const recent = state.listings.slice(0, 6);
     app.innerHTML = `<section class="hero"><div class="hero-bg"></div><div class="hero-inner">
       <div class="kicker">Farm to farm \u00b7 Private treaty</div>
-      <h1>The map of American cattle</h1>
-      <p class="lead">Accounts and listings are stored on the server now.</p>
+      <h1>The Zillow of Cattle</h1>
+      <p class="lead">Connecting buyers and sellers nationwide. List your herd and sell off the ranch - no commission on private-treaty cattle.</p>
       <div class="hero-cta">
         <a class="btn btn-light btn-lg" href="#/signup">Create a free account</a>
         <a class="btn btn-primary btn-lg" href="#/list">List cattle now</a>
       </div></div></section>
       <section class="section"><div class="section-head"><div><h2>Recently listed</h2>
-      <p class="sub">Live from the Herd Yard database.</p></div>
+      <p class="sub">Private treaty cattle from ranches nationwide.</p></div>
       <a class="btn btn-primary" href="#/browse">Browse all \u2192</a></div>
       <div class="cards-3">${recent.map(listingCard).join("")}</div></section>
       <section class="section"><div class="section-head"><div><h2>Choose a plan</h2></div></div>${plansHTML()}</section>`;
@@ -106,7 +106,7 @@
     });
     if (q.view !== "list" && window.L) {
       mapInst = L.map("map").setView([39.5, -98.3], 4);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OSM" }).addTo(mapInst);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "OSM" }).addTo(mapInst);
       const icon = L.divIcon({ className: "", html: `<div style="width:18px;height:18px;background:#1b6b45;border:2px solid #fff;border-radius:50%"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] });
       items.forEach((l) => {
         if (!l.lat) return;
@@ -150,7 +150,7 @@
       } catch (e) { toast(e.message); }
     };
   }
-  function ranch(slug) { /* public page handled by ranch-public.js */ }
+  function ranch(slug) { }
   function listCattle() {
     if (!state.user) { location.hash = "#/signup"; toast("Create an account to list cattle."); return; }
     app.innerHTML = `<div class="form-page"><h2 class="page-title">List cattle</h2>
