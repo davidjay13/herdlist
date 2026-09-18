@@ -29,13 +29,21 @@ module.exports = async function extraApi(ctx) {
   function avatarSrc(v) {
     return isPlaceholderAvatar(v) ? LOGO : v;
   }
-
-  (db.data.producers || []).forEach(function (p) {
-    if (isPlaceholderAvatar(p.avatar)) p.avatar = LOGO;
-  });
+  function normName(s) {
+    return String(s || "").toLowerCase().replace(/and/g, "").replace(/[^a-z0-9]/g, "");
+  }
 
   function isAdmin(u) {
     return !!(u && ADMINS.indexOf(String(u.email || "").toLowerCase()) >= 0);
+  }
+
+  function findImportedProducer(row) {
+    const id = "hy" + row.hyId;
+    return (
+      db.data.producers.find((p) => p.id === id || p.hyId === row.hyId || p.slug === row.slug) ||
+      db.data.producers.find((p) => normName(p.name) && normName(p.name) === normName(row.name)) ||
+      null
+    );
   }
 
   function applyImportedRow(row) {
@@ -61,7 +69,7 @@ module.exports = async function extraApi(ctx) {
       if (row.owner) user.name = row.owner;
       user.imported = true;
     }
-    let producer = db.data.producers.find((p) => p.id === id || p.hyId === row.hyId || p.slug === row.slug);
+    let producer = findImportedProducer(row);
     if (!producer) {
       producer = {
         id: id,
@@ -101,6 +109,7 @@ module.exports = async function extraApi(ctx) {
     producer.imported = true;
     producer.hyId = row.hyId;
     producer.userId = userId;
+    producer.slugAliases = Array.from(new Set([].concat(producer.slugAliases || [], [producer.slug, row.slug].filter(Boolean))));
 
     const listings = Array.isArray(row.listings) ? row.listings : [];
     listings.forEach(function (L) {
@@ -113,7 +122,7 @@ module.exports = async function extraApi(ctx) {
         db.data.listings.push({
           id: lid,
           hyListingId: L.hyListingId,
-          producerId: id,
+          producerId: producer.id,
           userId: userId,
           title: L.title || row.name + " listing",
           breed: L.breed || "",
@@ -141,28 +150,25 @@ module.exports = async function extraApi(ctx) {
           existing.price = Number(L.price);
           existing.priceType = "per_head";
         }
-        existing.producerId = id;
+        existing.producerId = producer.id;
         existing.userId = userId;
         existing.imported = true;
       }
     });
   }
 
-  if (!db.data.importedHyMediaSep18 && importedProducers.length && importedProducers[0].hyId) {
+  if (!db.data.importedHyRefreshSep18d && importedProducers.length && importedProducers[0].hyId) {
     importedProducers.forEach(applyImportedRow);
     db.data.importedHy = true;
     db.data.importedHyContact = true;
     db.data.importedHyMediaSep18 = true;
+    db.data.importedHyRefreshSep18d = true;
     await db.save();
   }
 
-  if (!db.data.logoAvatarSep18) {
-    (db.data.producers || []).forEach(function (p) {
-      if (isPlaceholderAvatar(p.avatar)) p.avatar = LOGO;
-    });
-    db.data.logoAvatarSep18 = true;
-    await db.save();
-  }
+  (db.data.producers || []).forEach(function (p) {
+    if (isPlaceholderAvatar(p.avatar)) p.avatar = LOGO;
+  });
 
   function withProducer(listing) {
     const p = db.data.producers.find((x) => x.id === listing.producerId);
@@ -262,7 +268,15 @@ module.exports = async function extraApi(ctx) {
   const prodMatch = url.match(/^\/api\/producers\/([^/]+)$/);
   if (prodMatch && method === "GET") {
     const key = decodeURIComponent(prodMatch[1]);
-    const p = db.data.producers.find((x) => x.slug === key || x.id === key);
+    const nk = normName(key);
+    const p = db.data.producers.find((x) =>
+      x.slug === key ||
+      x.id === key ||
+      String(x.hyId) === key ||
+      (x.slugAliases || []).indexOf(key) >= 0 ||
+      normName(x.slug) === nk ||
+      normName(x.name) === nk
+    );
     if (!p) return send(res, 404, { error: "Ranch not found" }), true;
     const listings = db.data.listings.filter((l) => l.producerId === p.id).map(withProducer);
     send(res, 200, { producer: Object.assign({}, p, { avatar: avatarSrc(p.avatar) }), listings });
