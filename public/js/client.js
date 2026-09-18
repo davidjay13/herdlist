@@ -45,10 +45,10 @@
   }
   function plansHTML() {
     return `<div class="plans">
-      <div class="plan"><h3>Single listing</h3><div class="amt">$45</div><div class="sub">one group · 60 days</div>
+      <div class="plan"><h3>Single listing</h3><div class="amt">$45</div><div class="sub">one group \u00b7 60 days</div>
         <ul><li>One listing</li><li>No commission on private treaty</li><li>Nationwide network</li></ul>
         <a class="btn btn-outline btn-wide" href="#/list">List now</a></div>
-      <div class="plan featured"><h3>Producer</h3><div class="amt">$432</div><div class="sub">per year · unlimited</div>
+      <div class="plan featured"><h3>Producer</h3><div class="amt">$432</div><div class="sub">per year \u00b7 unlimited</div>
         <ul><li>Unlimited listings</li><li>Public ranch profile</li><li>Followers</li></ul>
         <a class="btn btn-light btn-wide" href="#/signup">Become a producer</a></div>
       <div class="plan"><h3>Custom</h3><div class="amt">Talk</div><div class="sub">associations</div>
@@ -58,20 +58,18 @@
   function home() {
     const recent = state.listings.slice(0, 6);
     app.innerHTML = `<section class="hero"><div class="hero-bg"></div><div class="hero-inner">
-      <div class="kicker">Farm to farm · Private treaty</div>
+      <div class="kicker">Farm to farm \u00b7 Private treaty</div>
       <h1>The map of American cattle</h1>
-      <p class="lead">Accounts and listings are stored on the server now — the same herd on every device.</p>
+      <p class="lead">Accounts and listings are stored on the server now.</p>
       <div class="hero-cta">
         <a class="btn btn-light btn-lg" href="#/signup">Create a free account</a>
         <a class="btn btn-primary btn-lg" href="#/list">List cattle now</a>
       </div></div></section>
       <section class="section"><div class="section-head"><div><h2>Recently listed</h2>
-      <p class="sub">Live from the RangeList database.</p></div>
-      <a class="btn btn-primary" href="#/browse">Browse all →</a></div>
+      <p class="sub">Live from the Herd Yard database.</p></div>
+      <a class="btn btn-primary" href="#/browse">Browse all \u2192</a></div>
       <div class="cards-3">${recent.map(listingCard).join("")}</div></section>
-      <section class="section"><div class="section-head"><div><h2>Choose a plan</h2></div></div>${plansHTML()}</section>
-      <section class="section" style="text-align:center"><h2>Your herd. Your price. Your network.</h2>
-      <a class="btn btn-primary btn-lg" href="#/browse">Browse listings</a></section>`;
+      <section class="section"><div class="section-head"><div><h2>Choose a plan</h2></div></div>${plansHTML()}</section>`;
   }
   let mapInst = null;
   function browse() {
@@ -112,7 +110,7 @@
       const icon = L.divIcon({ className: "", html: `<div style="width:18px;height:18px;background:#1b6b45;border:2px solid #fff;border-radius:50%"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] });
       items.forEach((l) => {
         if (!l.lat) return;
-        L.marker([l.lat, l.lng], { icon }).addTo(mapInst).bindPopup(`<b>${priceLabel(l)}</b><br>${l.breed} · ${l.klass}<br><a href="#/listing/${l.id}">Open</a>`);
+        L.marker([l.lat, l.lng], { icon }).addTo(mapInst).bindPopup(`<b>${priceLabel(l)}</b><br>${l.breed} \u00b7 ${l.klass}<br><a href="#/listing/${l.id}">Open</a>`);
       });
       setTimeout(() => mapInst.invalidateSize(), 80);
     }
@@ -120,20 +118,19 @@
   function listingView(id) {
     const l = state.listingCache[id] || state.listings.find((x) => x.id === id);
     if (!l) { app.innerHTML = `<section class="section"><h2>Listing not found</h2></section>`; return; }
-    const p = l.producer || { name: "Ranch", slug: "", location: l.location, rating: "—", avatar: l.image, id: l.producerId };
+    const p = l.producer || { name: "Ranch", slug: "", location: l.location, rating: "\u2014", avatar: l.image, id: l.producerId };
     const imgs = l.images && l.images.length ? l.images : [l.image];
     app.innerHTML = `<div class="detail"><div>
       <div class="gallery" id="hero-img" style="background-image:url('${imgs[0]}')"></div>
       <div class="thumbs">${imgs.map((src,i)=>`<button class="${i===0?"on":""}" style="background-image:url('${src}')" data-src="${src}"></button>`).join("")}</div>
       <h2 style="margin-top:22px">${l.title}</h2>
-      <p class="meta">${l.breed} · ${l.klass} · ${l.head} ${l.unit} · ${l.location||""}</p>
+      <p class="meta">${l.breed} \u00b7 ${l.klass} \u00b7 ${l.head} ${l.unit} \u00b7 ${l.location||""}</p>
       <p>${l.description||""}</p>
-      <div class="panel" style="margin-top:16px">${Object.entries(l.details||{}).map(([k,v])=>`<div class="row"><span>${k}</span><b>${v}</b></div>`).join("")}</div>
       </div><aside class="side-card">
       <div class="label">Asking</div><div class="stat-num" style="font-size:2rem">${priceLabel(l)}</div>
-      <p class="sub">${l.daysLeft} days left · listed ${l.listedAt}</p>
+      <p class="sub">${l.daysLeft} days left \u00b7 listed ${l.listedAt}</p>
       <button class="btn btn-primary btn-wide btn-lg" id="contact-btn" style="margin-top:12px">${state.user?"Message the ranch":"Sign in to contact"}</button>
-      <button class="btn btn-outline btn-wide" id="follow-btn" style="margin-top:8px">${state.follows.includes(p.id)?"Following ranch":"Follow ranch"}</button>
+      <button class="btn btn-outline btn-wide" id="follow-btn" style="margin-top:8px">Follow ranch</button>
       <div class="producer-mini"><img src="${p.avatar||l.image}" alt=""><div>
       <a href="#/ranch/${p.slug||p.id}"><b>${p.name}</b></a>
       <div class="meta">${p.location||""}</div></div></div></aside></div>`;
@@ -142,35 +139,21 @@
     });
     $("#contact-btn").onclick = async () => {
       if (!state.user) { location.hash = "#/signup"; return; }
-      try { await api("/api/listings/"+l.id+"/contact", { method: "POST", body: JSON.stringify({ body: "Interested." }) }); toast("Message saved for "+p.name+"."); }
+      try { await api("/api/listings/"+l.id+"/contact", { method: "POST", body: JSON.stringify({ body: "Interested." }) }); toast("Message saved."); }
       catch (e) { toast(e.message); }
     };
     $("#follow-btn").onclick = async () => {
       if (!state.user) { location.hash = "#/signup"; return; }
       try {
         const r = await api("/api/producers/"+p.id+"/follow", { method: "POST", body: "{}" });
-        state.follows = r.following ? state.follows.concat(p.id) : state.follows.filter((x)=>x!==p.id);
         $("#follow-btn").textContent = r.following ? "Following ranch" : "Follow ranch";
       } catch (e) { toast(e.message); }
     };
   }
-  function ranch(slug) {
-    const pack = state.ranchCache[slug];
-    if (!pack) { app.innerHTML = `<section class="section"><h2>Ranch not found</h2></section>`; return; }
-    const p = pack.producer; const items = pack.listings || [];
-    app.innerHTML = `<div class="profile-hero" style="background-image:url('${p.cover}')"></div>
-      <div class="profile-card"><img class="av" src="${p.avatar}" alt=""><div>
-      <h2 style="margin:0">${p.name}</h2><p class="sub">${p.location||""} ${p.owner?"· "+p.owner:""}</p>
-      <p>${p.about||""}</p></div>
-      <div class="kpis"><div><b>${items.length}</b><span class="sub">Listings</span></div>
-      <div><b>${p.sold||0}</b><span class="sub">Sold</span></div></div></div>
-      <section class="section"><div class="section-head"><h2>Current listings</h2></div>
-      <div class="cards-3">${items.map(listingCard).join("")||"<p class='sub'>No live listings.</p>"}</div></section>`;
-  }
+  function ranch(slug) { /* public page handled by ranch-public.js */ }
   function listCattle() {
     if (!state.user) { location.hash = "#/signup"; toast("Create an account to list cattle."); return; }
     app.innerHTML = `<div class="form-page"><h2 class="page-title">List cattle</h2>
-      <p class="sub">Saved to the server. Anyone on this URL will see it.</p>
       <form id="list-form" class="panel" style="margin-top:18px"><div class="form-grid">
       <div class="field full"><label>Title</label><input name="title" required></div>
       <div class="field"><label>Breed</label><select name="breed">${RL.BREEDS.map((b)=>`<option>${b}</option>`).join("")}</select></div>
@@ -194,7 +177,6 @@
   function auth(mode) {
     const signup = mode === "signup";
     app.innerHTML = `<div class="auth-box"><h2>${signup?"Create an account":"Welcome back"}</h2>
-      <p class="sub">${signup?"Your ranch profile is created automatically.":"Sign in to message ranches."}</p>
       <form id="auth-form" style="margin-top:16px">
       ${signup?`<div class="field"><label>Name / ranch</label><input name="name" required></div>`:""}
       <div class="field"><label>Email</label><input name="email" type="email" required></div>
@@ -207,26 +189,8 @@
       try {
         const r = await api(signup?"/api/signup":"/api/signin", { method:"POST", body: JSON.stringify({ name: fd.get("name"), email: fd.get("email"), password: fd.get("password") }) });
         state.user = r.user;
-        const me = await api("/api/me");
-        state.producer = me.producer; state.follows = me.follows || [];
-        nav(); toast("Signed in as "+state.user.name); location.hash = "#/browse";
+        nav(); toast("Signed in as "+state.user.name); location.hash = "#/account";
       } catch (err) { toast(err.message); }
-    };
-  }
-  async function account() {
-    if (!state.user) { location.hash = "#/signin"; return; }
-    let mine = [];
-    try { mine = (await api("/api/my/listings")).listings; } catch (e) { mine = []; }
-    app.innerHTML = `<section class="section"><h2>${state.user.name}</h2>
-      <p class="sub">${state.user.email} · stored in the server database</p>
-      <div style="margin:16px 0;display:flex;gap:8px">
-      <a class="btn btn-primary" href="#/list">New listing</a>
-      <button class="btn btn-outline" id="out">Sign out</button></div>
-      <h3>Your listings</h3>
-      <div class="cards-3">${mine.length?mine.map(listingCard).join(""):"<p class='sub'>No listings yet.</p>"}</div></section>`;
-    $("#out").onclick = async () => {
-      await api("/api/signout", { method:"POST", body:"{}" });
-      state.user = null; state.follows = []; nav(); location.hash = "#/";
     };
   }
   function pricing() { app.innerHTML = `<section class="section"><h2>Producer plans</h2>${plansHTML()}</section>`; }
@@ -243,16 +207,16 @@
       try { const r = await api("/api/listings/"+parts[1]); state.listingCache[r.listing.id]=r.listing; } catch(e){}
     }
     if (parts[0]==="ranch" && parts[1] && !state.ranchCache[parts[1]]) {
-      try { const r = await api("/api/producers/"+parts[1]); state.ranchCache[parts[1]]=r; state.ranchCache[r.producer.slug]=r; } catch(e){}
+      try { const r = await api("/api/producers/"+parts[1]); state.ranchCache[parts[1]]=r; } catch(e){}
     }
     if (!parts.length) return home();
     if (parts[0]==="browse") return browse();
     if (parts[0]==="listing") return listingView(parts[1]);
-    if (parts[0]==="ranch") return ranch(parts[1]);
+    if (parts[0]==="ranch") return;
     if (parts[0]==="list") return listCattle();
     if (parts[0]==="signup") return auth("signup");
     if (parts[0]==="signin") return auth("signin");
-    if (parts[0]==="account") return account();
+    if (parts[0]==="account") return;
     if (parts[0]==="pricing") return pricing();
     if (parts[0]==="faq") return faq();
     home();
@@ -263,7 +227,7 @@
   (async function boot() {
     try { const me = await api("/api/me"); state.user = me.user; state.producer = me.producer; state.follows = me.follows||[]; } catch(e){}
     try { const r = await api("/api/listings"); state.listings = r.listings; r.listings.forEach((l)=>state.listingCache[l.id]=l); }
-    catch(e){ toast("Could not reach the API. Start the Node server with npm start."); }
+    catch(e){ toast("Could not reach the API."); }
     nav(); route();
   })();
 })();
