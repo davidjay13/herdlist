@@ -17,6 +17,20 @@ try {
 } catch (e) {
   LOGO_PNG = null;
 }
+const LOGO_SVG = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 152" width="160" height="152">
+  <g fill="#16503c">
+    <path d="M28 52c-8 10-16 14-24 14 6-2 12-12 16-24 3-8 8-18 16-22-2 10-4 22-8 32z"/>
+    <path d="M132 52c8 10 16 14 24 14-6-2-12-12-16-24-3-8-8-18-16-22 2 10 4 22 8 32z"/>
+    <path d="M18 78c-8 2-16-2-18-10 8 2 16 0 22-6 4 6 4 12-4 16z"/>
+    <path d="M142 78c8 2 16-2 18-10-8 2-16 0-22-6-4 6-4 12 4 16z"/>
+    <path d="M80 18c-22 0-40 10-52 28-8 12-10 28-6 44 4 18 16 34 32 44 10 6 20 10 26 10s16-4 26-10c16-10 28-26 32-44 4-16 2-32-6-44C120 28 102 18 80 18z"/>
+  </g>
+  <path fill="#f4f7f2" d="M80 22c-6 18-8 34-6 52 1 8 4 14 6 14s5-6 6-14c2-18 0-34-6-52z"/>
+  <path fill="#f4f7f2" d="M56 68c8 2 12 8 12 14 0 6-4 10-10 10s-12-6-12-14c0-6 4-10 10-10z"/>
+  <path fill="#f4f7f2" d="M104 68c-8 2-12 8-12 14 0 6 4 10 10 10s12-6 12-14c0-6-4-10-10-10z"/>
+  <path fill="#f4f7f2" d="M80 96c-18 2-28 12-28 24 0 10 12 20 28 20s28-10 28-20c0-12-10-22-28-24z"/>
+  <path fill="#16503c" d="M80 108c-8 0-16 4-18 10-1 4 4 8 18 8s19-4 18-8c-2-6-10-10-18-10z"/>
+</svg>`);
 
 function userFromCookie(req) {
   const raw = req.headers.cookie || "";
@@ -70,16 +84,28 @@ function mime(file) {
   );
 }
 
-function serveStatic(req, res) {
-  let urlPath = decodeURIComponent(req.url.split("?")[0]);
-  if (urlPath === "/") urlPath = "/index.html";
-  if ((urlPath === "/logo.png" || urlPath === "/logo.svg") && LOGO_PNG) {
+function serveLogo(res, asPng) {
+  if (asPng && LOGO_PNG && LOGO_PNG.length > 20000) {
     res.writeHead(200, {
       "Content-Type": "image/png",
       "Content-Length": LOGO_PNG.length,
       "Cache-Control": "public, max-age=3600",
     });
     return res.end(LOGO_PNG);
+  }
+  res.writeHead(200, {
+    "Content-Type": "image/svg+xml",
+    "Content-Length": LOGO_SVG.length,
+    "Cache-Control": "public, max-age=3600",
+  });
+  return res.end(LOGO_SVG);
+}
+
+function serveStatic(req, res) {
+  let urlPath = decodeURIComponent(req.url.split("?")[0]);
+  if (urlPath === "/") urlPath = "/index.html";
+  if (urlPath === "/logo.png" || urlPath === "/logo.svg" || urlPath === "/favicon.ico") {
+    return serveLogo(res, urlPath === "/logo.png");
   }
   const file = path.normalize(path.join(PUBLIC, urlPath));
   if (!file.startsWith(PUBLIC)) {
@@ -140,7 +166,7 @@ const server = http.createServer(async (req, res) => {
         about: "",
         associations: [],
         cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80",
-        avatar: "/logo.png?v=34",
+        avatar: "/logo.svg?v=38",
       });
       const token = crypto.randomBytes(24).toString("hex");
       db.data.sessions.push({ token, userId: id });
@@ -224,14 +250,14 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { listing: withProducer(listing) });
     }
 
-    const listingMatch = url.match(/^\/api\/listings\/([^/]+)$/);
+    const listingMatch = url.match(/^\\/api\\/listings\\/([^/]+)$/);
     if (listingMatch && method === "GET") {
       const listing = db.data.listings.find((l) => l.id === listingMatch[1]);
       if (!listing) return send(res, 404, { error: "Listing not found" });
       return send(res, 200, { listing: withProducer(listing) });
     }
 
-    const contactMatch = url.match(/^\/api\/listings\/([^/]+)\/contact$/);
+    const contactMatch = url.match(/^\\/api\\/listings\\/([^/]+)\\/contact$/);
     if (contactMatch && method === "POST") {
       const u = userFromCookie(req);
       if (!u) return send(res, 401, { error: "Sign in required" });
@@ -243,7 +269,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { ok: true });
     }
 
-    const prodMatch = url.match(/^\/api\/producers\/([^/]+)$/);
+    const prodMatch = url.match(/^\\/api\\/producers\\/([^/]+)$/);
     if (prodMatch && method === "GET") {
       const key = decodeURIComponent(prodMatch[1]);
       const p = db.data.producers.find((x) => x.slug === key || x.id === key);
@@ -252,7 +278,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { producer: p, listings });
     }
 
-    const followMatch = url.match(/^\/api\/producers\/([^/]+)\/follow$/);
+    const followMatch = url.match(/^\\/api\\/producers\\/([^/]+)\\/follow$/);
     if (followMatch && method === "POST") {
       const u = userFromCookie(req);
       if (!u) return send(res, 401, { error: "Sign in required" });
