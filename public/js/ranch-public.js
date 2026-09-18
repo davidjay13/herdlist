@@ -46,7 +46,7 @@
       '<div class="profile-hero" style="height:340px;background-image:url(\'' + (p.cover || p.avatar || "") + '\');background-size:cover;background-position:center"></div>' +
       '<div style="max-width:1100px;margin:-110px auto 0;padding:0 20px 72px;position:relative">' +
       '<div class="panel" style="display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center">' +
-      '<img class="av" src="' + (p.avatar || "") + '" alt="" style="width:112px;height:112px;border-radius:22px;object-fit:cover;border:4px solid #fffcf7;background:#fff">' +
+      '<img class="av" src="' + (p.avatar || "/logo.svg?v=24") + '" alt="" style="width:112px;height:112px;border-radius:22px;object-fit:contain;padding:8px;border:4px solid #fffcf7;background:#fff">' +
       '<div><div class="kicker" style="color:#1b6b45">Public ranch profile</div>' +
       '<h1 style="font-family:Fraunces,Georgia,serif;font-size:clamp(2rem,4vw,3rem);margin:4px 0 6px;letter-spacing:-.03em">' + (p.name || "Ranch") + '</h1>' +
       '<p class="sub" style="margin:0">' + (p.location || "") + (p.owner ? " \u00b7 " + p.owner : "") + '</p>' +
