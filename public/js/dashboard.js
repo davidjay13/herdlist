@@ -7,20 +7,21 @@
     setTimeout(function () { el.style.display = "none"; }, 2400);
   }
   function section() {
-    var hash = location.hash || "#/account";
+    var hash = location.hash || "";
     if (hash.indexOf("#/account/profile") === 0) return "profile";
     if (hash.indexOf("#/account/sold") === 0) return "sold";
     if (hash.indexOf("#/account/orders") === 0) return "orders";
     if (hash.indexOf("#/account/messages") === 0) return "messages";
     return "home";
   }
+  function esc(v) {
+    return String(v || "").split("&").join("&").split("<").join("<");
+  }
   function navItem(href, key, label) {
     var on = section() === key;
-    return '<a href="' + href + '" style="display:block;padding:10px 12px;border-radius:10px;margin:2px 8px;font-weight:560;' +
-      (on ? "background:#e6f2ea;color:#0f3f28;" : "color:#3a4a3e;") + '">' + label + "</a>";
-  }
-  function esc(v) {
-    return String(v || "").replace(/&/g, "&").replace(/"/g, """);
+    var bg = on ? "#e6f2ea" : "transparent";
+    var color = on ? "#0f3f28" : "#3a4a3e";
+    return '<a href="' + href + '" style="display:block;padding:10px 12px;border-radius:10px;margin:2px 8px;font-weight:560;background:' + bg + ";color:" + color + ';">' + label + "</a>";
   }
   function shellNow(inner, email) {
     var app = document.getElementById("app");
@@ -61,19 +62,15 @@
   function home(me, listings) {
     var name = ((me.user && me.user.name) || "Producer").split(" ")[0];
     var live = listings || [];
-    return "<h2 class='page-title'>Welcome, " + name + "</h2>" +
-      '<p class="sub">This is your ranch dashboard.</p>' +
-      '<div class="panel" style="margin-top:16px"><h3>Live listings</h3>' +
-      (live.length ? live.map(function (l) { return '<div class="row"><span>' + esc(l.title) + "</span><a href='#/listing/" + l.id + "'>Open</a></div>"; }).join("") : "<p class='sub'>No live listings</p>") +
-      "</div>";
+    var rows = live.length ? live.map(function (l) {
+      return '<div class="row"><span>' + esc(l.title) + "</span><a href='#/listing/" + l.id + "'>Open</a></div>";
+    }).join("") : "<p class='sub'>No live listings</p>";
+    return "<h2 class='page-title'>Welcome, " + esc(name) + "</h2><p class='sub'>This is your ranch dashboard.</p>" +
+      '<div class="panel" style="margin-top:16px"><h3>Live listings</h3>' + rows + "</div>";
   }
   function load() {
     var hash = location.hash || "";
-    if (hash.indexOf("#/account") !== 0) {
-      var foot = document.querySelector(".app-footer");
-      if (foot) foot.style.display = "";
-      return;
-    }
+    if (hash.indexOf("#/account") !== 0) return;
     shellNow("<p class='sub'>Loading dashboard...</p>", "");
     Promise.all([
       fetch("/api/me", { credentials: "include" }).then(function (r) { return r.json(); }),
@@ -95,11 +92,9 @@
             .catch(function (err) { toast(err.message); });
         };
       }
-    }).catch(function () {
-      shellNow("<p>Could not load account.</p>", "");
-    });
+    }).catch(function () { shellNow("<p>Could not load account.</p>", ""); });
   }
   window.addEventListener("hashchange", load);
   setTimeout(load, 0);
-  setTimeout(load, 300);
+  setTimeout(load, 400);
 })();
