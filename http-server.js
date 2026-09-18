@@ -11,6 +11,8 @@ const PORT = process.env.PORT || 8080;
 const PUBLIC = path.join(__dirname, "public");
 let db;
 const COOKIE = "rl_session";
+const OG_SRC = "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&h=630&q=80";
+let OG_BUF = null;
 function loadLogoSvg() {
   const p = path.join(PUBLIC, "logo.svg");
   if (fs.existsSync(p)) return fs.readFileSync(p);
@@ -61,10 +63,26 @@ function serveLogo(res) {
   return res.end(buf);
 }
 
+function serveOg(res) {
+  const disk = path.join(PUBLIC, "og.jpg");
+  if (fs.existsSync(disk) && fs.statSync(disk).size > 1000) {
+    const buf = fs.readFileSync(disk);
+    res.writeHead(200, { "Content-Type": "image/jpeg", "Content-Length": buf.length, "Cache-Control": "public, max-age=86400" });
+    return res.end(buf);
+  }
+  if (OG_BUF) {
+    res.writeHead(200, { "Content-Type": "image/jpeg", "Content-Length": OG_BUF.length, "Cache-Control": "public, max-age=86400" });
+    return res.end(OG_BUF);
+  }
+  res.writeHead(302, { Location: OG_SRC, "Cache-Control": "public, max-age=3600" });
+  return res.end();
+}
+
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/") urlPath = "/index.html";
   if (urlPath === "/logo.png" || urlPath === "/logo.svg" || urlPath === "/favicon.ico") return serveLogo(res);
+  if (urlPath === "/og.jpg" || urlPath === "/social-card.png" || urlPath === "/social-card.jpg") return serveOg(res);
   const file = path.normalize(path.join(PUBLIC, urlPath));
   if (!file.startsWith(PUBLIC)) { res.writeHead(403); return res.end(); }
   if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end("Not found"); }
