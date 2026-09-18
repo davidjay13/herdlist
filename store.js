@@ -101,7 +101,13 @@ async function init(seedFn) {
         slugify,
       };
     } catch (err) {
-      console.error("Postgres unavailable, using file store:", err.message);
+      const preview = String(url).slice(0, 18);
+      console.error(
+        "Postgres unavailable, using file store:",
+        err && err.message,
+        "code=" + ((err && err.code) || ""),
+        "url_prefix=" + preview
+      );
     }
   }
 
