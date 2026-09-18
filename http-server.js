@@ -11,6 +11,12 @@ const PORT = process.env.PORT || 8080;
 const PUBLIC = path.join(__dirname, "public");
 let db;
 const COOKIE = "rl_session";
+let LOGO_PNG = null;
+try {
+  LOGO_PNG = Buffer.from(require("./logo-png-b64"), "base64");
+} catch (e) {
+  LOGO_PNG = null;
+}
 
 function userFromCookie(req) {
   const raw = req.headers.cookie || "";
@@ -67,6 +73,14 @@ function mime(file) {
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/") urlPath = "/index.html";
+  if ((urlPath === "/logo.png" || urlPath === "/logo.svg") && LOGO_PNG) {
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": LOGO_PNG.length,
+      "Cache-Control": "public, max-age=3600",
+    });
+    return res.end(LOGO_PNG);
+  }
   const file = path.normalize(path.join(PUBLIC, urlPath));
   if (!file.startsWith(PUBLIC)) {
     res.writeHead(403);
@@ -126,7 +140,7 @@ const server = http.createServer(async (req, res) => {
         about: "",
         associations: [],
         cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80",
-        avatar: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=400&q=80",
+        avatar: "/logo.png?v=34",
       });
       const token = crypto.randomBytes(24).toString("hex");
       db.data.sessions.push({ token, userId: id });
