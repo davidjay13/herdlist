@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Herd Yard - The Zillow of Cattle</title>
+    <title>Herd Yard - Zillow For Cattle</title>
     <meta name="description" content="Herd Yard is an online platform for selling cattle. Connecting buyers and sellers nationwide." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600;650&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/styles.css?v=11" />
   </head>
   <body>
     <header class="app-header">
@@ -28,7 +28,7 @@
         <a href="#/account">Account</a>
       </nav>
       <div class="header-actions">
-        <button class="btn btn-ghost" id="acct-btn"><span id="acct-label">Account</span></button>
+        <button class="btn btn-ghost" id="acct-btn"><span id="acct-label">Log in</span></button>
         <button class="btn btn-primary" id="sell-btn">List Cattle</button>
       </div>
     </header>
@@ -39,10 +39,23 @@
     </footer>
     <div class="toast" id="toast"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/data.js?v=10"></script>
-    <script src="js/client.js?v=10"></script>
-    <script src="js/photos.js?v=10"></script>
-    <script src="js/dashboard.js?v=10"></script>
-    <script src="js/ranch-public.js?v=10"></script>
+    <script src="js/data.js?v=11"></script>
+    <script src="js/client.js?v=11"></script>
+    <script src="js/photos.js?v=11"></script>
+    <script src="js/dashboard.js?v=11"></script>
+    <script src="js/ranch-public.js?v=11"></script>
+    <script>
+      (function () {
+        function fix() {
+          var h = document.querySelector(".hero h1");
+          if (h) h.textContent = "Zillow For Cattle";
+          var a = document.getElementById("acct-label");
+          if (a && (a.textContent === "Account")) a.textContent = "Log in";
+        }
+        window.addEventListener("hashchange", function () { setTimeout(fix, 30); });
+        setTimeout(fix, 50);
+        setTimeout(fix, 400);
+      })();
+    </script>
   </body>
 </html>
