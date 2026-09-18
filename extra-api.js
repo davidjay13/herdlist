@@ -1,12 +1,17 @@
 const importedProducers = (() => {
-  const files = ["./import-producers.json", "./import-producers-b.json"];
   const rows = [];
-  files.forEach(function (f) {
+  for (let i = 0; i < 8; i++) {
     try {
-      const part = require(f);
+      const part = require("./import-p" + i + ".json");
       if (Array.isArray(part)) part.forEach(function (r) { rows.push(r); });
     } catch (e) {}
-  });
+  }
+  try {
+    const legacy = require("./import-producers.json");
+    if (Array.isArray(legacy)) legacy.forEach(function (r) {
+      if (!rows.some(function (x) { return x.hyId === r.hyId; })) rows.push(r);
+    });
+  } catch (e) {}
   return rows;
 })();
 
@@ -118,10 +123,6 @@ module.exports = async function extraApi(ctx) {
         existing.image = image;
         existing.images = images;
         existing.title = L.title || existing.title;
-        existing.breed = L.breed || existing.breed;
-        existing.klass = L.klass || existing.klass;
-        existing.location = L.location || existing.location;
-        existing.description = L.description || existing.description;
         if (L.price != null && L.price !== "") {
           existing.price = Number(L.price);
           existing.priceType = "per_head";
@@ -207,17 +208,6 @@ module.exports = async function extraApi(ctx) {
     return true;
   }
 
-  if (url === "/api/admin/visibility" && method === "POST") {
-    const u = userFromCookie(req);
-    if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
-    const b = await readBody(req);
-    const hide = !!b.hide;
-    db.data.listings.forEach(function (l) { l.hidden = hide; });
-    await db.save();
-    send(res, 200, { ok: true, hidden: hide, count: db.data.listings.length });
-    return true;
-  }
-
   if (url === "/api/profile" && method === "POST") {
     const u = userFromCookie(req);
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
@@ -237,41 +227,10 @@ module.exports = async function extraApi(ctx) {
     if (b.phone !== undefined) producer.phone = String(b.phone || "").trim();
     if (b.email !== undefined) producer.email = String(b.email || "").trim();
     if (b.website !== undefined) producer.website = String(b.website || "").trim();
-    if (b.associations !== undefined) producer.associations = String(b.associations || "").split(",").map((s) => s.trim()).filter(Boolean);
     if (typeof b.avatar === "string" && (b.avatar.startsWith("data:image") || b.avatar.startsWith("http"))) producer.avatar = b.avatar;
     if (typeof b.cover === "string" && (b.cover.startsWith("data:image") || b.cover.startsWith("http"))) producer.cover = b.cover;
     await db.save();
     send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "" }, producer });
-    return true;
-  }
-
-  const listingMatch = url.match(/^\/api\/listings\/([^/]+)$/);
-  if (listingMatch && (method === "POST" || method === "PATCH" || method === "PUT" || method === "DELETE")) {
-    const u = userFromCookie(req);
-    if (!u) return send(res, 401, { error: "Sign in required" }), true;
-    const listing = db.data.listings.find((l) => l.id === listingMatch[1]);
-    if (!listing) return send(res, 404, { error: "Listing not found" }), true;
-    if (listing.userId !== u.id && !isAdmin(u)) return send(res, 403, { error: "You can only change your own listings." }), true;
-    if (method === "DELETE") {
-      db.data.listings = db.data.listings.filter((l) => l.id !== listing.id);
-      await db.save();
-      send(res, 200, { ok: true });
-      return true;
-    }
-    const b = await readBody(req);
-    if (b.title != null) listing.title = String(b.title).trim() || listing.title;
-    if (b.breed != null) listing.breed = String(b.breed);
-    if (b.klass != null) listing.klass = String(b.klass);
-    if (b.category != null) listing.category = String(b.category);
-    if (b.head != null) listing.head = Number(b.head || listing.head);
-    if (b.location != null) listing.location = String(b.location);
-    if (b.description != null) listing.description = String(b.description);
-    if (b.status === "sold" || b.status === "active") listing.status = b.status;
-    if (b.hidden === true || b.hidden === false || b.hidden === "true" || b.hidden === "false") listing.hidden = b.hidden === true || b.hidden === "true";
-    if (b.price === "" || b.price === null) { listing.price = null; listing.priceType = "contact"; }
-    else if (b.price != null) { listing.price = Number(b.price); listing.priceType = "per_head"; }
-    await db.save();
-    send(res, 200, { listing: withProducer(listing) });
     return true;
   }
 
