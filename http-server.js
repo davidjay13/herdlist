@@ -13,11 +13,16 @@ let db;
 const COOKIE = "rl_session";
 let LOGO_PNG = null;
 try {
-  LOGO_PNG = Buffer.from(require("./logo-png-b64"), "base64");
+  const disk = path.join(PUBLIC, "logo.png");
+  if (fs.existsSync(disk) && fs.statSync(disk).size > 1000) {
+    LOGO_PNG = fs.readFileSync(disk);
+  } else {
+    LOGO_PNG = Buffer.from(require("./logo-png-b64"), "base64");
+  }
 } catch (e) {
   LOGO_PNG = null;
 }
-const LOGO_SVG = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 152" width="160" height="152"><g fill="#16503c"><circle cx="80" cy="76" r="70"/></g></svg>`);
+const LOGO_SVG = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 227" width="240" height="227"><path fill="#16503c" d="M42 78c-18-22-28-48-22-62 14 8 32 22 46 40 6-16 16-30 28-40 8 18 12 36 12 54h8c0-18 4-36 12-54 12 10 22 24 28 40 14-18 32-32 46-40 6 14-4 40-22 62 16 10 28 24 34 40-18 4-38 4-54-2-4 16-12 30-24 40 10 14 14 30 12 46-16-8-30-20-40-34-10 14-24 26-40 34-2-16 2-32 12-46-12-10-20-24-24-40-16 6-36 6-54 2 6-16 18-30 34-40z"/><path fill="#fff" d="M88 118c8 0 14 8 12 16-2 6-8 10-14 8s-10-10-8-16c2-5 6-8 10-8zm64 0c4 0 8 3 10 8 2 6-2 14-8 16s-12-2-14-8c-2-8 4-16 12-16zM120 148c12 0 22 8 24 18-8 6-16 8-24 8s-16-2-24-8c2-10 12-18 24-18z"/></svg>`);
 
 function userFromCookie(req) {
   const raw = req.headers.cookie || "";
@@ -57,11 +62,11 @@ function mime(file) {
 }
 
 function serveLogo(res) {
-  if (LOGO_PNG && LOGO_PNG.length > 1000) {
+  if (LOGO_PNG && LOGO_PNG.length > 8000 && LOGO_PNG[0] === 0x89 && LOGO_PNG[1] === 0x50) {
     res.writeHead(200, { "Content-Type": "image/png", "Content-Length": LOGO_PNG.length, "Cache-Control": "public, max-age=60, must-revalidate" });
     return res.end(LOGO_PNG);
   }
-  res.writeHead(200, { "Content-Type": "image/svg+xml", "Content-Length": LOGO_SVG.length });
+  res.writeHead(200, { "Content-Type": "image/svg+xml", "Content-Length": LOGO_SVG.length, "Cache-Control": "no-cache" });
   return res.end(LOGO_SVG);
 }
 
@@ -108,7 +113,7 @@ const server = http.createServer(async (req, res) => {
       db.data.users.push({ id, name, email, passwordHash: hashPassword(password) });
       let slug = slugify(name);
       if (db.data.producers.some((p) => p.slug === slug)) slug += "-" + id;
-      db.data.producers.push({ id: "u" + id, userId: id, slug, name, owner: name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", associations: [], cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80", avatar: "/logo.png?v=41" });
+      db.data.producers.push({ id: "u" + id, userId: id, slug, name, owner: name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", associations: [], cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80", avatar: "/logo.png?v=44" });
       const token = crypto.randomBytes(24).toString("hex");
       db.data.sessions.push({ token, userId: id });
       await db.save();
