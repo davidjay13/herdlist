@@ -44,7 +44,7 @@
       "<p class='sub'>" + rows.length + " ranch profiles</p>" +
       "<div class='panel' style='margin-top:16px'>" +
       (rows.length ? rows.map(function (p) {
-        var img = p.avatar || p.cover || "";
+        var img = p.avatar || "/logo.svg?v=24";
         var contact = [p.phone, p.email].filter(Boolean).join(" \u00b7 ");
         return "<div class='row' style='align-items:center;gap:12px'>" +
           (img ? "<img src='" + String(img).split("'").join("") + "' alt='' style='width:52px;height:52px;object-fit:cover;border-radius:10px'>" : "") +
@@ -82,7 +82,7 @@
       (rows.length ? rows.map(function (a) {
         var badge = a.admin ? "Admin" : (a.imported ? "Imported" : "Signed up");
         return "<div class='row' style='align-items:center;gap:12px'>" +
-          (a.avatar ? "<img src='" + String(a.avatar).split("'").join("") + "' alt='' style='width:40px;height:40px;object-fit:cover;border-radius:8px'>" : "") +
+          "<img src='" + String(a.avatar || "/logo.svg?v=24").split("'").join("") + "' alt='' style='width:40px;height:40px;object-fit:contain;background:#fff;border-radius:8px;padding:3px'>" +
           "<span style='flex:1'><b>" + esc(a.name) + "</b>" +
           "<div class='sub'>" + esc(a.email) + (a.phone ? " \u00b7 " + esc(a.phone) : "") + " \u00b7 id " + a.id + "</div></span>" +
           "<span class='sub'>" + esc(a.producerName || "no ranch") + "<br>" + esc(a.location) + "</span>" +
