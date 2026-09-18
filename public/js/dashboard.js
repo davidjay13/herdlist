@@ -15,58 +15,56 @@
     return "home";
   }
   function esc(v) {
-    return String(v || "").split("&").join("&").split("<").join("<");
+    return String(v || "").split("<").join(" ");
   }
   function navItem(href, key, label) {
     var on = section() === key;
     var bg = on ? "#e6f2ea" : "transparent";
     var color = on ? "#0f3f28" : "#3a4a3e";
-    return '<a href="' + href + '" style="display:block;padding:10px 12px;border-radius:10px;margin:2px 8px;font-weight:560;background:' + bg + ";color:" + color + ';">' + label + "</a>";
+    return "<a href='" + href + "' style='display:block;padding:10px 12px;border-radius:10px;margin:2px 8px;font-weight:560;background:" + bg + ";color:" + color + ";'>" + label + "</a>";
   }
   function shellNow(inner, email) {
     var app = document.getElementById("app");
     if (!app) return;
-    var foot = document.querySelector(".app-footer");
-    if (foot) foot.style.display = "none";
     app.innerHTML =
-      '<div class="dash-shell" style="display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 64px);background:#f7f4ee">' +
-      '<aside style="background:#fffcf7;border-right:1px solid #d8e0d6;padding:18px 0;display:flex;flex-direction:column">' +
-      '<div style="padding:4px 20px 16px"><b>Account</b><div class="sub">' + esc(email) + "</div></div>" +
+      "<div class='dash-shell' style='display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 64px);background:#f7f4ee'>" +
+      "<aside style='background:#fffcf7;border-right:1px solid #d8e0d6;padding:18px 0;display:flex;flex-direction:column'>" +
+      "<div style='padding:4px 20px 16px'><b>Account</b><div class='sub'>" + esc(email) + "</div></div>" +
       navItem("#/account", "home", "Dashboard") +
       navItem("#/account/profile", "profile", "Profile") +
       navItem("#/account/sold", "sold", "Sold") +
       navItem("#/account/orders", "orders", "Orders") +
       navItem("#/account/messages", "messages", "Messages") +
-      '<a href="#/browse" style="display:block;padding:10px 20px;color:#3a4a3e;font-weight:560">Browse</a>' +
-      '<div style="margin-top:auto;padding:12px"><a class="btn btn-primary btn-wide" href="#/list">+ Create listing</a>' +
-      '<a class="btn btn-outline btn-wide" href="#/pricing" style="margin-top:8px">Upgrade</a></div></aside>' +
-      '<section id="dash-main" style="padding:28px">' + (inner || "<p class='sub'>Loading...</p>") + "</section></div>";
+      "<a href='#/browse' style='display:block;padding:10px 20px;color:#3a4a3e;font-weight:560'>Browse</a>" +
+      "<div style='margin-top:auto;padding:12px'><a class='btn btn-primary btn-wide' href='#/list'>+ Create listing</a>" +
+      "<a class='btn btn-outline btn-wide' href='#/pricing' style='margin-top:8px'>Upgrade</a></div></aside>" +
+      "<section id='dash-main' style='padding:28px'>" + (inner || "<p class='sub'>Loading...</p>") + "</section></div>";
   }
   function profileHtml(me) {
     var user = me.user || {};
     var p = me.producer || {};
     return "<h2 class='page-title'>Profile settings</h2>" +
-      (p.slug ? '<p><a class="btn btn-outline" href="#/ranch/' + p.slug + '">View public ranch page</a></p>' : "") +
-      '<form id="dash-profile-form" class="panel"><div class="form-grid">' +
-      '<div class="field"><label>Full name</label><input name="name" value="' + esc(user.name) + '"></div>' +
-      '<div class="field"><label>Phone</label><input name="phone" value="' + esc(user.phone || p.phone) + '"></div>' +
-      '<div class="field full"><label>Email</label><input name="email" value="' + esc(user.email) + '"></div>' +
-      '<div class="field"><label>Ranch name</label><input name="ranchName" value="' + esc(p.name || user.name) + '"></div>' +
-      '<div class="field"><label>Owner</label><input name="owner" value="' + esc(p.owner || user.name) + '"></div>' +
-      '<div class="field"><label>Location</label><input name="location" value="' + esc(p.location) + '"></div>' +
-      '<div class="field"><label>Associations</label><input name="associations" value="' + esc((p.associations || []).join(", ")) + '"></div>' +
-      '<div class="field full"><label>About</label><textarea name="about" rows="4">' + (p.about || "") + "</textarea></div>" +
-      '<div class="field full"><label>Operations</label><textarea name="operations" rows="4">' + (p.operations || "") + "</textarea></div></div>" +
-      '<button class="btn btn-primary" style="margin-top:14px" type="submit">Save profile</button></form>';
+      (p.slug ? "<p><a class='btn btn-outline' href='#/ranch/" + p.slug + "'>View public ranch page</a></p>" : "") +
+      "<form id='dash-profile-form' class='panel'><div class='form-grid'>" +
+      "<div class='field'><label>Full name</label><input name='name' value='" + esc(user.name) + "'></div>" +
+      "<div class='field'><label>Phone</label><input name='phone' value='" + esc(user.phone || p.phone) + "'></div>" +
+      "<div class='field full'><label>Email</label><input name='email' value='" + esc(user.email) + "'></div>" +
+      "<div class='field'><label>Ranch name</label><input name='ranchName' value='" + esc(p.name || user.name) + "'></div>" +
+      "<div class='field'><label>Owner</label><input name='owner' value='" + esc(p.owner || user.name) + "'></div>" +
+      "<div class='field'><label>Location</label><input name='location' value='" + esc(p.location) + "'></div>" +
+      "<div class='field'><label>Associations</label><input name='associations' value='" + esc((p.associations || []).join(", ")) + "'></div>" +
+      "<div class='field full'><label>About</label><textarea name='about' rows='4'>" + (p.about || "") + "</textarea></div>" +
+      "<div class='field full'><label>Operations</label><textarea name='operations' rows='4'>" + (p.operations || "") + "</textarea></div></div>" +
+      "<button class='btn btn-primary' style='margin-top:14px' type='submit'>Save profile</button></form>";
   }
   function home(me, listings) {
     var name = ((me.user && me.user.name) || "Producer").split(" ")[0];
     var live = listings || [];
     var rows = live.length ? live.map(function (l) {
-      return '<div class="row"><span>' + esc(l.title) + "</span><a href='#/listing/" + l.id + "'>Open</a></div>";
+      return "<div class='row'><span>" + esc(l.title) + "</span><a href='#/listing/" + l.id + "'>Open</a></div>";
     }).join("") : "<p class='sub'>No live listings</p>";
     return "<h2 class='page-title'>Welcome, " + esc(name) + "</h2><p class='sub'>This is your ranch dashboard.</p>" +
-      '<div class="panel" style="margin-top:16px"><h3>Live listings</h3>' + rows + "</div>";
+      "<div class='panel' style='margin-top:16px'><h3>Live listings</h3>" + rows + "</div>";
   }
   function load() {
     var hash = location.hash || "";
