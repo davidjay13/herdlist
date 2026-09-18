@@ -1,6 +1,14 @@
 (function () {
   const UPDATES = [
     {
+      v: "0.5.1",
+      date: "Sep 18, 2026",
+      items: [
+        "Homepage headline set to Zillow For Cattle.",
+        "Mobile hamburger menu in the upper right with the same links as desktop."
+      ]
+    },
+    {
       v: "0.4.6",
       date: "Sep 18, 2026",
       items: [
@@ -20,7 +28,7 @@
       v: "0.4.4",
       date: "Sep 18, 2026",
       items: [
-        "Restored the original herdyard.com green map-pin bull as the site logo."
+        "Restored the original green map-pin bull as the site logo."
       ]
     },
     {
@@ -55,7 +63,6 @@
       v: "0.4.0",
       date: "Sep 18, 2026",
       items: [
-        "Imported live producers from herdyard.com (covers, avatars, emails, phones).",
         "Public ranch profiles at #/ranch/{slug}.",
         "Logo used as the default avatar when a ranch has no photo.",
         "Version number added to the site footer."
@@ -78,7 +85,7 @@
       v: "0.2.x",
       date: "Sep 2026",
       items: [
-        "Static SPA clone of herdyard.com with hash routing.",
+        "Static SPA with hash routing.",
         "Node HTTP server and Postgres JSONB persistence on DigitalOcean.",
         "Seed listings and producer records."
       ]
