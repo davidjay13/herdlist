@@ -19,7 +19,7 @@ module.exports = async function extraApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword } = ctx;
   const ADMINS = ["david@davidjay.com"];
   const COW = "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80";
-  const LOGO = "/logo.svg?v=28";
+  const LOGO = "/logo.svg?v=32";
   function isPlaceholderAvatar(v) {
     if (!v) return true;
     var s = String(v);
@@ -93,6 +93,8 @@ module.exports = async function extraApi(ctx) {
         avatar: row.avatar || LOGO,
         imported: true,
         hyId: row.hyId,
+        lat: row.lat || null,
+        lng: row.lng || null,
       };
       db.data.producers.push(producer);
     }
@@ -110,6 +112,8 @@ module.exports = async function extraApi(ctx) {
     if (row.followers) producer.followers = row.followers;
     if (row.sold != null) producer.sold = row.sold;
     if (row.rating) producer.rating = row.rating;
+    if (row.lat) producer.lat = row.lat;
+    if (row.lng) producer.lng = row.lng;
     producer.imported = true;
     producer.hyId = row.hyId;
     producer.userId = userId;
@@ -145,6 +149,8 @@ module.exports = async function extraApi(ctx) {
           description: L.description || "",
           imported: true,
           hidden: false,
+          lat: row.lat || null,
+          lng: row.lng || null,
         });
       } else {
         if (!existing.imageLocked) {
@@ -163,13 +169,14 @@ module.exports = async function extraApi(ctx) {
     });
   }
 
-  if (!db.data.importedHyRefreshSep18e && importedProducers.length && importedProducers[0].hyId) {
+  if (!db.data.importedHyRefreshSep18f && importedProducers.length && importedProducers[0].hyId) {
     importedProducers.forEach(applyImportedRow);
     db.data.importedHy = true;
     db.data.importedHyContact = true;
     db.data.importedHyMediaSep18 = true;
     db.data.importedHyRefreshSep18d = true;
     db.data.importedHyRefreshSep18e = true;
+    db.data.importedHyRefreshSep18f = true;
     await db.save();
   }
 
