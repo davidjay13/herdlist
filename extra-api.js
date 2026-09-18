@@ -1,9 +1,36 @@
 module.exports = async function extraApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword } = ctx;
+  const ADMINS = ["david@davidjay.com"];
+
+  function isAdmin(u) {
+    return !!(u && ADMINS.indexOf(String(u.email || "").toLowerCase()) >= 0);
+  }
 
   function withProducer(listing) {
     const p = db.data.producers.find((x) => x.id === listing.producerId);
     return Object.assign({}, listing, { producer: p || null });
+  }
+
+  if (url === "/api/me" && method === "GET") {
+    const u = userFromCookie(req);
+    if (!u) return send(res, 200, { user: null, follows: [], admin: false }), true;
+    const producer = db.data.producers.find((p) => p.userId === u.id) || null;
+    const follows = db.data.follows.filter((f) => f.userId === u.id).map((f) => f.producerId);
+    send(res, 200, {
+      user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "", admin: isAdmin(u) },
+      producer,
+      follows,
+      admin: isAdmin(u),
+    });
+    return true;
+  }
+
+  if (url === "/api/my/listings" && method === "GET") {
+    const u = userFromCookie(req);
+    if (!u) return send(res, 401, { error: "Sign in required" }), true;
+    const list = isAdmin(u) ? db.data.listings : db.data.listings.filter((l) => l.userId === u.id);
+    send(res, 200, { listings: list.map(withProducer), admin: isAdmin(u) });
+    return true;
   }
 
   if (url === "/api/profile" && method === "POST") {
@@ -53,7 +80,7 @@ module.exports = async function extraApi(ctx) {
     if (typeof b.cover === "string" && b.cover.startsWith("data:image")) producer.cover = b.cover;
     producer.phone = u.phone || "";
     await db.save();
-    send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "" }, producer });
+    send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "", admin: isAdmin(u) }, producer });
     return true;
   }
 
@@ -77,7 +104,9 @@ module.exports = async function extraApi(ctx) {
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
     const listing = db.data.listings.find((l) => l.id === listingMatch[1]);
     if (!listing) return send(res, 404, { error: "Listing not found" }), true;
-    if (listing.userId !== u.id) return send(res, 403, { error: "You can only change your own listings." }), true;
+    if (listing.userId !== u.id && !isAdmin(u)) {
+      return send(res, 403, { error: "You can only change your own listings." }), true;
+    }
     if (method === "DELETE") {
       db.data.listings = db.data.listings.filter((l) => l.id !== listing.id);
       await db.save();
