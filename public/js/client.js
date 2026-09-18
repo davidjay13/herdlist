@@ -59,7 +59,7 @@
     const recent = state.listings.slice(0, 6);
     app.innerHTML = `<section class="hero"><div class="hero-bg"></div><div class="hero-inner">
       <div class="kicker">Farm to farm \u00b7 Private treaty</div>
-      <h1>The Zillow of Cattle</h1>
+      <h1>Zillow For Cattle</h1>
       <p class="lead">Connecting buyers and sellers nationwide. No commission on private-treaty cattle.</p>
       <div class="hero-cta">
         <a class="btn btn-light btn-lg" href="#/signup">Create a free account</a>
