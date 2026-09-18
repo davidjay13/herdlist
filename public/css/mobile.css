@@ -1,0 +1,13 @@
+@media (max-width: 980px) {
+  .nav-links { display: none !important; }
+  #sell-btn { display: none !important; }
+  .header-actions { gap: 0; }
+  #acct-btn {
+    background: #1b6b45;
+    color: #fff;
+    padding: 8px 16px;
+  }
+  .app-header { padding: 10px 16px; gap: 8px; }
+  .dash-shell { grid-template-columns: 1fr !important; }
+  .dash-shell aside { display: none; }
+}
