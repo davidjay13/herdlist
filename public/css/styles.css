@@ -237,7 +237,7 @@ button, input, select, textarea { font-family: inherit; }
 .browse-stage { display: block; min-height: 0; flex: 1; }
 .browse-layout.view-split .browse-stage {
   display: grid;
-  grid-template-columns: minmax(380px, 1.1fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(380px, 1.15fr) minmax(380px, 1fr);
   height: calc(100vh - 126px);
   max-height: calc(100vh - 126px);
   overflow: hidden;
@@ -287,13 +287,14 @@ button, input, select, textarea { font-family: inherit; }
   align-content: start;
 }
 .browse-layout.view-split .listings-grid {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   min-height: 0;
   height: 100%;
   overflow: auto;
 }
-.browse-layout.view-split .listing-card .thumb { height: 160px; }
-.browse-layout.view-split .listing-body { display: block; }
+.browse-layout.view-split .listing-card .thumb { height: 118px; }
+.browse-layout.view-split .listing-body { display: block; padding: 10px 12px 12px; }
+.browse-layout.view-split .price { font-size: 1rem; }
 .leaflet-container { height: 100%; width: 100%; background: #dce8d8; }
 .hy-pin { background: transparent; border: 0; }
 .hy-dot {
