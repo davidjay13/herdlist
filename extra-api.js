@@ -8,7 +8,7 @@ const importedProducers = (() => {
 })();
 
 module.exports = async function extraApi(ctx) {
-  const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword } = ctx;
+  const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword } = ctx;
   const ADMINS = ["david@davidjay.com"];
   const COW = "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80";
 
@@ -16,26 +16,34 @@ module.exports = async function extraApi(ctx) {
     return !!(u && ADMINS.indexOf(String(u.email || "").toLowerCase()) >= 0);
   }
 
-  if (!db.data.importedHy && importedProducers.length && importedProducers[0].hyId) {
-    importedProducers.forEach(function (row) {
-      const id = "hy" + row.hyId;
-      if (db.data.producers.some((p) => p.id === id || p.slug === row.slug)) return;
-      const userId = 8000 + Number(row.hyId);
-      if (!db.data.users.some((u) => u.id === userId)) {
-        db.data.users.push({
-          id: userId,
-          name: row.name,
-          email: "imported+" + row.hyId + "@herd-yard.local",
-          passwordHash: hashPassword("imported-" + row.hyId),
-          imported: true,
-        });
-      }
-      db.data.producers.push({
+  function applyImportedRow(row) {
+    const id = "hy" + row.hyId;
+    const userId = 8000 + Number(row.hyId);
+    let user = db.data.users.find((u) => u.id === userId);
+    if (!user) {
+      user = {
+        id: userId,
+        name: row.owner || row.name,
+        email: row.email || ("imported+" + row.hyId + "@herd-yard.local"),
+        passwordHash: hashPassword("imported-" + row.hyId),
+        imported: true,
+        phone: row.phone || "",
+      };
+      db.data.users.push(user);
+    } else {
+      if (row.email) user.email = row.email;
+      if (row.phone) user.phone = row.phone;
+      if (row.owner) user.name = row.owner;
+      user.imported = true;
+    }
+    let producer = db.data.producers.find((p) => p.id === id || p.hyId === row.hyId || p.slug === row.slug);
+    if (!producer) {
+      producer = {
         id: id,
         userId: userId,
         slug: String(row.slug || slugify(row.name)).replace(/[^a-z0-9-]/g, "-"),
         name: row.name,
-        owner: row.name,
+        owner: row.owner || row.name,
         location: row.location || "",
         rating: row.rating || 5,
         reviews: 0,
@@ -44,17 +52,36 @@ module.exports = async function extraApi(ctx) {
         about: row.about || "",
         operations: "",
         associations: [],
-        cover: COW,
-        avatar: COW,
+        cover: row.cover || COW,
+        avatar: row.avatar || COW,
         imported: true,
         hyId: row.hyId,
-      });
-    });
+      };
+      db.data.producers.push(producer);
+    }
+    producer.name = row.name || producer.name;
+    if (row.owner) producer.owner = row.owner;
+    if (row.location) producer.location = row.location;
+    if (row.about) producer.about = row.about;
+    if (row.cover) producer.cover = row.cover;
+    if (row.avatar) producer.avatar = row.avatar;
+    if (row.email) producer.email = row.email;
+    if (row.phone) producer.phone = row.phone;
+    if (row.website) producer.website = row.website;
+    if (row.photos && row.photos.length) producer.photos = row.photos;
+    producer.imported = true;
+    producer.hyId = row.hyId;
+    producer.userId = userId;
+  }
+
+  if (!db.data.importedHyContact && importedProducers.length && importedProducers[0].hyId) {
+    importedProducers.forEach(applyImportedRow);
     db.data.importedHy = true;
+    db.data.importedHyContact = true;
     await db.save();
   }
 
-  function withProducer(listing, i) {
+  function withProducer(listing) {
     const p = db.data.producers.find((x) => x.id === listing.producerId);
     return Object.assign({}, listing, { producer: p || null });
   }
@@ -65,7 +92,7 @@ module.exports = async function extraApi(ctx) {
     const producer = db.data.producers.find((p) => p.userId === u.id) || null;
     const follows = db.data.follows.filter((f) => f.userId === u.id).map((f) => f.producerId);
     send(res, 200, {
-      user: { id: u.id, name: u.name, email: u.email, admin: isAdmin(u) },
+      user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "", admin: isAdmin(u) },
       producer,
       follows,
       admin: isAdmin(u),
@@ -89,6 +116,7 @@ module.exports = async function extraApi(ctx) {
         id: user.id,
         name: user.name || "",
         email: email,
+        phone: user.phone || (producer && producer.phone) || "",
         admin: isAdmin(user),
         imported: !!user.imported || email.indexOf("@herd-yard.local") >= 0,
         producerName: producer ? producer.name : "",
@@ -134,6 +162,7 @@ module.exports = async function extraApi(ctx) {
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
     const b = await readBody(req);
     if (b.name) u.name = String(b.name).trim();
+    if (b.phone !== undefined) u.phone = String(b.phone || "").trim();
     let producer = db.data.producers.find((p) => p.userId === u.id);
     if (!producer) {
       producer = { id: "u" + u.id, userId: u.id, slug: slugify(u.name) + "-" + u.id, name: u.name, owner: u.name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", operations: "", associations: [], cover: COW, avatar: COW };
@@ -144,11 +173,14 @@ module.exports = async function extraApi(ctx) {
     if (b.location !== undefined) producer.location = String(b.location || "").trim();
     if (b.about !== undefined) producer.about = String(b.about || "");
     if (b.operations !== undefined) producer.operations = String(b.operations || "");
+    if (b.phone !== undefined) producer.phone = String(b.phone || "").trim();
+    if (b.email !== undefined) producer.email = String(b.email || "").trim();
+    if (b.website !== undefined) producer.website = String(b.website || "").trim();
     if (b.associations !== undefined) producer.associations = String(b.associations || "").split(",").map((s) => s.trim()).filter(Boolean);
-    if (typeof b.avatar === "string" && b.avatar.startsWith("data:image")) producer.avatar = b.avatar;
-    if (typeof b.cover === "string" && b.cover.startsWith("data:image")) producer.cover = b.cover;
+    if (typeof b.avatar === "string" && (b.avatar.startsWith("data:image") || b.avatar.startsWith("http"))) producer.avatar = b.avatar;
+    if (typeof b.cover === "string" && (b.cover.startsWith("data:image") || b.cover.startsWith("http"))) producer.cover = b.cover;
     await db.save();
-    send(res, 200, { user: { id: u.id, name: u.name, email: u.email }, producer });
+    send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "" }, producer });
     return true;
   }
 
