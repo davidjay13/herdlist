@@ -1,14 +1,38 @@
 module.exports = async function extraApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword } = ctx;
   const ADMINS = ["david@davidjay.com"];
+  const COW =
+    "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80";
+  const COWS = [
+    COW,
+    "https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1516466723877-e4ec1d736c8a?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1570042223119-0d2d2d6c1384?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1596733439284-f58b3c1d9858?auto=format&fit=crop&w=1200&q=80",
+  ];
+  const NOT_COW = ["1464226184884", "1416879595882", "1560493676", "1484557985045", "1477764250597"];
 
   function isAdmin(u) {
     return !!(u && ADMINS.indexOf(String(u.email || "").toLowerCase()) >= 0);
   }
 
-  function withProducer(listing) {
+  function cowify(src, i) {
+    if (!src || typeof src !== "string") return COWS[i % COWS.length];
+    if (src.indexOf("data:image") === 0) return src;
+    for (var n = 0; n < NOT_COW.length; n++) {
+      if (src.indexOf(NOT_COW[n]) >= 0) return COWS[i % COWS.length];
+    }
+    return src;
+  }
+
+  function withProducer(listing, i) {
     const p = db.data.producers.find((x) => x.id === listing.producerId);
-    return Object.assign({}, listing, { producer: p || null });
+    const image = cowify(listing.image, i || 0);
+    const images = (listing.images && listing.images.length ? listing.images : [listing.image]).map(function (s, n) {
+      return cowify(s, n);
+    });
+    return Object.assign({}, listing, { image: image, images: images, producer: p || null });
   }
 
   if (url === "/api/me" && method === "GET") {
@@ -25,11 +49,36 @@ module.exports = async function extraApi(ctx) {
     return true;
   }
 
+  if (url === "/api/listings" && method === "GET") {
+    const u = userFromCookie(req);
+    const q = new URL(req.url, "http://x").searchParams;
+    let list = db.data.listings.slice();
+    if (!isAdmin(u)) list = list.filter((l) => l.status !== "sold" && !l.hidden);
+    if (q.get("category")) list = list.filter((l) => l.category === q.get("category"));
+    if (q.get("breed")) list = list.filter((l) => l.breed === q.get("breed"));
+    if (q.get("klass")) list = list.filter((l) => l.klass === q.get("klass"));
+    send(res, 200, { listings: list.map(withProducer) });
+    return true;
+  }
+
   if (url === "/api/my/listings" && method === "GET") {
     const u = userFromCookie(req);
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
     const list = isAdmin(u) ? db.data.listings : db.data.listings.filter((l) => l.userId === u.id);
     send(res, 200, { listings: list.map(withProducer), admin: isAdmin(u) });
+    return true;
+  }
+
+  if (url === "/api/admin/visibility" && method === "POST") {
+    const u = userFromCookie(req);
+    if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
+    const b = await readBody(req);
+    const hide = !!b.hide;
+    db.data.listings.forEach(function (l) {
+      l.hidden = hide;
+    });
+    await db.save();
+    send(res, 200, { ok: true, hidden: hide, count: db.data.listings.length });
     return true;
   }
 
@@ -63,8 +112,8 @@ module.exports = async function extraApi(ctx) {
         operations: "",
         phone: "",
         associations: [],
-        cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80",
-        avatar: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=400&q=80",
+        cover: COW,
+        avatar: COWS[4],
       };
       db.data.producers.push(producer);
     }
@@ -122,6 +171,9 @@ module.exports = async function extraApi(ctx) {
     if (b.location != null) listing.location = String(b.location);
     if (b.description != null) listing.description = String(b.description);
     if (b.status === "sold" || b.status === "active") listing.status = b.status;
+    if (b.hidden === true || b.hidden === false || b.hidden === "true" || b.hidden === "false") {
+      listing.hidden = b.hidden === true || b.hidden === "true";
+    }
     if (b.price === "" || b.price === null) {
       listing.price = null;
       listing.priceType = "contact";
