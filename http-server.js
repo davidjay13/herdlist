@@ -17,7 +17,7 @@ try {
 } catch (e) {
   LOGO_PNG = null;
 }
-const LOGO_SVG = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 152" width="160" height="152"></svg>`);
+const LOGO_SVG = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 152" width="160" height="152"><g fill="#16503c"><circle cx="80" cy="76" r="70"/></g></svg>`);
 
 function userFromCookie(req) {
   const raw = req.headers.cookie || "";
@@ -108,7 +108,7 @@ const server = http.createServer(async (req, res) => {
       db.data.users.push({ id, name, email, passwordHash: hashPassword(password) });
       let slug = slugify(name);
       if (db.data.producers.some((p) => p.slug === slug)) slug += "-" + id;
-      db.data.producers.push({ id: "u" + id, userId: id, slug, name, owner: name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", associations: [], cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80", avatar: "/logo.png?v=40" });
+      db.data.producers.push({ id: "u" + id, userId: id, slug, name, owner: name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", associations: [], cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80", avatar: "/logo.png?v=41" });
       const token = crypto.randomBytes(24).toString("hex");
       db.data.sessions.push({ token, userId: id });
       await db.save();
