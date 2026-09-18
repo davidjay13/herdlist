@@ -4,7 +4,11 @@ const crypto = require("crypto");
 
 const DATA_DIR = path.join(__dirname, "data");
 const FILE = path.join(DATA_DIR, "store.json");
-fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+} catch (e) {
+  console.error("Could not create data dir", e.message);
+}
 
 function hashPassword(password, salt) {
   const s = salt || crypto.randomBytes(16).toString("hex");
@@ -14,7 +18,9 @@ function hashPassword(password, salt) {
 
 function checkPassword(password, stored) {
   const [s, hash] = String(stored).split(":");
+  if (!s || !hash) return false;
   const next = crypto.scryptSync(password, s, 32).toString("hex");
+  if (hash.length !== next.length) return false;
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(next, "hex"));
 }
 
@@ -33,65 +39,84 @@ function emptyData() {
 }
 
 function loadFile() {
-  if (!fs.existsSync(FILE)) return null;
-  return JSON.parse(fs.readFileSync(FILE, "utf8"));
+  try {
+    if (!fs.existsSync(FILE)) return null;
+    return JSON.parse(fs.readFileSync(FILE, "utf8"));
+  } catch {
+    return null;
+  }
 }
 
 function saveFile(data) {
   fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
 }
 
-async function init(seedFn) {
-  const url = process.env.DATABASE_URL || process.env.db_DATABASE_URL || process.env.DATABASE_URL_INTERNAL;
-  let data;
-  let persist = "file";
-  let pgClient = null;
-
-  if (url) {
-    persist = "postgres";
-    const { Client } = require("pg");
-    pgClient = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
-    await pgClient.connect();
-    await pgClient.query(`
-      CREATE TABLE IF NOT EXISTS app_state (
-        id integer PRIMARY KEY,
-        payload jsonb NOT NULL
-      )
-    `);
-    const row = await pgClient.query("SELECT payload FROM app_state WHERE id = 1");
-    if (row.rows[0]) {
-      data = row.rows[0].payload;
-    } else {
-      data = emptyData();
-      seedFn(data);
-      await pgClient.query("INSERT INTO app_state (id, payload) VALUES (1, $1)", [JSON.stringify(data)]);
-    }
-  } else {
-    data = loadFile();
-    if (!data) {
-      data = emptyData();
-      seedFn(data);
-      saveFile(data);
-    }
-  }
-
+function fileStore(data) {
   return {
     data,
-    persist,
+    persist: "file",
     async save() {
-      if (pgClient) {
-        await pgClient.query(
-          "INSERT INTO app_state (id, payload) VALUES (1, $1) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload",
-          [JSON.stringify(data)]
-        );
-      } else {
-        saveFile(data);
-      }
+      saveFile(data);
     },
     hashPassword,
     checkPassword,
     slugify,
   };
+}
+
+async function init(seedFn) {
+  const url = process.env.DATABASE_URL || process.env.db_DATABASE_URL || process.env.DATABASE_URL_INTERNAL;
+  if (url) {
+    try {
+      const { Client } = require("pg");
+      const pgClient = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+      await pgClient.connect();
+      await pgClient.query(`
+        CREATE TABLE IF NOT EXISTS app_state (
+          id integer PRIMARY KEY,
+          payload jsonb NOT NULL
+        )
+      `);
+      const row = await pgClient.query("SELECT payload FROM app_state WHERE id = 1");
+      let data;
+      if (row.rows[0]) {
+        data = row.rows[0].payload;
+      } else {
+        data = emptyData();
+        seedFn(data);
+        await pgClient.query("INSERT INTO app_state (id, payload) VALUES (1, $1)", [JSON.stringify(data)]);
+      }
+      console.log("Store: postgres");
+      return {
+        data,
+        persist: "postgres",
+        async save() {
+          await pgClient.query(
+            "INSERT INTO app_state (id, payload) VALUES (1, $1) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload",
+            [JSON.stringify(data)]
+          );
+        },
+        hashPassword,
+        checkPassword,
+        slugify,
+      };
+    } catch (err) {
+      console.error("Postgres unavailable, using file store:", err.message);
+    }
+  }
+
+  let data = loadFile();
+  if (!data) {
+    data = emptyData();
+    seedFn(data);
+    try {
+      saveFile(data);
+    } catch (e) {
+      console.error("File store write failed", e.message);
+    }
+  }
+  console.log("Store: file");
+  return fileStore(data);
 }
 
 module.exports = { init, slugify, hashPassword, checkPassword };
