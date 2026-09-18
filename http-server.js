@@ -8,7 +8,7 @@ const { seedJson } = require("./seed-json");
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC = path.join(__dirname, "public");
-const db = init(seedJson);
+let db;
 const COOKIE = "rl_session";
 
 function userFromCookie(req) {
@@ -89,7 +89,7 @@ const server = http.createServer(async (req, res) => {
   const url = req.url.split("?")[0];
   const method = req.method;
   try {
-    if (url === "/api/health") return send(res, 200, { ok: true });
+    if (url === "/api/health") return send(res, 200, { ok: true, persist: db.persist });
 
     if (url === "/api/me" && method === "GET") {
       const u = userFromCookie(req);
@@ -128,7 +128,7 @@ const server = http.createServer(async (req, res) => {
       });
       const token = crypto.randomBytes(24).toString("hex");
       db.data.sessions.push({ token, userId: id });
-      db.save();
+      await db.save();
       return send(res, 200, { user: { id, name, email } }, setSession(res, token));
     }
 
@@ -140,7 +140,7 @@ const server = http.createServer(async (req, res) => {
       if (!u || !checkPassword(password, u.passwordHash)) return send(res, 401, { error: "Email or password is wrong." });
       const token = crypto.randomBytes(24).toString("hex");
       db.data.sessions.push({ token, userId: u.id });
-      db.save();
+      await db.save();
       return send(res, 200, { user: { id: u.id, name: u.name, email: u.email } }, setSession(res, token));
     }
 
@@ -148,7 +148,7 @@ const server = http.createServer(async (req, res) => {
       const raw = req.headers.cookie || "";
       const m = raw.match(new RegExp("(?:^|; )" + COOKIE + "=([^;]+)"));
       if (m) db.data.sessions = db.data.sessions.filter((s) => s.token !== m[1]);
-      db.save();
+      await db.save();
       return send(res, 200, { ok: true }, { "Set-Cookie": `${COOKIE}=; HttpOnly; Path=/; Max-Age=0` });
     }
 
@@ -197,7 +197,7 @@ const server = http.createServer(async (req, res) => {
         details: { ListedBy: u.name },
       };
       db.data.listings.unshift(listing);
-      db.save();
+      await db.save();
       return send(res, 200, { listing: withProducer(listing) });
     }
 
@@ -216,7 +216,7 @@ const server = http.createServer(async (req, res) => {
       if (!listing) return send(res, 404, { error: "Listing not found" });
       const b = await readBody(req);
       db.data.messages.push({ listingId: listing.id, fromUser: u.id, toProducer: listing.producerId, body: b.body || "Interested", at: Date.now() });
-      db.save();
+      await db.save();
       return send(res, 200, { ok: true });
     }
 
@@ -239,12 +239,12 @@ const server = http.createServer(async (req, res) => {
       if (i >= 0) {
         db.data.follows.splice(i, 1);
         p.followers = Math.max((p.followers || 1) - 1, 0);
-        db.save();
+        await db.save();
         return send(res, 200, { following: false });
       }
       db.data.follows.push({ userId: u.id, producerId: p.id });
       p.followers = (p.followers || 0) + 1;
-      db.save();
+      await db.save();
       return send(res, 200, { following: true });
     }
 
@@ -262,4 +262,14 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log("RangeList running on http://localhost:" + PORT));
+init(seedJson)
+  .then((store) => {
+    db = store;
+    server.listen(PORT, () =>
+      console.log("Herd Yard running on http://localhost:" + PORT + " persist=" + db.persist)
+    );
+  })
+  .catch((err) => {
+    console.error("Failed to start store", err);
+    process.exit(1);
+  });
