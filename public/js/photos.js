@@ -109,7 +109,6 @@
       "<label>Photos</label>" +
       '<label id="dropzone" class="media-drop" for="photos">' +
       '<input id="photos" type="file" accept="image/*" multiple>' +
-      "<strong>Add photos</strong>" +
       "<span>" + photoHint + "</span>" +
       "</label>" +
       '<div id="photo-preview" class="thumbs" style="margin-top:10px;flex-wrap:wrap"></div>';
@@ -118,13 +117,13 @@
     var vwrap = document.createElement("div");
     vwrap.className = "field full";
     vwrap.innerHTML =
-      "<label>Video</label>" +
+      '<div class="media-title">Add video</div>' +
       '<label id="video-dropzone" class="media-drop" for="listing-video">' +
       '<input id="listing-video" type="file" accept="video/*,.mp4,.mov,.webm">' +
-      "<strong>Add video</strong>" +
       "<span>" + videoHint + "</span>" +
-      '<div id="video-name" class="sub" style="margin-top:8px;display:none"></div></label>' +
-      '<div style="margin-top:10px"><label>Video link</label>' +
+      "</label>" +
+      '<div id="video-name" class="sub" style="margin-top:8px;display:none"></div>' +
+      '<div style="margin-top:12px"><label>Video link</label>' +
       '<input id="video-url" placeholder="YouTube, Vimeo, or mp4 URL"></div>';
 
     var titleField = grid.querySelector('input[name="title"]');
