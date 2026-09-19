@@ -13,6 +13,7 @@
       link: "https://buy.stripe.com/14A3cvcVT3azgcobsl8so02"
     }
   };
+  var mounting = false;
 
   function planKey() {
     var q = new URLSearchParams((location.hash.split("?")[1] || ""));
@@ -28,6 +29,9 @@
     if (path() !== "checkout") return;
     var app = document.getElementById("app");
     if (!app) return;
+    if (document.getElementById("stripe-box") && document.getElementById("stripe-box").dataset.ready) return;
+    if (mounting) return;
+    mounting = true;
     var key = planKey();
     var plan = PLANS[key];
     app.innerHTML = `<div class="form-page" style="max-width:720px">
@@ -40,8 +44,10 @@
     try {
       var cfg = await fetch("/api/billing-config", { credentials: "include" }).then(function (r) { return r.json(); });
       if (!cfg || !cfg.embedded || !cfg.publishableKey) {
-        box.innerHTML = `<p>Card form loads on this page after Stripe keys are added to the server.</p>
-          <a class="btn btn-primary" href="${plan.link}">Continue to secure checkout</a>`;
+        box.innerHTML = `<p>Secure checkout is ready via Stripe.</p>
+          <a class="btn btn-primary" href="${plan.link}">Continue to checkout</a>`;
+        box.dataset.ready = "1";
+        mounting = false;
         return;
       }
       var session = await fetch("/api/checkout", {
@@ -52,7 +58,9 @@
       }).then(function (r) { return r.json(); });
       if (!session.clientSecret) {
         box.innerHTML = `<p>${session.error || "Could not start checkout."}</p>
-          <a class="btn btn-primary" href="${plan.link}">Continue to secure checkout</a>`;
+          <a class="btn btn-primary" href="${plan.link}">Continue to checkout</a>`;
+        box.dataset.ready = "1";
+        mounting = false;
         return;
       }
       if (!window.Stripe) {
@@ -66,12 +74,21 @@
       }
       var stripe = window.Stripe(cfg.publishableKey);
       var checkout = await stripe.initEmbeddedCheckout({ clientSecret: session.clientSecret });
+      if (!document.getElementById("stripe-box")) {
+        mounting = false;
+        return;
+      }
       box.innerHTML = "";
       checkout.mount("#stripe-box");
+      box.dataset.ready = "1";
     } catch (e) {
-      box.innerHTML = `<p>Checkout could not load.</p>
-        <a class="btn btn-primary" href="${plan.link}">Continue to secure checkout</a>`;
+      if (box) {
+        box.innerHTML = `<p>${(e && e.message) || "Checkout could not load."}</p>
+          <a class="btn btn-primary" href="${plan.link}">Continue to checkout</a>`;
+        box.dataset.ready = "1";
+      }
     }
+    mounting = false;
   }
 
   function wirePlans() {
@@ -90,11 +107,19 @@
 
   window.addEventListener("hashchange", function () {
     setTimeout(render, 20);
+    setTimeout(render, 120);
+    setTimeout(render, 400);
     setTimeout(wirePlans, 40);
   });
   var app = document.getElementById("app");
-  if (app && window.MutationObserver) new MutationObserver(wirePlans).observe(app, { childList: true, subtree: true });
+  if (app && window.MutationObserver) {
+    new MutationObserver(function () {
+      if (path() === "checkout" && !document.getElementById("stripe-box")) render();
+      wirePlans();
+    }).observe(app, { childList: true });
+  }
   setTimeout(render, 40);
+  setTimeout(render, 250);
   setTimeout(wirePlans, 40);
   setTimeout(wirePlans, 300);
 })();
