@@ -340,6 +340,24 @@
     }).join("");
     return "<div class='news-ribbon'><div class='news-kicker'>Industry news</div><div class='news-window'><div class='news-track'>" + rows + "</div></div></div>";
   }
+  function podcastsRow(items) {
+    var list = (items || []).slice(0, 3);
+    if (!list.length) {
+      return "<section class='podcast-strip'><div class='podcast-head'><h3>Herd Yard podcasts</h3><a href='https://www.youtube.com/@herdyard_USA' target='_blank' rel='noopener'>Watch on YouTube</a></div><p class='dash-empty'>Latest episodes will show up here.</p></section>";
+    }
+    var cards = list.map(function (v) {
+      var thumb = String(v.thumb || ("https://i.ytimg.com/vi/" + v.id + "/hqdefault.jpg")).split("'").join("");
+      var href = String(v.url || ("https://www.youtube.com/watch?v=" + v.id)).split("'").join("");
+      return "<a class='podcast-card' href='" + href + "' target='_blank' rel='noopener'>" +
+        "<div class='podcast-thumb' style='background-image:url(" + JSON.stringify(thumb) + ")'>" +
+        "<span class='podcast-play'></span>" +
+        (v.duration ? "<span class='podcast-dur'>" + esc(v.duration) + "</span>" : "") +
+        "</div><b>" + esc(v.title) + "</b></a>";
+    }).join("");
+    return "<section class='podcast-strip'><div class='podcast-head'><h3>Herd Yard podcasts</h3>" +
+      "<a href='https://www.youtube.com/@herdyard_USA' target='_blank' rel='noopener'>@herdyard_USA</a></div>" +
+      "<div class='podcast-grid'>" + cards + "</div></section>";
+  }
   function home(me, listings, pack) {
     var name = ((me.user && me.user.name) || "Producer").split(" ")[0];
     pack = pack || {};
@@ -365,6 +383,7 @@
     return "<h2 class='page-title'>Welcome, " + esc(name) + "</h2>" +
       "<p class='sub'>Your ranch desk — news, messages, and cattle nearby.</p>" +
       newsRibbon(pack.news) +
+      podcastsRow(pack.podcasts) +
       "<div class='dash-kpis'>" +
       "<div class='dash-kpi'><b>" + Number(pack.myListings || (listings || []).length) + "</b><span>Your listings</span></div>" +
       "<div class='dash-kpi'><b>" + Number(pack.totalViews || 0).toLocaleString() + "</b><span>Listing views</span></div>" +

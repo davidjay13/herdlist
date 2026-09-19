@@ -121,6 +121,113 @@ module.exports = async function newsApi(ctx) {
     return { title: title.slice(0, 180), image: image.slice(0, 500), source: String(source).slice(0, 60) };
   }
 
+
+  const YT_CHANNEL = "UCj-YoVb91TazVAySJeTJ4Hg";
+  const YT_HANDLE = "herdyard_USA";
+  const YT_FALLBACK = [
+    { id: "hVlTd874LuM", title: "Great Life, Tough Business: Kerr Taylor - Old Three Wagyu", duration: "35:03" },
+    { id: "_-r4aw0TXa4", title: "Building Better Wagyu : Sandhill Performance Wagyu", duration: "36:38" },
+    { id: "vh95RfvE7gU", title: "Ranching at 8,000 Feet: How Circle C Is Building for the Future", duration: "22:59" }
+  ].map(function (v) {
+    return {
+      id: v.id,
+      title: v.title,
+      duration: v.duration,
+      url: "https://www.youtube.com/watch?v=" + v.id,
+      thumb: "https://i.ytimg.com/vi/" + v.id + "/hqdefault.jpg",
+      channel: "https://www.youtube.com/@" + YT_HANDLE
+    };
+  });
+
+  function durationSeconds(d) {
+    var p = String(d || "").split(":").map(Number);
+    if (p.some(function (n) { return isNaN(n); })) return 0;
+    if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2];
+    if (p.length === 2) return p[0] * 60 + p[1];
+    return 0;
+  }
+
+  function normalizePodcast(v) {
+    return {
+      id: v.id,
+      title: v.title,
+      duration: v.duration || "",
+      url: "https://www.youtube.com/watch?v=" + v.id,
+      thumb: "https://i.ytimg.com/vi/" + v.id + "/hqdefault.jpg",
+      channel: "https://www.youtube.com/@" + YT_HANDLE
+    };
+  }
+
+  function pickPodcasts(list) {
+    var long = (list || []).filter(function (v) { return durationSeconds(v.duration) >= 8 * 60; });
+    var chosen = (long.length >= 2 ? long : list || []).slice(0, 3);
+    return chosen.map(normalizePodcast);
+  }
+
+  async function scrapeYoutubeVideos() {
+    var ac = new AbortController();
+    var timer = setTimeout(function () { ac.abort(); }, 7000);
+    var html = "";
+    try {
+      var r = await fetch("https://www.youtube.com/@" + YT_HANDLE + "/videos", {
+        signal: ac.signal,
+        redirect: "follow",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; HerdYard/1.0; +https://herd-yard.com)",
+          "Accept-Language": "en-US,en;q=0.9",
+          Accept: "text/html"
+        }
+      });
+      html = await r.text();
+    } catch (e) {
+      html = "";
+    }
+    clearTimeout(timer);
+    var m = html.match(/ytInitialData\s*=\s*(\{.+?\});<\/script>/);
+    if (!m) return [];
+    var data;
+    try { data = JSON.parse(m[1]); } catch (e) { return []; }
+    var lockups = [];
+    function walk(o) {
+      if (!o) return;
+      if (Array.isArray(o)) { o.forEach(walk); return; }
+      if (typeof o !== "object") return;
+      if (o.lockupViewModel) lockups.push(o.lockupViewModel);
+      Object.keys(o).forEach(function (k) { walk(o[k]); });
+    }
+    walk(data);
+    var seen = {};
+    var out = [];
+    lockups.forEach(function (lu) {
+      var id = "";
+      try { id = lu.rendererContext.commandContext.onTap.innertubeCommand.watchEndpoint.videoId; } catch (e) {}
+      if (!id || seen[id]) return;
+      var title = "";
+      try { title = lu.metadata.lockupMetadataViewModel.title.content; } catch (e) {}
+      var duration = "";
+      try {
+        duration = lu.contentImage.thumbnailViewModel.overlays[0].thumbnailBottomOverlayViewModel.badges[0].thumbnailBadgeViewModel.text;
+      } catch (e) {}
+      if (!title) return;
+      seen[id] = true;
+      out.push({ id: id, title: title, duration: duration });
+    });
+    return out;
+  }
+
+  async function latestPodcasts() {
+    var cache = db.data.podcasts;
+    var fresh = cache && cache.at && (Date.now() - cache.at < 30 * 60 * 1000) && Array.isArray(cache.items) && cache.items.length;
+    if (fresh) return cache.items;
+    var scraped = [];
+    try { scraped = await scrapeYoutubeVideos(); } catch (e) { scraped = []; }
+    var items = pickPodcasts(scraped);
+    if (!items.length) items = (cache && cache.items && cache.items.length) ? cache.items : YT_FALLBACK;
+    db.data.podcasts = { at: Date.now(), items: items };
+    try { await db.save(); } catch (e) {}
+    return items;
+  }
+
   if (seedNews()) {
     try { await db.save(); } catch (e) {}
   }
@@ -214,8 +321,10 @@ module.exports = async function newsApi(ctx) {
       return false;
     }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
     var news = (db.data.news || []).slice().sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+    var podcasts = await latestPodcasts();
     send(res, 200, {
       news: news,
+      podcasts: podcasts,
       messages: msgs.slice(0, 8),
       messageCount: msgs.length,
       local: local,
