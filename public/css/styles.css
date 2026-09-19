@@ -466,13 +466,23 @@ button, input, select, textarea { font-family: inherit; }
   min-height: 96px;
   box-sizing: border-box;
   margin-top: 6px;
+  margin-bottom: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #0f3f28;
 }
 .media-drop strong {
   display: block;
+  font-family: inherit;
   font-size: 1.05rem;
+  font-weight: 700;
   color: #0f3f28;
   margin-bottom: 4px;
   pointer-events: none;
+  text-transform: none;
+  letter-spacing: 0;
 }
 .media-drop > span,
 .media-drop .media-drop-sub {

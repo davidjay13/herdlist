@@ -214,17 +214,19 @@
     main.innerHTML =
       "<h2 class='page-title'>Edit listing</h2>" +
       "<form id='listing-edit-form' class='panel'><div class='form-grid'>" +
-      "<div class='field full'><div class='media-title'>Add a Photo</div>" +
+      "<div class='field full'>" +
       "<img id='edit-photo-preview' src='" + String(currentSrc).split("'").join("") + "' alt='listing photo' style='width:100%;max-height:260px;object-fit:cover;border-radius:16px;margin:0 0 12px;background:#dce8d8'>" +
       "<label id='edit-dropzone' class='media-drop' for='edit-photo-input'>" +
       "<input id='edit-photo-input' type='file' accept='image/*' multiple>" +
+      "<strong>Add a Photo</strong>" +
       "<span>drop or click to upload</span></label>" +
       "<div style='margin-top:10px'><label>Photo link</label>" +
       "<input id='edit-photo-url' placeholder='https://'></div></div>" +
-      "<div class='field full'><div class='media-title'>Add a Video</div>" +
+      "<div class='field full'>" +
       (listing.video ? "<video controls playsinline src='" + String(listing.video).split("'").join("") + "' style='width:100%;max-height:220px;border-radius:12px;background:#142018;margin:0 0 10px'></video>" : "") +
       "<label id='edit-video-drop' class='media-drop' for='edit-video-input'>" +
       "<input id='edit-video-input' type='file' accept='video/*,.mp4,.mov,.webm'>" +
+      "<strong>Add a Video</strong>" +
       "<span>drop or click to upload</span>" +
       "<div id='edit-video-name' class='sub' style='margin-top:8px;display:none'></div></label>" +
       "<div style='margin-top:10px'><label>Video link</label>" +

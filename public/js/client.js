@@ -297,17 +297,17 @@
       <form id="list-form" class="panel" style="margin-top:18px"><div class="form-grid">
       <div class="field full"><label>Title</label><input name="title" required></div>
       <div class="field full">
-        <div class="media-title">Add a Photo</div>
         <label id="dropzone" class="media-drop" for="photos">
           <input id="photos" type="file" accept="image/*" multiple>
+          <strong>Add a Photo</strong>
           <span>drop or click to upload</span>
         </label>
         <div id="photo-preview" class="thumbs" style="margin-top:10px;flex-wrap:wrap"></div>
       </div>
       <div class="field full">
-        <div class="media-title">Add a Video</div>
         <label id="video-dropzone" class="media-drop" for="listing-video">
           <input id="listing-video" type="file" accept="video/*,.mp4,.mov,.webm">
+          <strong>Add a Video</strong>
           <span>drop or click to upload</span>
         </label>
         <div id="video-name" class="sub" style="margin-top:8px;display:none"></div>
