@@ -1,5 +1,15 @@
 (function () {
+  // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
+    {
+      v: "0.5.13",
+      date: "Sep 19, 2026",
+      items: [
+        "Updates page is kept current with each deploy — latest ship notes land here the same day they go live.",
+        "Admin → Emails can send a test welcome and send the weekly stats recap immediately.",
+        "Weekly Account Stats recap is live through Postmark (sample sent). Opt in on Profile to receive it Mondays."
+      ]
+    },
     {
       v: "0.5.12",
       date: "Sep 19, 2026",
