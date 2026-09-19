@@ -12,7 +12,8 @@
     signup: { title: "Create a free account | Herd Yard", desc: "Join Herd Yard to list cattle, follow ranches, and message producers nationwide.", image: "/og/signup.jpg", path: "/signup", robots: "index,follow" },
     listing: { title: "Cattle listing | Herd Yard", desc: "View this private-treaty cattle listing on Herd Yard.", image: "/og/listing.jpg", path: "/listing", robots: "index,follow" },
     ranch: { title: "Ranch profile | Herd Yard", desc: "Public ranch profile on Herd Yard with current cattle listings.", image: "/og/ranch.jpg", path: "/ranch", robots: "index,follow" },
-    account: { title: "Account | Herd Yard", desc: "Your Herd Yard ranch desk.", image: "/og/signin.jpg", path: "/account", robots: "noindex,nofollow" }
+    account: { title: "Account | Herd Yard", desc: "Your Herd Yard ranch desk.", image: "/og/signin.jpg", path: "/account", robots: "noindex,nofollow" },
+    bugs: { title: "Bug squash report | Herd Yard", desc: "Bugs found and fixed on this Herd Yard build.", image: "/og/updates.jpg", path: "/bugs", robots: "noindex,follow" }
   };
 
   function abs(u, fallback) {

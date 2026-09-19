@@ -2,6 +2,14 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.14",
+      date: "Sep 19, 2026",
+      items: [
+        "Bug squash pass: Message the ranch no longer auto-sends Interested; profile associations and login email save; days left counts down; sold listings stay off ranch pages; ranch phone/email stay off public browse JSON.",
+        "Bug report at /bugs with every item found and fixed on this pass."
+      ]
+    },
+    {
       v: "0.5.13",
       date: "Sep 19, 2026",
       items: [

@@ -118,9 +118,20 @@ function serveStatic(req, res) {
   res.end(buf);
 }
 
+function remainingDays(listedAt, stored) {
+  const t = Date.parse(listedAt || "");
+  if (!t) return Math.max(0, Number(stored || 0) || 0);
+  return Math.max(0, Math.ceil((t + 60 * 86400000 - Date.now()) / 86400000));
+}
+
 function withProducer(listing) {
   const p = db.data.producers.find((x) => x.id === listing.producerId);
-  return { ...listing, producer: p || null };
+  const producer = p ? {
+    id: p.id, slug: p.slug, name: p.name, owner: p.owner, location: p.location || "",
+    rating: p.rating, reviews: p.reviews, sold: p.sold || 0, followers: p.followers || 0,
+    about: p.about || "", avatar: p.avatar, cover: p.cover, lat: p.lat, lng: p.lng, website: p.website || ""
+  } : null;
+  return { ...listing, daysLeft: remainingDays(listing.listedAt, listing.daysLeft), producer };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -152,7 +163,7 @@ const server = http.createServer(async (req, res) => {
       db.data.users.push({ id, name, email, passwordHash: hashPassword(password) });
       let slug = slugify(name);
       if (db.data.producers.some((p) => p.slug === slug)) slug += "-" + id;
-      db.data.producers.push({ id: "u" + id, userId: id, slug, name, owner: name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", associations: [], cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80", avatar: "/logo.svg?v=45" });
+      db.data.producers.push({ id: "u" + id, userId: id, slug, name, owner: name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", associations: [], cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80", avatar: "/cowboy.svg?v=2" });
       const token = crypto.randomBytes(24).toString("hex");
       db.data.sessions.push({ token, userId: id });
       await db.save();
@@ -182,7 +193,7 @@ const server = http.createServer(async (req, res) => {
 
     if (url === "/api/listings" && method === "GET") {
       const q = new URL(req.url, "http://x").searchParams;
-      let list = db.data.listings.filter((l) => l.status !== "sold");
+      let list = db.data.listings.filter((l) => l.status !== "sold" && !l.hidden);
       if (q.get("category")) list = list.filter((l) => l.category === q.get("category"));
       if (q.get("breed")) list = list.filter((l) => l.breed === q.get("breed"));
       if (q.get("klass")) list = list.filter((l) => l.klass === q.get("klass"));
@@ -195,7 +206,11 @@ const server = http.createServer(async (req, res) => {
       const b = await readBody(req);
       const title = String(b.title || "").trim();
       if (!title) return send(res, 400, { error: "Title is required." });
-      const producer = db.data.producers.find((p) => p.userId === u.id);
+      const producer = db.data.producers.find((p) => p.userId === u.id) || (function () {
+        const row = { id: "u" + u.id, userId: u.id, slug: slugify(u.name) + "-" + u.id, name: u.name, owner: u.name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", associations: [], cover: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80", avatar: "/cowboy.svg?v=2" };
+        db.data.producers.push(row);
+        return row;
+      })();
       const id = "l" + Date.now();
       const price = b.price === "" || b.price == null ? null : Number(b.price);
       const uploaded = Array.isArray(b.images) ? b.images.filter((s) => typeof s === "string" && s.startsWith("data:image")).slice(0, 4) : [];
@@ -212,7 +227,19 @@ const server = http.createServer(async (req, res) => {
     if (listingMatch && method === "GET") {
       const listing = db.data.listings.find((l) => l.id === listingMatch[1]);
       if (!listing) return send(res, 404, { error: "Listing not found" });
-      return send(res, 200, { listing: withProducer(listing) });
+      const viewer = userFromCookie(req);
+      const pack = withProducer(listing);
+      if (!viewer && pack.producer) {
+        delete pack.producer.phone;
+        delete pack.producer.email;
+      } else if (viewer && listing.producerId) {
+        const raw = db.data.producers.find((x) => x.id === listing.producerId);
+        if (raw && pack.producer) {
+          pack.producer.phone = raw.phone || "";
+          pack.producer.email = raw.email || "";
+        }
+      }
+      return send(res, 200, { listing: pack });
     }
 
     const contactMatch = url.match(/^\/api\/listings\/([^/]+)\/contact$/);
@@ -232,7 +259,7 @@ const server = http.createServer(async (req, res) => {
       const key = decodeURIComponent(prodMatch[1]);
       const p = db.data.producers.find((x) => x.slug === key || x.id === key);
       if (!p) return send(res, 404, { error: "Ranch not found" });
-      const listings = db.data.listings.filter((l) => l.producerId === p.id).map(withProducer);
+      const listings = db.data.listings.filter((l) => l.producerId === p.id && l.status !== "sold" && !l.hidden).map(withProducer);
       return send(res, 200, { producer: p, listings });
     }
 

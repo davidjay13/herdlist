@@ -19,6 +19,21 @@
     toastEl.style.display = "block";
     setTimeout(() => (toastEl.style.display = "none"), 2400);
   }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">")
+      .replace(/"/g, """);
+  }
+  function cssUrl(s) {
+    return String(s || "").replace(/['"\\)]/g, "");
+  }
+  function daysBadge(l) {
+    var n = Number(l.daysLeft);
+    if (n > 0) return n + "d left";
+    return l.listedAt ? "listed " + l.listedAt : "listed";
+  }
   function money(n) {
     if (n == null) return "Contact for Price";
     return "$" + Number(n).toLocaleString("en-US");
@@ -43,15 +58,15 @@
   }
   function listingCard(l) {
     const p = l.producer;
-    return `<article class="listing-card" onclick="location.hash='#/listing/${l.id}'">
-      <div class="thumb" style="background-image:url('${l.image}')">
-        <span class="badge">${p ? p.name : "Ranch"}</span>
-        <span class="days">${l.daysLeft}d left</span>
+    return `<article class="listing-card" onclick="location.hash='#/listing/${esc(l.id)}'">
+      <div class="thumb" style="background-image:url('${cssUrl(l.image)}')">
+        <span class="badge">${esc(p ? p.name : "Ranch")}</span>
+        <span class="days">${esc(daysBadge(l))}</span>
       </div>
       <div class="listing-body">
-        <div class="price">${priceLabel(l)}</div>
-        <div class="meta"><span>${l.breed}</span><span>${l.klass}</span><span>${l.head} ${l.unit}</span></div>
-        <div class="meta" style="margin-top:4px">${l.location || ""}</div>
+        <div class="price">${esc(priceLabel(l))}</div>
+        <div class="meta"><span>${esc(l.breed)}</span><span>${esc(l.klass)}</span><span>${esc(l.head)} ${esc(l.unit)}</span></div>
+        <div class="meta" style="margin-top:4px">${esc(l.location || "")}</div>
       </div></article>`;
   }
   function plansHTML() {
@@ -207,28 +222,23 @@
     const p = l.producer || { name: "Ranch", slug: "", location: l.location, rating: "\u2014", avatar: l.image, id: l.producerId };
     const imgs = l.images && l.images.length ? l.images : [l.image];
     app.innerHTML = `<div class="detail"><div>
-      <div class="gallery" id="hero-img" style="background-image:url('${imgs[0]}')"></div>
-      <div class="thumbs">${imgs.map((src,i)=>`<button class="${i===0?"on":""}" style="background-image:url('${src}')" data-src="${src}"></button>`).join("")}</div>
-      <h2 style="margin-top:22px">${l.title}</h2>
-      <p class="meta">${l.breed} \u00b7 ${l.klass} \u00b7 ${l.head} ${l.unit} \u00b7 ${l.location||""}</p>
-      <p>${l.description||""}</p>
+      <div class="gallery" id="hero-img" style="background-image:url('${cssUrl(imgs[0])}')"></div>
+      <div class="thumbs">${imgs.map((src,i)=>`<button class="${i===0?"on":""}" style="background-image:url('${cssUrl(src)}')" data-src="${esc(src)}"></button>`).join("")}</div>
+      <h2 style="margin-top:22px">${esc(l.title)}</h2>
+      <p class="meta">${esc(l.breed)} \u00b7 ${esc(l.klass)} \u00b7 ${esc(l.head)} ${esc(l.unit)} \u00b7 ${esc(l.location||"")}</p>
+      <p>${esc(l.description||"")}</p>
       </div><aside class="side-card">
-      <div class="label">Asking</div><div class="stat-num" style="font-size:2rem">${priceLabel(l)}</div>
-      <p class="sub">${l.daysLeft} days left \u00b7 listed ${l.listedAt}</p>
+      <div class="label">Asking</div><div class="stat-num" style="font-size:2rem">${esc(priceLabel(l))}</div>
+      <p class="sub">${esc(daysBadge(l))} \u00b7 listed ${esc(l.listedAt)}</p>
       <button class="btn btn-primary btn-wide btn-lg" id="contact-btn" style="margin-top:12px">${state.user?"Message the ranch":"Sign in to contact"}</button>
       <button class="btn btn-outline btn-wide" id="follow-btn" style="margin-top:8px">Follow ranch</button>
-      <div class="producer-mini"><img src="${p.avatar||l.image}" alt=""><div>
-      <a href="#/ranch/${p.slug||p.id}"><b>${p.name}</b></a>
-      <div class="meta">${p.location||""}</div></div></div></aside></div>`;
+      <div class="producer-mini"><img src="${esc(p.avatar||"/cowboy.svg?v=2")}" alt=""><div>
+      <a href="#/ranch/${esc(p.slug||p.id)}"><b>${esc(p.name)}</b></a>
+      <div class="meta">${esc(p.location||"")}</div></div></div></aside></div>`;
     try { fetch("/api/listings/"+id+"/view", { method: "POST", credentials: "include" }); } catch (e) {}
     app.querySelectorAll(".thumbs button").forEach((b) => {
-      b.onclick = () => { app.querySelectorAll(".thumbs button").forEach((x)=>x.classList.remove("on")); b.classList.add("on"); $("#hero-img").style.backgroundImage = `url('${b.dataset.src}')`; };
+      b.onclick = () => { app.querySelectorAll(".thumbs button").forEach((x)=>x.classList.remove("on")); b.classList.add("on"); $("#hero-img").style.backgroundImage = `url('${cssUrl(b.dataset.src)}')`; };
     });
-    $("#contact-btn").onclick = async () => {
-      if (!state.user) { location.hash = "#/signup"; return; }
-      try { await api("/api/listings/"+l.id+"/contact", { method: "POST", body: JSON.stringify({ body: "Interested." }) }); toast("Message saved."); }
-      catch (e) { toast(e.message); }
-    };
     $("#follow-btn").onclick = async () => {
       if (!state.user) { location.hash = "#/signup"; return; }
       try {
@@ -306,16 +316,13 @@
     if (!parts.length) return home();
     if (parts[0]==="browse") return browse();
     if (parts[0]==="listing") return listingView(parts[1]);
-    if (parts[0]==="ranch") return;
     if (parts[0]==="list") return listCattle();
     if (parts[0]==="signup") return auth("signup");
     if (parts[0]==="signin") return auth("signin");
-    if (parts[0]==="account") return;
     if (parts[0]==="pricing") return pricing();
     if (parts[0]==="faq") return faq();
-    if (parts[0]==="updates") return;
-    if (parts[0]==="producers") return;
-    home();
+    if (parts[0]==="ranch" || parts[0]==="account" || parts[0]==="updates" || parts[0]==="producers" || parts[0]==="bugs" || parts[0]==="checkout") return;
+    app.innerHTML = `<section class="section" style="max-width:640px"><h2>Page not found</h2><p class="sub">That link is not on Herd Yard.</p><p><a class="btn btn-primary" href="#/">Back home</a></p></section>`;
   }
   window.addEventListener("hashchange", route);
   document.getElementById("sell-btn").onclick = () => (location.hash = "#/list");

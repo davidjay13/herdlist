@@ -108,6 +108,15 @@ const PAGES = {
     image: "/og/signin.jpg",
     imageAlt: "Herd Yard account",
     robots: "noindex,nofollow"
+  },
+  bugs: {
+    key: "bugs",
+    path: "/bugs",
+    title: "Bug squash report | Herd Yard",
+    desc: "Bugs found and fixed on this Herd Yard build.",
+    image: "/og/updates.jpg",
+    imageAlt: "Herd Yard bug squash report",
+    robots: "noindex,follow"
   }
 };
 
@@ -253,7 +262,7 @@ function inject(html, seo) {
 function isSpaPath(urlPath) {
   const p = String(urlPath || "/").split("?")[0];
   if (p === "/" || p === "/index.html") return true;
-  if (/^\/(browse|producers|pricing|faq|list|updates|signin|signup)\/?$/.test(p)) return true;
+  if (/^\/(browse|producers|pricing|faq|list|updates|signin|signup|bugs)\/?$/.test(p)) return true;
   if (/^\/listing\/[^/]+\/?$/.test(p)) return true;
   if (/^\/ranch\/[^/]+\/?$/.test(p)) return true;
   if (/^\/account(\/.*)?$/.test(p)) return true;

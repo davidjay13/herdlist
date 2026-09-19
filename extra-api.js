@@ -193,10 +193,45 @@ module.exports = async function extraApi(ctx) {
     if (isPlaceholderAvatar(p.avatar)) p.avatar = LOGO;
   });
 
-  function withProducer(listing) {
+  function remainingDays(listedAt, stored) {
+    const t = Date.parse(listedAt || "");
+    if (!t) return Math.max(0, Number(stored || 0) || 0);
+    return Math.max(0, Math.ceil((t + 60 * 86400000 - Date.now()) / 86400000));
+  }
+  function publicProducer(p, revealContact) {
+    if (!p) return null;
+    const out = {
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      owner: p.owner,
+      location: p.location || "",
+      rating: p.rating,
+      reviews: p.reviews,
+      sold: p.sold || 0,
+      followers: p.followers || 0,
+      about: p.about || "",
+      operations: p.operations || "",
+      associations: p.associations || [],
+      cover: p.cover,
+      avatar: avatarSrc(p.avatar),
+      lat: p.lat,
+      lng: p.lng,
+      website: p.website || "",
+    };
+    if (revealContact) {
+      out.phone = p.phone || "";
+      out.email = p.email || "";
+    }
+    return out;
+  }
+
+  function withProducer(listing, revealContact) {
     const p = db.data.producers.find((x) => x.id === listing.producerId);
-    if (!p) return Object.assign({}, listing, { producer: null });
-    return Object.assign({}, listing, { producer: Object.assign({}, p, { avatar: avatarSrc(p.avatar) }) });
+    return Object.assign({}, listing, {
+      daysLeft: remainingDays(listing.listedAt, listing.daysLeft),
+      producer: publicProducer(p, revealContact),
+    });
   }
 
   if (url === "/api/me" && method === "GET") {
@@ -215,7 +250,7 @@ module.exports = async function extraApi(ctx) {
 
   if (url === "/api/producers" && method === "GET") {
     send(res, 200, { producers: db.data.producers.map(function (p) {
-      return Object.assign({}, p, { avatar: avatarSrc(p.avatar) });
+      return publicProducer(p, false);
     }) });
     return true;
   }
@@ -291,14 +326,14 @@ module.exports = async function extraApi(ctx) {
     const u = userFromCookie(req);
     let list = db.data.listings.slice();
     if (!isAdmin(u)) list = list.filter((l) => l.status !== "sold" && !l.hidden);
-    send(res, 200, { listings: list.map(withProducer) });
+    send(res, 200, { listings: list.map((l) => withProducer(l, false)) });
     return true;
   }
 
   if (url === "/api/admin/listings" && method === "GET") {
     const u = userFromCookie(req);
     if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
-    send(res, 200, { listings: db.data.listings.map(withProducer), admin: true });
+    send(res, 200, { listings: db.data.listings.map((l) => withProducer(l, true)), admin: true });
     return true;
   }
 
@@ -306,7 +341,7 @@ module.exports = async function extraApi(ctx) {
     const u = userFromCookie(req);
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
     const list = db.data.listings.filter((l) => l.userId === u.id);
-    send(res, 200, { listings: list.map(withProducer), admin: isAdmin(u) });
+    send(res, 200, { listings: list.map((l) => withProducer(l, true)), admin: isAdmin(u) });
     return true;
   }
 
@@ -347,7 +382,7 @@ module.exports = async function extraApi(ctx) {
       listing.imageLocked = true;
     }
     await db.save();
-    send(res, 200, { listing: withProducer(listing) });
+    send(res, 200, { listing: withProducer(listing, isAdmin(u) || listing.userId === u.id) });
     return true;
   }
 
@@ -377,8 +412,18 @@ module.exports = async function extraApi(ctx) {
     if (b.about !== undefined) producer.about = String(b.about || "");
     if (b.operations !== undefined) producer.operations = String(b.operations || "");
     if (b.phone !== undefined) producer.phone = String(b.phone || "").trim();
-    if (b.email !== undefined) producer.email = String(b.email || "").trim();
+    if (b.email !== undefined) {
+      const email = String(b.email || "").trim().toLowerCase();
+      producer.email = email;
+      if (email && email.indexOf("@") > 0) {
+        const taken = (db.data.users || []).some((x) => x.id !== u.id && String(x.email || "").toLowerCase() === email);
+        if (!taken) u.email = email;
+      }
+    }
     if (b.website !== undefined) producer.website = String(b.website || "").trim();
+    if (b.associations !== undefined) {
+      producer.associations = String(b.associations || "").split(",").map((s) => s.trim()).filter(Boolean);
+    }
     if (typeof b.avatar === "string" && (b.avatar.startsWith("data:image") || b.avatar.startsWith("http"))) producer.avatar = b.avatar;
     if (typeof b.cover === "string" && (b.cover.startsWith("data:image") || b.cover.startsWith("http"))) producer.cover = b.cover;
     if (u.emailWeeklyStats && !wasStats) {
@@ -433,8 +478,11 @@ module.exports = async function extraApi(ctx) {
       normName(x.name) === nk
     );
     if (!p) return send(res, 404, { error: "Ranch not found" }), true;
-    const listings = db.data.listings.filter((l) => l.producerId === p.id).map(withProducer);
-    send(res, 200, { producer: Object.assign({}, p, { avatar: avatarSrc(p.avatar) }), listings });
+    const viewer = userFromCookie(req);
+    const listings = db.data.listings
+      .filter((l) => l.producerId === p.id && l.status !== "sold" && !l.hidden)
+      .map((l) => withProducer(l, false));
+    send(res, 200, { producer: publicProducer(p, !!viewer), listings });
     return true;
   }
 
