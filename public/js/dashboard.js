@@ -359,7 +359,7 @@
       return "<div class='news-ribbon'><div class='news-kicker'>Industry news</div>" +
         "<div class='news-item'>Headlines will appear here after an admin pastes article links.</div></div>";
     }
-    var doubled = list.concat(list);
+    var doubled = list.concat(list).concat(list).concat(list);
     var rows = doubled.map(function (n) {
       var href = String(n.url || "#").split("'").join("");
       var sub = n.subtext || n.source || "";
