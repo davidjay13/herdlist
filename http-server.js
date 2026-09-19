@@ -10,6 +10,7 @@ const messagesApi = require("./messages-api");
 const newsApi = require("./news-api");
 const stripeBilling = require("./stripe-billing");
 const seo = require("./seo");
+const mail = require("./mail");
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC = path.join(__dirname, "public");
@@ -125,7 +126,7 @@ const server = http.createServer(async (req, res) => {
   const url = req.url.split("?")[0];
   const method = req.method;
   try {
-    if (url === "/api/health") return send(res, 200, { ok: true, persist: db.persist });
+    if (url === "/api/health") return send(res, 200, { ok: true, persist: db.persist, mail: mail.configured() });
     if (await newsApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
     if (await extraApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
     if (await messagesApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
@@ -154,6 +155,7 @@ const server = http.createServer(async (req, res) => {
       const token = crypto.randomBytes(24).toString("hex");
       db.data.sessions.push({ token, userId: id });
       await db.save();
+      mail.welcome({ id: id, name: name, email: email });
       return send(res, 200, { user: { id, name, email } }, setSession(res, token));
     }
 
@@ -201,6 +203,7 @@ const server = http.createServer(async (req, res) => {
       const listing = { id, producerId: producer.id, userId: u.id, title, breed: b.breed || "Angus", klass: b.klass || "Cow-Calf Pair", category: b.category || "Cattle", head: Number(b.head || 1), unit: b.category === "Genetics" ? "Units" : "Head", price, priceType: price == null ? "contact" : "per_head", daysLeft: 60, listedAt: new Date().toISOString().slice(0, 10), location: b.location || "", lat: Number(b.lat || 39.8), lng: Number(b.lng || -98.5), status: "active", image, images: uploaded.length ? uploaded : [image], description: String(b.description || ""), details: { ListedBy: u.name } };
       db.data.listings.unshift(listing);
       await db.save();
+      mail.listingLive(u, listing);
       return send(res, 200, { listing: withProducer(listing) });
     }
 
@@ -248,6 +251,8 @@ const server = http.createServer(async (req, res) => {
       db.data.follows.push({ userId: u.id, producerId: p.id });
       p.followers = (p.followers || 0) + 1;
       await db.save();
+      var owner = db.data.users.find(function (x) { return x.id === p.userId; });
+      if (owner && owner.id !== u.id) mail.followed(owner, u.name, p.name);
       return send(res, 200, { following: true });
     }
 

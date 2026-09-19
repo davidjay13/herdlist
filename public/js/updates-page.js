@@ -1,6 +1,14 @@
 (function () {
   const UPDATES = [
     {
+      v: "0.5.10",
+      date: "Sep 19, 2026",
+      items: [
+        "Transactional email: welcome when you create an account, a note when your listing goes live, an email when someone messages you, and a note when someone follows your ranch.",
+        "David also gets a copy when a new account is created."
+      ]
+    },
+    {
       v: "0.5.9",
       date: "Sep 19, 2026",
       items: [

@@ -1,3 +1,4 @@
+const mail = require("./mail");
 module.exports = async function messagesApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie } = ctx;
   if (!db.data.messages) db.data.messages = [];
@@ -75,6 +76,10 @@ module.exports = async function messagesApi(ctx) {
     };
     db.data.messages.push(msg);
     await db.save();
+    if (toUser) {
+      var owner = db.data.users.find(function (x) { return x.id === toUser; });
+      if (owner) mail.newMessage(owner, u.name, listing.title, body, listing.id);
+    }
     send(res, 200, { ok: true, message: decorateMessage(msg, u) });
     return true;
   }
@@ -117,6 +122,10 @@ module.exports = async function messagesApi(ctx) {
     };
     db.data.messages.push(msg);
     await db.save();
+    if (msg.toUser) {
+      var recip = db.data.users.find(function (x) { return x.id === msg.toUser; });
+      if (recip) mail.newMessage(recip, u.name, listing.title, body, listing.id);
+    }
     send(res, 200, { ok: true, message: decorateMessage(msg, u) });
     return true;
   }

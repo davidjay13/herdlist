@@ -1,0 +1,192 @@
+const SITE = "https://herd-yard.com";
+const FROM = process.env.MAIL_FROM || "Herd Yard <hello@herd-yard.com>";
+const NOTIFY = process.env.MAIL_NOTIFY || "david@davidjay.com";
+
+function configured() {
+  return !!(process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY);
+}
+
+function usable(email) {
+  const s = String(email || "").trim().toLowerCase();
+  if (!s || s.indexOf("@") < 1) return false;
+  if (s.indexOf("@herd-yard.local") >= 0) return false;
+  if (s.indexOf("@example.com") >= 0) return false;
+  return true;
+}
+
+function esc(s) {
+  return String(s || "")
+    .replace(/&/g, "&" + "amp;")
+    .replace(/</g, "&" + "lt;")
+    .replace(/>/g, "&" + "gt;");
+}
+
+function wrap(preheader, heading, bodyHtml, ctaLabel, ctaHref) {
+  const btn = ctaLabel
+    ? '<p style="margin:28px 0 8px"><a href="' + ctaHref + '" style="display:inline-block;background:#1b6b45;color:#fffcf7;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:600;font-family:Arial,sans-serif">' + esc(ctaLabel) + "</a></p>"
+    : "";
+  return (
+    '<!doctype html><html><body style="margin:0;padding:0;background:#f4f1ea">' +
+    '<div style="display:none;max-height:0;overflow:hidden">' + esc(preheader) + "</div>" +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px">' +
+    '<tr><td align="center">' +
+    '<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fffcf7;border:1px solid #d8e0d6;border-radius:16px;overflow:hidden">' +
+    '<tr><td style="background:#0f3f28;padding:18px 24px;color:#c4a35a;font-family:Arial,sans-serif;letter-spacing:.12em;font-size:12px;font-weight:700">HERD YARD</td></tr>' +
+    '<tr><td style="padding:28px 24px 8px;font-family:Georgia,serif;font-size:26px;color:#142018">' + esc(heading) + "</td></tr>" +
+    '<tr><td style="padding:0 24px 32px;font-family:Arial,sans-serif;font-size:16px;line-height:1.55;color:#3a4a3e">' +
+    bodyHtml + btn +
+    '<p style="margin:28px 0 0;font-size:13px;color:#6b7a6e">Herd Yard — private-treaty cattle, no commission.<br><a href="' + SITE + '" style="color:#1b6b45">herd-yard.com</a></p>' +
+    "</td></tr></table></td></tr></table></body></html>"
+  );
+}
+
+async function sendViaResend(payload) {
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + process.env.RESEND_API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: FROM,
+      to: [payload.to],
+      bcc: payload.bcc ? [payload.bcc] : undefined,
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text
+    })
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error("Resend " + r.status + " " + t.slice(0, 200));
+  }
+  return r.json();
+}
+
+async function sendViaSendgrid(payload) {
+  const personalizations = [{ to: [{ email: payload.to }] }];
+  if (payload.bcc) personalizations[0].bcc = [{ email: payload.bcc }];
+  const r = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + process.env.SENDGRID_API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      personalizations: personalizations,
+      from: { email: (FROM.match(/<([^>]+)>/) || [0, "hello@herd-yard.com"])[1], name: "Herd Yard" },
+      subject: payload.subject,
+      content: [
+        { type: "text/plain", value: payload.text || payload.subject },
+        { type: "text/html", value: payload.html }
+      ]
+    })
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error("SendGrid " + r.status + " " + t.slice(0, 200));
+  }
+  return { ok: true };
+}
+
+async function send(payload) {
+  if (!usable(payload.to)) return { skipped: true };
+  if (!configured()) {
+    console.log("[mail] skipped (no RESEND_API_KEY or SENDGRID_API_KEY):", payload.subject, "→", payload.to);
+    return { skipped: true, reason: "not-configured" };
+  }
+  try {
+    if (process.env.RESEND_API_KEY) return await sendViaResend(payload);
+    return await sendViaSendgrid(payload);
+  } catch (err) {
+    console.error("[mail] send failed:", err && err.message);
+    return { error: String(err && err.message) };
+  }
+}
+
+function fire(payload) {
+  Promise.resolve()
+    .then(function () { return send(payload); })
+    .catch(function (err) { console.error("[mail]", err && err.message); });
+}
+
+function welcome(user) {
+  const name = user.name || "there";
+  fire({
+    to: user.email,
+    subject: "Welcome to Herd Yard",
+    text: "Hi " + name + ", your Herd Yard account is ready. Browse cattle, list a group, and message ranches at " + SITE + "/browse",
+    html: wrap(
+      "Your Herd Yard account is ready.",
+      "Welcome, " + name,
+      "<p>Your account is live. You can browse nationwide listings, follow ranches, and publish cattle when you are ready.</p><p>No commission on private treaty.</p>",
+      "Open your dashboard",
+      SITE + "/account"
+    )
+  });
+  if (usable(NOTIFY) && String(user.email).toLowerCase() !== NOTIFY.toLowerCase()) {
+    fire({
+      to: NOTIFY,
+      subject: "New Herd Yard account: " + (user.name || user.email),
+      text: (user.name || "") + " <" + user.email + "> just signed up.",
+      html: wrap(
+        "New signup",
+        "New account",
+        "<p><b>" + esc(user.name || "") + "</b><br>" + esc(user.email) + "</p>",
+        "Open admin",
+        SITE + "/account"
+      )
+    });
+  }
+}
+
+function listingLive(user, listing) {
+  fire({
+    to: user.email,
+    subject: "Your listing is live: " + (listing.title || "Cattle"),
+    text: "Your listing \"" + (listing.title || "Cattle") + "\" is up on Herd Yard. " + SITE + "/listing/" + listing.id,
+    html: wrap(
+      "Your cattle listing is live.",
+      "Listing published",
+      "<p><b>" + esc(listing.title || "Cattle") + "</b> is now on Herd Yard.</p><p>" + esc([listing.breed, listing.klass, listing.location].filter(Boolean).join(" · ")) + "</p>",
+      "View listing",
+      SITE + "/listing/" + listing.id
+    )
+  });
+}
+
+function newMessage(toUser, fromName, listingTitle, body, listingId) {
+  if (!toUser || !toUser.email) return;
+  const preview = String(body || "").replace(/\s+/g, " ").trim().slice(0, 220);
+  fire({
+    to: toUser.email,
+    subject: (fromName || "Someone") + " messaged you on Herd Yard",
+    text: (fromName || "A buyer") + " wrote about " + (listingTitle || "a listing") + ": " + preview + "\n\n" + SITE + "/account/messages",
+    html: wrap(
+      "New message on Herd Yard",
+      "New message",
+      "<p><b>" + esc(fromName || "A member") + "</b> wrote about <b>" + esc(listingTitle || "a listing") + "</b>:</p>" +
+        '<blockquote style="margin:12px 0;padding:12px 14px;background:#eef4ef;border-radius:10px;color:#142018">' + esc(preview) + "</blockquote>",
+      "Open messages",
+      SITE + "/account/messages"
+    )
+  });
+}
+
+function followed(owner, followerName, ranchName) {
+  if (!owner) return;
+  fire({
+    to: owner.email,
+    subject: (followerName || "Someone") + " followed " + (ranchName || "your ranch"),
+    text: (followerName || "A member") + " followed " + (ranchName || "your ranch") + " on Herd Yard.",
+    html: wrap(
+      "New follower",
+      "New follower",
+      "<p><b>" + esc(followerName || "A member") + "</b> started following <b>" + esc(ranchName || "your ranch") + "</b> on Herd Yard.</p>",
+      "Open dashboard",
+      SITE + "/account"
+    )
+  });
+}
+
+module.exports = { configured, send, fire, welcome, listingLive, newMessage, followed, usable };

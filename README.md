@@ -47,3 +47,18 @@ PORT=8080 node http-server.js
 ```
 
 Or keep it running with pm2: `pm2 start http-server.js --name rangelist`
+
+
+## Transactional email
+
+Set one of these on the DigitalOcean App Platform service:
+
+- `RESEND_API_KEY` (preferred)
+- or `SENDGRID_API_KEY`
+
+Optional:
+
+- `MAIL_FROM` — default `Herd Yard <hello@herd-yard.com>` (domain must be verified with the provider)
+- `MAIL_NOTIFY` — default `david@davidjay.com` (copy of new-account emails)
+
+Sends on: account created, listing published, new message, ranch followed.
