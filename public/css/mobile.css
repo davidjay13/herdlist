@@ -1,5 +1,10 @@
 @media (max-width: 980px) {
   .section-head .btn { padding: 10px 14px; font-size: 0.88rem; }
+  .section { padding: 16px 16px 28px; }
+  .section-head { margin-bottom: 12px; align-items: flex-start; }
+  .hero { min-height: 0; }
+  .hero-inner { padding: 28px 16px 24px; }
+
 
   .nav-links { display: none !important; }
   .header-actions #acct-btn,
