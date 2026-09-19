@@ -141,32 +141,52 @@ function fire(payload) {
 
 function welcome(user) {
   const name = user.name || "there";
+  return sendWelcome(user.email, name, true);
+}
+
+function sendWelcome(email, name, notifyAdmin) {
+  const n = name || "there";
   fire({
-    to: user.email,
+    to: email,
     subject: "Welcome to Herd Yard",
-    text: "Hi " + name + ", your Herd Yard account is ready. Browse cattle, list a group, and message ranches at " + SITE + "/browse",
+    text: "Hi " + n + ", your Herd Yard account is ready. Browse cattle, list a group, and message ranches at " + SITE + "/browse",
     html: wrap(
       "Your Herd Yard account is ready.",
-      "Welcome, " + name,
+      "Welcome, " + n,
       "<p>Your account is live. You can browse nationwide listings, follow ranches, and publish cattle when you are ready.</p><p>No commission on private treaty.</p>",
       "Open your dashboard",
       SITE + "/account"
     )
   });
-  if (usable(NOTIFY) && String(user.email).toLowerCase() !== NOTIFY.toLowerCase()) {
+  if (notifyAdmin && usable(NOTIFY) && String(email).toLowerCase() !== NOTIFY.toLowerCase()) {
     fire({
       to: NOTIFY,
-      subject: "New Herd Yard account: " + (user.name || user.email),
-      text: (user.name || "") + " <" + user.email + "> just signed up.",
+      subject: "New Herd Yard account: " + n,
+      text: n + " <" + email + "> just signed up.",
       html: wrap(
         "New signup",
         "New account",
-        "<p><b>" + esc(user.name || "") + "</b><br>" + esc(user.email) + "</p>",
+        "<p><b>" + esc(n) + "</b><br>" + esc(email) + "</p>",
         "Open admin",
         SITE + "/account"
       )
     });
   }
+}
+
+function sampleWelcome(email, name) {
+  return send({
+    to: email,
+    subject: "Welcome to Herd Yard",
+    text: "Hi " + (name || "there") + ", your Herd Yard account is ready. Browse cattle, list a group, and message ranches at " + SITE + "/browse",
+    html: wrap(
+      "Your Herd Yard account is ready.",
+      "Welcome, " + (name || "there"),
+      "<p>Your account is live. You can browse nationwide listings, follow ranches, and publish cattle when you are ready.</p><p>No commission on private treaty.</p>",
+      "Open your dashboard",
+      SITE + "/account"
+    )
+  });
 }
 
 function listingLive(user, listing) {
@@ -218,4 +238,4 @@ function followed(owner, followerName, ranchName) {
   });
 }
 
-module.exports = { configured, send, fire, welcome, listingLive, newMessage, followed, usable };
+module.exports = { configured, send, fire, welcome, sampleWelcome, listingLive, newMessage, followed, usable };

@@ -1,3 +1,5 @@
+const mail = require("./mail");
+
 const importedProducers = (() => {
   const rows = [];
   for (let i = 0; i < 8; i++) {
@@ -214,6 +216,16 @@ module.exports = async function extraApi(ctx) {
     send(res, 200, { producers: db.data.producers.map(function (p) {
       return Object.assign({}, p, { avatar: avatarSrc(p.avatar) });
     }) });
+    return true;
+  }
+
+  if (url === "/api/admin/test-email" && method === "POST") {
+    const u = userFromCookie(req);
+    if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
+    const b = await readBody(req);
+    const to = String((b && b.to) || u.email || "").trim();
+    const r = await mail.sampleWelcome(to, u.name || "David");
+    send(res, 200, { ok: !r.error && !r.skipped, result: r, to: to });
     return true;
   }
 

@@ -126,7 +126,7 @@ const server = http.createServer(async (req, res) => {
   const url = req.url.split("?")[0];
   const method = req.method;
   try {
-    if (url === "/api/health") return send(res, 200, { ok: true, persist: db.persist, mail: mail.configured() });
+    if (url === "/api/health") return send(res, 200, { ok: true, persist: db.persist, mail: mail.configured(), mailSample: db.data.mailSampleSentAt || null });
     if (await newsApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
     if (await extraApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
     if (await messagesApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
@@ -273,7 +273,20 @@ const server = http.createServer(async (req, res) => {
 init(seedJson)
   .then((store) => {
     db = store;
-    server.listen(PORT, () => console.log("Herd Yard running on http://localhost:" + PORT + " persist=" + db.persist));
+    server.listen(PORT, () => {
+      console.log("Herd Yard running on http://localhost:" + PORT + " persist=" + db.persist + " mail=" + mail.configured());
+      if (mail.configured() && !db.data.mailSampleSentAt) {
+        mail.sampleWelcome("david@davidjay.com", "David").then(function (r) {
+          db.data.mailSampleSentAt = Date.now();
+          db.data.mailSampleResult = r && (r.ErrorCode != null ? r : { ok: !r.error, error: r.error, skipped: r.skipped });
+          return db.save();
+        }).then(function () {
+          console.log("[mail] sample welcome sent to david@davidjay.com", db.data.mailSampleResult);
+        }).catch(function (err) {
+          console.error("[mail] sample welcome failed", err && err.message);
+        });
+      }
+    });
   })
   .catch((err) => {
     console.error("Failed to start store", err);
