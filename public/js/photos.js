@@ -103,12 +103,12 @@
     var wrap = document.createElement("div");
     wrap.className = "field full";
     wrap.innerHTML =
-      '<label>Photos (up to 4)</label>' +
+      '<label>Photos</label>' +
       '<div id="dropzone">' +
       '<input id="photos" type="file" accept="image/*" multiple style="display:none">' +
       '<div id="drop-hint">' +
-      "<strong>Drop photos here</strong>" +
-      "<span>or click to browse from your phone or computer</span>" +
+      "<strong>Add photos</strong>" +
+      "<span>Click or drop · up to 4</span>" +
       "</div>" +
       '<div id="photo-preview" class="thumbs" style="margin-top:10px;flex-wrap:wrap"></div>' +
       "</div>";
@@ -120,13 +120,13 @@
     var vwrap = document.createElement("div");
     vwrap.className = "field full";
     vwrap.innerHTML =
-      "<label>Video (optional)</label>" +
+      "<label>Video</label>" +
       '<div id="video-dropzone">' +
       '<input id="listing-video" type="file" accept="video/mp4,video/webm,video/quicktime" style="display:none">' +
-      '<div id="video-hint"><strong>Drop a video of the cattle</strong><span>mp4, webm, or mov · 40 MB max · or paste a YouTube link below</span></div>' +
+      '<div id="video-hint"><strong>Add video</strong><span>Click or drop · 40 MB max</span></div>' +
       '<div id="video-name" class="sub" style="margin-top:8px;display:none"></div></div>' +
-      '<div style="margin-top:10px"><label>Or paste a YouTube / Vimeo / mp4 link</label>' +
-      '<input id="video-url" placeholder="https://www.youtube.com/watch?v=..."></div>';
+      '<div style="margin-top:10px"><label>Video link</label>' +
+      '<input id="video-url" placeholder="YouTube, Vimeo, or mp4 URL"></div>';
     if (desc) grid.insertBefore(vwrap, desc);
     else grid.appendChild(vwrap);
     var vzone = document.getElementById("video-dropzone");

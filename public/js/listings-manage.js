@@ -218,19 +218,19 @@
       "<img id='edit-photo-preview' src='" + String(currentSrc).split("'").join("") + "' alt='listing photo' style='width:100%;max-height:260px;object-fit:cover;border-radius:16px;margin:0 0 12px;background:#dce8d8'>" +
       "<div id='edit-dropzone' style='border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:16px;text-align:center;cursor:pointer'>" +
       "<input id='edit-photo-input' type='file' accept='image/*' multiple style='display:none'>" +
-      "<strong style='display:block;color:#0f3f28'>Drop a new photo here</strong>" +
-      "<span style='display:block;font-size:0.88rem;color:#3a4a3e'>or click to choose from your computer</span></div>" +
-      "<div style='margin-top:10px'><label>Or paste an image URL</label>" +
-      "<input id='edit-photo-url' placeholder='https://...'></div></div>" +
-      "<div class='field full'><label>Video (optional)</label>" +
+      "<strong style='display:block;color:#0f3f28'>Replace photo</strong>" +
+      "<span style='display:block;font-size:0.88rem;color:#3a4a3e'>Click or drop</span></div>" +
+      "<div style='margin-top:10px'><label>Photo link</label>" +
+      "<input id='edit-photo-url' placeholder='https://'></div></div>" +
+      "<div class='field full'><label>Video</label>" +
       (listing.video ? "<video controls playsinline src='" + String(listing.video).split("'").join("") + "' style='width:100%;max-height:220px;border-radius:12px;background:#142018;margin:0 0 10px'></video>" : "") +
       "<div id='edit-video-drop' style='border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:16px;text-align:center;cursor:pointer'>" +
       "<input id='edit-video-input' type='file' accept='video/mp4,video/webm,video/quicktime' style='display:none'>" +
-      "<strong style='display:block;color:#0f3f28'>Drop a video here</strong>" +
-      "<span style='display:block;font-size:0.88rem;color:#3a4a3e'>mp4, webm, or mov · 40 MB max</span>" +
-      "<div id='edit-video-name' class='sub' style='margin-top:8px'>" + esc(listing.video || "") + "</div></div>" +
-      "<div style='margin-top:10px'><label>Or paste a YouTube / Vimeo / mp4 link</label>" +
-      "<input id='edit-video-url' placeholder='https://...' value='" + esc(listing.video && String(listing.video).indexOf("http") === 0 ? listing.video : "") + "'></div>" +
+      "<strong style='display:block;color:#0f3f28'>Add video</strong>" +
+      "<span style='display:block;font-size:0.88rem;color:#3a4a3e'>Click or drop · 40 MB max</span>" +
+      "<div id='edit-video-name' class='sub' style='margin-top:8px;display:none'></div></div>" +
+      "<div style='margin-top:10px'><label>Video link</label>" +
+      "<input id='edit-video-url' placeholder='YouTube, Vimeo, or mp4 URL' value='" + esc(listing.video && String(listing.video).indexOf("http") === 0 ? listing.video : "") + "'></div>" +
       "<label style='display:flex;gap:8px;margin-top:10px;cursor:pointer'><input type='checkbox' id='edit-video-clear'> Remove video</label></div>" +
       "<div class='field full'><label>Title</label><input name='title' value='" + esc(listing.title) + "' required></div>" +
       "<div class='field'><label>Breed</label><input name='breed' value='" + esc(listing.breed) + "'></div>" +
@@ -277,7 +277,10 @@
         var f = vinput.files && vinput.files[0];
         if (f && String(f.type).indexOf("video/") === 0) {
           pendingVideo = f;
-          if (vname) vname.textContent = f.name + " · " + Math.round(f.size / 1024 / 1024 * 10) / 10 + " MB";
+          if (vname) {
+            vname.style.display = "block";
+            vname.textContent = f.name + " · " + Math.round(f.size / 1024 / 1024 * 10) / 10 + " MB";
+          }
         }
         vinput.value = "";
       };
@@ -287,7 +290,10 @@
         var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
         if (f && String(f.type).indexOf("video/") === 0) {
           pendingVideo = f;
-          if (vname) vname.textContent = f.name;
+          if (vname) {
+            vname.style.display = "block";
+            vname.textContent = f.name;
+          }
         }
       });
     }
