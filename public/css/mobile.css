@@ -53,12 +53,18 @@
   .dash-kpi { padding: 8px 4px; border-radius: 10px; }
   .dash-kpi b { font-size: 1.05rem; }
   .dash-kpi span { font-size: .62rem; }
-  .view-split-btn { display: none !important; }
   .browse-layout.view-split .map-wrap { display: none !important; }
   .browse-layout.view-split .listings-col,
   .browse-layout.view-split .listings-grid { display: grid !important; }
   .browse-layout.view-split .browse-stage { display: block !important; height: auto !important; }
+  .browse-toolbar { padding: 10px 12px; gap: 8px; }
+  .browse-toolbar > div:first-child { display: none; }
+  .view-toggle { width: 100%; justify-content: stretch; }
+  .view-toggle .btn { flex: 1; max-width: none; padding: 8px 6px; font-size: 0.78rem; text-align: center; }
+  .view-toggle .label-wide { display: none; }
+  .view-toggle .label-short { display: inline; }
 }
+
 
 
 .menu-toggle {

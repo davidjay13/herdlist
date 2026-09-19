@@ -233,7 +233,14 @@ button, input, select, textarea { font-family: inherit; }
   border-bottom: 1px solid var(--line);
   background: var(--white);
 }
-.view-toggle { display: flex; gap: 6px; }
+.view-toggle { display: flex; gap: 4px; flex: 1; justify-content: flex-end; min-width: 0; }
+.view-toggle .btn {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.view-toggle .label-short { display: none; }
 .browse-stage { display: block; min-height: 0; flex: 1; }
 .browse-layout.view-split .browse-stage {
   display: grid;

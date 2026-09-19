@@ -126,7 +126,7 @@
       <p class="sub" style="margin-top:16px">${items.length} listings</p></aside>
       <div class="browse-main"><div class="browse-toolbar"><div><b>Nationwide inventory</b></div>
       <div class="view-toggle">
-        <button class="btn view-split-btn ${q.view==="split"?"btn-primary":"btn-outline"}" data-view="split">Map + cards</button>
+        <button class="btn view-split-btn ${q.view==="split"?"btn-primary":"btn-outline"}" data-view="split"><span class="label-wide">Map + cards</span><span class="label-short">Split</span></button>
         <button class="btn ${q.view==="map"?"btn-primary":"btn-outline"}" data-view="map">Map</button>
         <button class="btn ${q.view==="list"?"btn-primary":"btn-outline"}" data-view="list">Cards</button>
       </div></div>
