@@ -229,6 +229,14 @@ module.exports = async function extraApi(ctx) {
     return true;
   }
 
+  if (url === "/api/admin/mail" && method === "GET") {
+    const u = userFromCookie(req);
+    if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
+    const emails = Array.isArray(db.data.mailLog) ? db.data.mailLog.slice() : [];
+    send(res, 200, { emails: emails, count: emails.length });
+    return true;
+  }
+
   if (url === "/api/admin/accounts" && method === "GET") {
     const u = userFromCookie(req);
     if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;

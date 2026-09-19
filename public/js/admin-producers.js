@@ -69,10 +69,18 @@
       c.style.cssText = "display:block;padding:8px 10px;border-radius:8px;font-weight:560;color:#3a4a3e";
       box.appendChild(c);
     }
+    if (!document.getElementById("nav-emails")) {
+      var em = document.createElement("a");
+      em.id = "nav-emails";
+      em.href = "#/account/emails";
+      em.textContent = "Emails";
+      em.style.cssText = "display:block;padding:8px 10px;border-radius:8px;font-weight:560;color:#3a4a3e";
+      box.appendChild(em);
+    }
   }
 
   function mark() {
-    [["nav-producers", "#/account/producers"], ["nav-accounts", "#/account/accounts"], ["nav-news", "#/account/news"]].forEach(function (pair) {
+    [["nav-producers", "#/account/producers"], ["nav-accounts", "#/account/accounts"], ["nav-news", "#/account/news"], ["nav-emails", "#/account/emails"]].forEach(function (pair) {
       var a = document.getElementById(pair[0]);
       if (!a) return;
       var on = hash().indexOf(pair[1]) === 0;
@@ -269,6 +277,49 @@
     if (sel) sel.onchange = function () { paintAccounts(accounts); };
   }
 
+  function whenMail(ts) {
+    if (!ts) return "";
+    try {
+      return new Date(Number(ts)).toLocaleString([], { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+    } catch (e) { return ""; }
+  }
+  function paintEmails(emails) {
+    var main = document.getElementById("dash-main");
+    if (!main) return;
+    var q = ((document.getElementById("mail-q") && document.getElementById("mail-q").value) || "").trim().toLowerCase();
+    var rows = emails || [];
+    if (q) {
+      rows = rows.filter(function (m) {
+        return String(m.to || "").toLowerCase().indexOf(q) >= 0 || String(m.subject || "").toLowerCase().indexOf(q) >= 0;
+      });
+    }
+    main.innerHTML =
+      "<h2 class='page-title'>Emails</h2>" +
+      "<p class='sub'>Every message Herd Yard has sent. Use this to spot typo addresses. " + rows.length + " shown of " + (emails || []).length + ".</p>" +
+      "<div class='field' style='max-width:360px;margin:16px 0'><label>Search</label>" +
+      "<input id='mail-q' placeholder='Recipient or subject' value='" + esc(q) + "'></div>" +
+      "<div class='panel'>" +
+      (rows.length ? "<div class='row' style='display:flex;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#6b7a6e;font-weight:650;padding:0 0 8px'>" +
+        "<span style='flex:1.4'>To</span><span style='flex:1.6'>Subject</span><span style='width:88px'>Status</span><span style='width:160px'>When</span></div>" +
+        rows.map(function (m) {
+          var st = m.status || "sent";
+          var color = st === "error" ? "#b4532a" : (st === "skipped" ? "#6b7a6e" : "#1b6b45");
+          return "<div class='row' style='display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid #e6eee8'>" +
+            "<span style='flex:1.4;min-width:0'><b style='word-break:break-all'>" + esc(m.to) + "</b>" +
+            (m.error ? "<div class='sub'>" + esc(m.error) + "</div>" : "") + "</span>" +
+            "<span style='flex:1.6;min-width:0'>" + esc(m.subject) + "</span>" +
+            "<span style='width:88px;color:" + color + ";font-weight:650'>" + esc(st) + "</span>" +
+            "<span class='sub' style='width:160px'>" + esc(whenMail(m.at)) + "</span></div>";
+        }).join("") : "<p class='sub'>No emails logged yet. New signups, listings, messages, and follows will show here.</p>") +
+      "</div>";
+    var input = document.getElementById("mail-q");
+    if (input) {
+      input.onkeydown = function (e) {
+        if (e.key === "Enter") paintEmails(emails);
+      };
+    }
+  }
+
   function paintNews(items) {
     var main = document.getElementById("dash-main");
     if (!main) return;
@@ -376,6 +427,16 @@
         .catch(function (e) {
           var main = document.getElementById("dash-main");
           if (main) main.innerHTML = "<p>" + esc(e.message || "Could not load accounts.") + "</p>";
+        });
+      return;
+    }
+    if (hash().indexOf("#/account/emails") === 0) {
+      fetch("/api/admin/mail", { credentials: "include" })
+        .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Admin only"); return d; }); })
+        .then(function (data) { paintEmails((data && data.emails) || []); })
+        .catch(function (e) {
+          var main = document.getElementById("dash-main");
+          if (main) main.innerHTML = "<p>" + esc(e.message || "Could not load emails.") + "</p>";
         });
       return;
     }

@@ -273,6 +273,7 @@ const server = http.createServer(async (req, res) => {
 init(seedJson)
   .then((store) => {
     db = store;
+    mail.attach(db);
     server.listen(PORT, () => {
       console.log("Herd Yard running on http://localhost:" + PORT + " persist=" + db.persist + " mail=" + mail.configured());
       if (mail.configured() && !db.data.mailSampleSentAt) {

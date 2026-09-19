@@ -17,6 +17,7 @@
     if (hash.indexOf("#/account/orders") === 0) return "orders";
     if (hash.indexOf("#/account/messages") === 0) return "messages";
     if (hash.indexOf("#/account/news") === 0) return "admin";
+    if (hash.indexOf("#/account/emails") === 0) return "admin";
     if (hash.indexOf("#/account/producers") === 0) return "admin";
     if (hash.indexOf("#/account/accounts") === 0) return "admin";
     if (hash.indexOf("#/account/global") === 0) return "admin";
@@ -40,6 +41,7 @@
       item("#/account/global", "Global Listings", "nav-global") +
       item("#/account/producers", "Producers", "nav-producers") +
       item("#/account/accounts", "Accounts", "nav-accounts") +
+      item("#/account/emails", "Emails", "nav-emails") +
       item("#/account/news", "News", "nav-news") +
       "</div>";
   }
@@ -89,7 +91,8 @@
       pills = pills.concat([
         ["#/account/global", "Global"],
         ["#/account/producers", "Producers"],
-        ["#/account/news", "News"]
+        ["#/account/news", "News"],
+        ["#/account/emails", "Emails"]
       ]);
     }
     var links = pills.map(function (p) {
@@ -148,6 +151,7 @@
         "<a class='btn btn-outline' href='#/account/global'>Global Listings</a>" +
         "<a class='btn btn-outline' href='#/account/producers'>Producers</a>" +
         "<a class='btn btn-outline' href='#/account/accounts'>Accounts</a>" +
+        "<a class='btn btn-outline' href='#/account/emails'>Emails</a>" +
         "<a class='btn btn-outline' href='#/account/news'>News</a></div></div>" : "") +
       "<input id='avatar-file' type='file' accept='image/*' style='display:none'>" +
       "<input id='cover-file' type='file' accept='image/*' style='display:none'>";

@@ -2,6 +2,22 @@ const SITE = "https://herd-yard.com";
 const FROM = process.env.MAIL_FROM || "Herd Yard <hello@herd-yard.com>";
 const NOTIFY = process.env.MAIL_NOTIFY || "david@davidjay.com";
 
+let store = null;
+function attach(db) {
+  store = db;
+  if (store && store.data && !Array.isArray(store.data.mailLog)) store.data.mailLog = [];
+}
+
+function record(entry) {
+  try {
+    if (!store || !store.data) return;
+    if (!Array.isArray(store.data.mailLog)) store.data.mailLog = [];
+    store.data.mailLog.unshift(entry);
+    if (store.data.mailLog.length > 3000) store.data.mailLog.length = 3000;
+    if (typeof store.save === "function") store.save().catch(function () {});
+  } catch (e) {}
+}
+
 function postmarkToken() {
   return process.env.POSTMARK_SERVER_TOKEN || process.env.POSTMARK_API_TOKEN || process.env.POSTMARK_API_KEY || "";
 }
@@ -118,17 +134,47 @@ async function sendViaSendgrid(payload) {
 }
 
 async function send(payload) {
-  if (!usable(payload.to)) return { skipped: true };
+  const to = String((payload && payload.to) || "").trim();
+  const subject = String((payload && payload.subject) || "");
+  const row = {
+    id: "e" + Date.now() + Math.floor(Math.random() * 1000),
+    to: to,
+    subject: subject,
+    at: Date.now(),
+    status: "sent",
+    error: "",
+    messageId: ""
+  };
+  if (!usable(payload.to)) {
+    row.status = "skipped";
+    row.error = "invalid address";
+    record(row);
+    return { skipped: true };
+  }
   if (!configured()) {
     console.log("[mail] skipped (no POSTMARK_SERVER_TOKEN):", payload.subject, "→", payload.to);
+    row.status = "skipped";
+    row.error = "not-configured";
+    record(row);
     return { skipped: true, reason: "not-configured" };
   }
   try {
-    if (postmarkToken()) return await sendViaPostmark(payload);
-    if (process.env.RESEND_API_KEY) return await sendViaResend(payload);
-    return await sendViaSendgrid(payload);
+    var result;
+    if (postmarkToken()) result = await sendViaPostmark(payload);
+    else if (process.env.RESEND_API_KEY) result = await sendViaResend(payload);
+    else result = await sendViaSendgrid(payload);
+    row.messageId = (result && (result.MessageID || result.id)) || "";
+    if (result && result.error) {
+      row.status = "error";
+      row.error = String(result.error);
+    }
+    record(row);
+    return result;
   } catch (err) {
     console.error("[mail] send failed:", err && err.message);
+    row.status = "error";
+    row.error = String(err && err.message);
+    record(row);
     return { error: String(err && err.message) };
   }
 }
@@ -238,4 +284,4 @@ function followed(owner, followerName, ranchName) {
   });
 }
 
-module.exports = { configured, send, fire, welcome, sampleWelcome, listingLive, newMessage, followed, usable };
+module.exports = { configured, send, fire, welcome, sampleWelcome, listingLive, newMessage, followed, usable, attach };

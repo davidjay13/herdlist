@@ -1,6 +1,13 @@
 (function () {
   const UPDATES = [
     {
+      v: "0.5.11",
+      date: "Sep 19, 2026",
+      items: [
+        "Admin → Emails lists every outbound message: recipient, subject, status, and time, with search for typo addresses."
+      ]
+    },
+    {
       v: "0.5.10",
       date: "Sep 19, 2026",
       items: [
