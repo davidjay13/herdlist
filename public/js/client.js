@@ -82,10 +82,15 @@
     var cta = document.querySelector(".mobile-menu .menu-cta");
     if (cta) cta.style.display = logged ? "none" : "";
   }
+  function listingAlt(l) {
+    return [l.title, l.breed, l.klass, l.location].filter(Boolean).join(" · ") || "Cattle listing";
+  }
   function listingCard(l) {
     const p = l.producer;
+    const alt = esc(listingAlt(l));
     return `<article class="listing-card" onclick="location.hash='#/listing/${esc(l.id)}'">
-      <div class="thumb" style="background-image:url('${cssUrl(l.image)}')">
+      <div class="thumb">
+        <img src="${esc(l.image || "/og/listing.jpg")}" alt="${alt}">
         <span class="badge">${esc(p ? p.name : "Ranch")}</span>
         <span class="days">${esc(daysBadge(l))}</span>
         ${l.video ? '<span class="play-badge">Video</span>' : ""}
@@ -139,12 +144,22 @@
     return [base[0] + ((h % 80)-40)/120, base[1] + (((h>>8)%80)-40)/80];
   }
   function browse() {
-    const params = new URLSearchParams(location.hash.split("?")[1] || "");
+    const params = new URLSearchParams((location.hash.split("?")[1] || location.search.replace(/^\?/, "") || ""));
     const isMobile = window.matchMedia("(max-width: 980px)").matches;
     let view = params.get("view") || "split";
     if (isMobile) view = "split";
-    const q = { category: params.get("category") || "", breed: params.get("breed") || "", klass: params.get("klass") || "", view: view };
-    const items = state.listings.filter((l) => (!q.category || l.category === q.category) && (!q.breed || l.breed === q.breed) && (!q.klass || l.klass === q.klass));
+    const q = { category: params.get("category") || "", breed: params.get("breed") || "", klass: params.get("klass") || "", view: view, q: params.get("q") || "" };
+    const needle = q.q.trim().toLowerCase();
+    const items = state.listings.filter((l) => {
+      if (q.category && l.category !== q.category) return false;
+      if (q.breed && l.breed !== q.breed) return false;
+      if (q.klass && l.klass !== q.klass) return false;
+      if (needle) {
+        const blob = [l.title, l.breed, l.klass, l.location, l.description, l.category, l.producer && l.producer.name].join(" ").toLowerCase();
+        if (blob.indexOf(needle) < 0) return false;
+      }
+      return true;
+    });
     const PAGE = 9;
     const pages = Math.max(1, Math.ceil(items.length / PAGE));
     let page = Math.max(1, parseInt(params.get("page") || "1", 10) || 1);
@@ -161,6 +176,7 @@
     }
     const viewCls = q.view === "map" ? "view-map" : q.view === "list" ? "view-list" : "view-split";
     app.innerHTML = `<div class="browse-layout ${viewCls}"><aside class="filters"><h3>Filter listings</h3>
+      <div class="field"><label>Search</label><input id="f-q" value="${esc(q.q)}" placeholder="Breed, town, ranch..."></div>
       <div class="filter-row">
       <div class="field"><label>Category</label><select id="f-cat"><option value="">All</option>${RL.CATEGORIES.map((c) => `<option ${c===q.category?"selected":""}>${c}</option>`).join("")}</select></div>
       <div class="field"><label>Breed</label><select id="f-breed"><option value="">All breeds</option>${RL.BREEDS.map((c) => `<option ${c===q.breed?"selected":""}>${c}</option>`).join("")}</select></div>
@@ -191,13 +207,19 @@
     if (prev) prev.onclick = () => { if (page > 1) browseHash({ page: String(page - 1) }); };
     if (nxt) nxt.onclick = () => { if (page < pages) browseHash({ page: String(page + 1) }); };
     if (isMobile) {
-      ["f-cat", "f-breed", "f-klass"].forEach(function (id) {
+      ["f-q", "f-cat", "f-breed", "f-klass"].forEach(function (id) {
         var el = document.getElementById(id);
-        if (el) el.onchange = function () { document.getElementById("apply-f").click(); };
+        if (!el) return;
+        el.onchange = function () { document.getElementById("apply-f").click(); };
       });
     }
+    var qEl = document.getElementById("f-q");
+    if (qEl) qEl.onkeydown = function (ev) {
+      if (ev.key === "Enter") { ev.preventDefault(); document.getElementById("apply-f").click(); }
+    };
     $("#apply-f").onclick = () => {
       const next = new URLSearchParams();
+      if ($("#f-q") && $("#f-q").value.trim()) next.set("q", $("#f-q").value.trim());
       if ($("#f-cat").value) next.set("category", $("#f-cat").value);
       if ($("#f-breed").value) next.set("breed", $("#f-breed").value);
       if ($("#f-klass").value) next.set("klass", $("#f-klass").value);
@@ -254,7 +276,7 @@
     const vid = videoKind(l.video);
     const heroMedia = videoHero(vid, imgs[0]);
     app.innerHTML = `<div class="detail"><div>
-      <div class="gallery ${vid ? "has-video" : ""}" id="hero-img" ${vid ? "" : `style="background-image:url('${cssUrl(imgs[0])}')"`}>${heroMedia}</div>
+      <div class="gallery ${vid ? "has-video" : ""}" id="hero-img" ${vid ? "" : `style="background-image:url('${cssUrl(imgs[0])}')"`}>${vid ? heroMedia : `<img src="${esc(imgs[0] || "")}" alt="${esc(listingAlt(l))}" style="width:100%;height:100%;object-fit:cover">`}</div>
       <div class="thumbs">${vid ? `<button type="button" class="on thumb-video" data-video="1">Video</button>` : ""}${imgs.map((src,i)=>`<button type="button" class="${!vid && i===0?"on":""}" style="background-image:url('${cssUrl(src)}')" data-src="${esc(src)}"></button>`).join("")}</div>
       <h2 style="margin-top:22px">${esc(l.title)}</h2>
       <p class="meta">${esc(l.breed)} \u00b7 ${esc(l.klass)} \u00b7 ${esc(l.head)} ${esc(l.unit)} \u00b7 ${esc(l.location||"")}</p>
@@ -264,7 +286,7 @@
       <p class="sub">${esc(daysBadge(l))} \u00b7 listed ${esc(l.listedAt)}</p>
       <button class="btn btn-primary btn-wide btn-lg" id="contact-btn" style="margin-top:12px">${state.user?"Message the ranch":"Sign in to contact"}</button>
       <button class="btn btn-outline btn-wide" id="follow-btn" style="margin-top:8px">Follow ranch</button>
-      <div class="producer-mini"><img src="${esc(p.avatar||"/cowboy.svg?v=2")}" alt=""><div>
+      <div class="producer-mini"><img src="${esc(p.avatar||"/cowboy.svg?v=2")}" alt="${esc(p.name || "Ranch")}"><div>
       <a href="#/ranch/${esc(p.slug||p.id)}"><b>${esc(p.name)}</b></a>
       <div class="meta">${esc(p.location||"")}</div></div></div></aside></div>`;
     try { fetch("/api/listings/"+id+"/view", { method: "POST", credentials: "include" }); } catch (e) {}
@@ -370,6 +392,17 @@
       else if (parts[0]==="account") window.HerdSeo.apply("account");
       else window.HerdSeo.apply(parts[0]);
     }
+    try {
+      var pathHit = "/" + (parts.join("/") || "");
+      if (pathHit.indexOf("/account") !== 0 && pathHit.indexOf("/signin") !== 0) {
+        fetch("/api/stats/hit", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: pathHit, ref: document.referrer || "" })
+        });
+      }
+    } catch (e) {}
     if (mapInst) { mapInst.remove(); mapInst = null; }
     if (parts[0]==="listing" && parts[1] && !state.listingCache[parts[1]]) {
       try { const r = await api("/api/listings/"+parts[1]); state.listingCache[r.listing.id]=r.listing; } catch(e){}

@@ -22,6 +22,24 @@
   }
 
 
+  function uploadPhoto(blob) {
+    if (!blob) return Promise.resolve("");
+    return fetch("/api/upload/photo", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": blob.type || "image/jpeg",
+        "X-File-Name": "photo.jpg"
+      },
+      body: blob
+    }).then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) throw new Error(data.error || "Photo upload failed");
+        return data.url;
+      });
+    });
+  }
+
   function compressImage(file) {
     return new Promise(function (resolve, reject) {
       if (!file || !String(file.type).startsWith("image/")) return resolve(null);
@@ -41,7 +59,9 @@
         canvas.height = h;
         canvas.getContext("2d").drawImage(img, 0, 0, w, h);
         URL.revokeObjectURL(url);
-        resolve(canvas.toDataURL("image/jpeg", 0.72));
+        canvas.toBlob(function (blob) {
+          resolve(blob || null);
+        }, "image/jpeg", 0.72);
       };
       img.onerror = function () {
         URL.revokeObjectURL(url);
@@ -205,8 +225,14 @@
         var btn = form.querySelector("button");
         if (btn) btn.disabled = true;
         Promise.all(picked.slice(0, 4).map(compressImage))
+          .then(function (blobs) {
+            blobs = (blobs || []).filter(Boolean);
+            if (!blobs.length) return [];
+            if (btn) btn.textContent = "Uploading photos...";
+            return Promise.all(blobs.map(uploadPhoto));
+          })
           .then(function (images) {
-            images = images.filter(Boolean);
+            images = (images || []).filter(Boolean);
             var body = {};
             Array.prototype.forEach.call(form.elements, function (el) {
               if (!el.name || el.type === "file") return;

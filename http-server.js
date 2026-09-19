@@ -13,6 +13,7 @@ const seo = require("./seo");
 const mail = require("./mail");
 const weeklyMail = require("./weekly-mail");
 const videoStore = require("./video-store");
+const photoStore = require("./photo-store");
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC = path.join(__dirname, "public");
@@ -139,7 +140,17 @@ function serveStatic(req, res) {
     }));
     return res.end(buf);
   }
-  if (urlPath === "/" || urlPath === "/index.html" || seo.isSpaPath(urlPath)) return sendIndex(res, urlPath);
+  if (urlPath.startsWith("/uploads/photos/")) {
+    const file = photoStore.diskFile(urlPath);
+    if (!file || !fs.existsSync(file)) { res.writeHead(404); return res.end("Not found"); }
+    const buf = fs.readFileSync(file);
+    res.writeHead(200, headers({
+      "Content-Type": photoStore.mimeFor(file),
+      "Content-Length": buf.length,
+      "Cache-Control": "public, max-age=31536000, immutable"
+    }));
+    return res.end(buf);
+  }
   const file = path.normalize(path.join(PUBLIC, urlPath));
   if (!file.startsWith(PUBLIC)) { res.writeHead(403); return res.end(); }
   if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
@@ -169,8 +180,8 @@ function withProducer(listing) {
 
 const server = http.createServer(async (req, res) => {
   const host = String(req.headers.host || "").split(":")[0].toLowerCase();
-  if (host === "www.herd-yard.com") {
-    res.writeHead(301, headers({ Location: "https://herd-yard.com" + req.url }));
+  if (host === "www.herd-yard.com" || host === "herdyard.com" || host === "www.herdyard.com") {
+    res.writeHead(301, headers({ Location: "https://herd-yard.com" + req.url, "Cache-Control": "public, max-age=3600" }));
     return res.end();
   }
   const url = req.url.split("?")[0];
@@ -231,7 +242,7 @@ const server = http.createServer(async (req, res) => {
 
     if (url === "/api/listings" && method === "GET") {
       const q = new URL(req.url, "http://x").searchParams;
-      let list = db.data.listings.filter((l) => l.status !== "sold" && !l.hidden);
+      let list = db.data.listings.filter((l) => l.status !== "sold" && !l.hidden && !seo.isTestListing(l));
       if (q.get("category")) list = list.filter((l) => l.category === q.get("category"));
       if (q.get("breed")) list = list.filter((l) => l.breed === q.get("breed"));
       if (q.get("klass")) list = list.filter((l) => l.klass === q.get("klass"));
@@ -251,9 +262,10 @@ const server = http.createServer(async (req, res) => {
       })();
       const id = "l" + Date.now();
       const price = b.price === "" || b.price == null ? null : Number(b.price);
-      const uploaded = Array.isArray(b.images) ? b.images.filter((s) => typeof s === "string" && s.startsWith("data:image")).slice(0, 4) : [];
-      if (typeof b.image === "string" && b.image.startsWith("data:image") && !uploaded.length) uploaded.push(b.image);
-      const image = uploaded[0] || b.image || "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80";
+      const uploaded = photoStore.persistList(
+        (Array.isArray(b.images) ? b.images : []).concat(typeof b.image === "string" ? [b.image] : [])
+      );
+      const image = uploaded[0] || photoStore.persistAny(b.image) || "/og/listing.jpg";
       const listing = { id, producerId: producer.id, userId: u.id, title, breed: b.breed || "Angus", klass: b.klass || "Cow-Calf Pair", category: b.category || "Cattle", head: Number(b.head || 1), unit: b.category === "Genetics" ? "Units" : "Head", price, priceType: price == null ? "contact" : "per_head", daysLeft: 60, listedAt: new Date().toISOString().slice(0, 10), location: b.location || "", lat: Number(b.lat || 39.8), lng: Number(b.lng || -98.5), status: "active", image, images: uploaded.length ? uploaded : [image], video: videoStore.validVideo(b.video), description: String(b.description || ""), details: { ListedBy: u.name } };
       db.data.listings.unshift(listing);
       await db.save();

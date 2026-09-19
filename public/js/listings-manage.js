@@ -46,13 +46,28 @@
         canvas.height = h;
         canvas.getContext("2d").drawImage(img, 0, 0, w, h);
         URL.revokeObjectURL(url);
-        resolve(canvas.toDataURL("image/jpeg", 0.72));
+        canvas.toBlob(function (blob) { resolve(blob || null); }, "image/jpeg", 0.72);
       };
       img.onerror = function () {
         URL.revokeObjectURL(url);
         reject(new Error("Could not read photo"));
       };
       img.src = url;
+    });
+  }
+
+  function uploadPhoto(blob) {
+    if (!blob) return Promise.resolve("");
+    return fetch("/api/upload/photo", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": blob.type || "image/jpeg", "X-File-Name": "photo.jpg" },
+      body: blob
+    }).then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) throw new Error(data.error || "Photo upload failed");
+        return data.url;
+      });
     });
   }
 
@@ -303,7 +318,10 @@
       Promise.resolve()
         .then(function () {
           if (!pendingPhotos.length) return [];
-          return Promise.all(pendingPhotos.map(compressImage));
+          if (btn) btn.textContent = "Uploading photos...";
+          return Promise.all(pendingPhotos.map(compressImage)).then(function (blobs) {
+            return Promise.all((blobs || []).filter(Boolean).map(uploadPhoto));
+          });
         })
         .then(function (images) {
           images = (images || []).filter(Boolean);

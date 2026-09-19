@@ -1,6 +1,8 @@
 const mail = require("./mail");
 const weeklyMail = require("./weekly-mail");
 const videoStore = require("./video-store");
+const photoStore = require("./photo-store");
+const seo = require("./seo");
 
 const importedProducers = (() => {
   const rows = [];
@@ -249,6 +251,59 @@ module.exports = async function extraApi(ctx) {
     return true;
   }
 
+  if (url === "/api/upload/photo" && method === "POST") {
+    const u = userFromCookie(req);
+    if (!u) return send(res, 401, { error: "Sign in required" }), true;
+    try {
+      const saved = await photoStore.saveFromReq(req);
+      send(res, 200, saved);
+    } catch (err) {
+      send(res, 400, { error: (err && err.message) || "Could not upload photo." });
+    }
+    return true;
+  }
+
+  if (url === "/api/stats/hit" && method === "POST") {
+    const b = await readBody(req);
+    const pathName = String((b && b.path) || "").slice(0, 180);
+    if (!pathName || pathName.indexOf("/account") === 0 || pathName.indexOf("/signin") === 0) {
+      send(res, 200, { ok: true, skipped: true });
+      return true;
+    }
+    if (!Array.isArray(db.data.hits)) db.data.hits = [];
+    db.data.hits.push({
+      at: Date.now(),
+      path: pathName,
+      ref: String((b && b.ref) || "").slice(0, 180)
+    });
+    if (db.data.hits.length > 8000) db.data.hits = db.data.hits.slice(-6000);
+    if (db.data.hits.length % 20 === 0) await db.save();
+    send(res, 200, { ok: true });
+    return true;
+  }
+
+  if (url === "/api/admin/traffic" && method === "GET") {
+    const u = userFromCookie(req);
+    if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
+    const hits = Array.isArray(db.data.hits) ? db.data.hits : [];
+    const since = Date.now() - 7 * 86400000;
+    const week = hits.filter(function (h) { return h && h.at >= since; });
+    const pages = {};
+    const refs = {};
+    week.forEach(function (h) {
+      const p = h.path || "/";
+      pages[p] = (pages[p] || 0) + 1;
+      const r = h.ref || "(direct)";
+      refs[r] = (refs[r] || 0) + 1;
+    });
+    function top(obj) {
+      return Object.keys(obj).map(function (k) { return { name: k, n: obj[k] }; })
+        .sort(function (a, b) { return b.n - a.n; }).slice(0, 20);
+    }
+    send(res, 200, { week: week.length, all: hits.length, pages: top(pages), refs: top(refs) });
+    return true;
+  }
+
   if (url === "/api/upload/video" && method === "POST") {
     const u = userFromCookie(req);
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
@@ -338,7 +393,9 @@ module.exports = async function extraApi(ctx) {
   if (url === "/api/listings" && method === "GET") {
     const u = userFromCookie(req);
     let list = db.data.listings.slice();
-    if (!isAdmin(u)) list = list.filter((l) => l.status !== "sold" && !l.hidden);
+    if (!isAdmin(u)) {
+      list = list.filter((l) => l.status !== "sold" && !l.hidden && !seo.isTestListing(l));
+    }
     send(res, 200, { listings: list.map((l) => withProducer(l, false)) });
     return true;
   }
@@ -384,15 +441,16 @@ module.exports = async function extraApi(ctx) {
     if (b.description != null) listing.description = String(b.description);
     if (b.hidden != null) listing.hidden = !!b.hidden;
     if (b.video !== undefined) listing.video = videoStore.validVideo(b.video);
-    const uploaded = Array.isArray(b.images) ? b.images.filter(isImageValue).slice(0, 4) : [];
-    if (isImageValue(b.image) && !uploaded.length) uploaded.push(b.image);
+    const uploaded = photoStore.persistList(
+      (Array.isArray(b.images) ? b.images : []).concat(isImageValue(b.image) ? [b.image] : [])
+    );
     if (uploaded.length) {
       listing.image = uploaded[0];
       listing.images = uploaded;
       listing.imageLocked = true;
     } else if (isImageValue(b.image)) {
-      listing.image = b.image;
-      listing.images = [b.image].concat((listing.images || []).slice(1)).slice(0, 4);
+      listing.image = photoStore.persistAny(b.image) || b.image;
+      listing.images = [listing.image].concat((listing.images || []).slice(1)).slice(0, 4);
       listing.imageLocked = true;
     }
     await db.save();

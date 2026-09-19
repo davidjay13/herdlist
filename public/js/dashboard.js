@@ -17,6 +17,7 @@
     if (hash.indexOf("#/account/orders") === 0) return "orders";
     if (hash.indexOf("#/account/messages") === 0) return "messages";
     if (hash.indexOf("#/account/news") === 0) return "admin";
+    if (hash.indexOf("#/account/traffic") === 0) return "admin";
     if (hash.indexOf("#/account/emails") === 0) return "admin";
     if (hash.indexOf("#/account/producers") === 0) return "admin";
     if (hash.indexOf("#/account/accounts") === 0) return "admin";
@@ -42,6 +43,7 @@
       item("#/account/producers", "Producers", "nav-producers") +
       item("#/account/accounts", "Accounts", "nav-accounts") +
       item("#/account/emails", "Emails", "nav-emails") +
+      item("#/account/traffic", "Traffic", "nav-traffic") +
       item("#/account/news", "News", "nav-news") +
       "</div>";
   }
@@ -498,6 +500,24 @@
       (latest.length ? latest.slice(0, 5).map(miniRow).join("") : "<div class='dash-empty'>New cattle will show up here as they list.</div>") +
       "</section></div>";
   }
+  function paintTraffic() {
+    var main = document.getElementById("dash-main") || document.querySelector(".dash-col");
+    if (!main) return;
+    main.innerHTML = "<div class='panel'><h2>Traffic</h2><p class='sub'>Last 7 days on herd-yard.com</p><p>Loading…</p></div>";
+    fetch("/api/admin/traffic", { credentials: "include" }).then(function (r) { return r.json(); }).then(function (d) {
+      function rows(list, label) {
+        if (!list || !list.length) return "<p class='sub'>No " + label + " yet.</p>";
+        return "<table class='hy-table' style='width:100%;border-collapse:collapse'><tbody>" + list.map(function (row) {
+          return "<tr><td style='padding:8px 6px;border-bottom:1px solid #e4ece6'>" + esc(row.name) + "</td><td style='padding:8px 6px;border-bottom:1px solid #e4ece6;text-align:right;font-weight:600'>" + row.n + "</td></tr>";
+        }).join("") + "</tbody></table>";
+      }
+      main.innerHTML = "<div class='panel'><h2>Traffic</h2><p class='sub'>Page views this week: <b>" + (d.week || 0) + "</b> · stored: " + (d.all || 0) + "</p>" +
+        "<h3 style='margin:18px 0 8px'>Pages</h3>" + rows(d.pages, "pages") +
+        "<h3 style='margin:22px 0 8px'>Referrers</h3>" + rows(d.refs, "referrers") + "</div>";
+    }).catch(function () {
+      main.innerHTML = "<div class='panel'><h2>Traffic</h2><p>Could not load stats.</p></div>";
+    });
+  }
   function load() {
     var hash = location.hash || "";
     if (hash.indexOf("#/account") !== 0) return;
@@ -519,6 +539,7 @@
       shellNow(inner, me.user.email || "");
       if (s === "profile") bindProfile(me);
       if (s === "messages") bindMessages();
+      if ((location.hash || "").indexOf("#/account/traffic") === 0) paintTraffic();
     }).catch(function () { shellNow("<p>Could not load account.</p>", ""); });
   }
   window.addEventListener("hashchange", load);

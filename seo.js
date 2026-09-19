@@ -284,9 +284,17 @@ const FAQS = [
   { q: "Can I list just one group of cattle?", a: "Yes. Single Listing is $45. If you sell throughout the year, Producer membership is $432 and includes unlimited listings plus a public ranch profile." }
 ];
 
+function isTestListing(l) {
+  const t = String((l && l.title) || "").trim().toLowerCase();
+  if (!t) return false;
+  if (t === "test" || t === "testing" || t === "test listing") return true;
+  if (/^test(\s|[-:#./])/.test(t)) return true;
+  return false;
+}
+
 function liveListings(db) {
   return ((db && db.data && db.data.listings) || []).filter(function (l) {
-    return l && !l.hidden && l.status !== "sold";
+    return l && !l.hidden && l.status !== "sold" && !isTestListing(l);
   });
 }
 
@@ -442,4 +450,4 @@ function robotsTxt() {
   return "User-agent: *\nAllow: /\nDisallow: /account\nDisallow: /signin\nDisallow: /list\nDisallow: /bugs\nSitemap: " + SITE + "/sitemap.xml\n";
 }
 
-module.exports = { PAGES, SITE, forRequest, inject, isSpaPath, sitemapXml, robotsTxt, abs };
+module.exports = { PAGES, SITE, forRequest, inject, isSpaPath, sitemapXml, robotsTxt, abs, isTestListing };

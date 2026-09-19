@@ -2,6 +2,14 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.22",
+      date: "Sep 19, 2026",
+      items: [
+        "www.herd-yard.com and herdyard.com redirect to herd-yard.com when pointed at this app.",
+        "Admin Traffic page counts page views. Browse has a search box. Listing photos upload as files with alt text. Test listings stay out of the public site and sitemap. Fonts are hosted on Herd Yard instead of Google."
+      ]
+    },
+    {
       v: "0.5.21",
       date: "Sep 19, 2026",
       items: [
