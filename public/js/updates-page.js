@@ -2,6 +2,13 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.27",
+      date: "Sep 19, 2026",
+      items: [
+        "ABN Ranch featured profile on the homepage now has a looping pasture video in the header."
+      ]
+    },
+    {
       v: "0.5.26",
       date: "Sep 19, 2026",
       items: [

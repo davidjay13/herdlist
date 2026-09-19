@@ -173,6 +173,12 @@
             <div class="hy-build-cta"><a class="btn btn-primary btn-lg" href="#/signup">Sign Up Now</a></div>
           </div>
           <div class="hy-feature">
+            <div class="hy-feature-banner">
+              <video autoplay muted loop playsinline poster="/abn-header.jpg">
+                <source src="/abn-header.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="hy-feature-body">
             <div>
               <div class="hy-feature-kicker">Featured Producer</div>
               <h3>Meet ABN Ranch.</h3>
@@ -190,6 +196,7 @@
                 <div><b>April Lazoya</b><span>ABN Ranch</span></div>
               </div>
               <blockquote>Excited to share a little about our family Red Wagyu ranch! As a proud cattlewoman, I love using Herd Yard to showcase our amazing seed stock. It's never been easier to connect with fellow ranchers.</blockquote>
+            </div>
             </div>
           </div>
         </div>
