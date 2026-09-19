@@ -380,6 +380,7 @@ button, input, select, textarea { font-family: inherit; }
 .faq details { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
 .faq summary { cursor: pointer; font-weight: 560; }
 
+.app-footer a { color: var(--green); font-weight: 560; }
 .app-footer {
   border-top: 1px solid var(--line);
   padding: 36px 28px;
