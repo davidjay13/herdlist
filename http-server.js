@@ -127,7 +127,7 @@ const server = http.createServer(async (req, res) => {
   const url = req.url.split("?")[0];
   const method = req.method;
   try {
-    if (url === "/api/health") return send(res, 200, { ok: true, persist: db.persist, mail: mail.configured(), mailSample: db.data.mailSampleSentAt || null });
+    if (url === "/api/health") return send(res, 200, { ok: true, persist: db.persist, mail: mail.configured(), mailSample: db.data.mailSampleSentAt || null, weeklySample: db.data.mailWeeklySampleSentAt || null });
     if (await newsApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
     if (await extraApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
     if (await messagesApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
@@ -286,6 +286,23 @@ init(seedJson)
           console.log("[mail] sample welcome sent to david@davidjay.com", db.data.mailSampleResult);
         }).catch(function (err) {
           console.error("[mail] sample welcome failed", err && err.message);
+        });
+      }
+      if (mail.configured() && !db.data.mailWeeklySampleSentAt) {
+        var david = (db.data.users || []).find(function (u) {
+          return String(u.email || "").toLowerCase() === "david@davidjay.com";
+        }) || { email: "david@davidjay.com", name: "David", id: 0 };
+        var stats = david.id ? weeklyMail.statsFor(db, david) : {
+          name: "David", ranch: "Herd Yard", weekViews: 12, messages: 3, newListings: 1, newFollowers: 2, liveCount: 4, topTitle: "Black Angus pairs", topViews: 8
+        };
+        mail.weeklyStats(david, stats, weeklyMail.HIGHLIGHTS).then(function (r) {
+          db.data.mailWeeklySampleSentAt = Date.now();
+          db.data.mailWeeklySampleResult = r && (r.ErrorCode != null ? r : { ok: !r.error, error: r.error, skipped: r.skipped });
+          return db.save();
+        }).then(function () {
+          console.log("[mail] sample weekly stats sent to david@davidjay.com", db.data.mailWeeklySampleResult);
+        }).catch(function (err) {
+          console.error("[mail] sample weekly stats failed", err && err.message);
         });
       }
       setInterval(function () {
