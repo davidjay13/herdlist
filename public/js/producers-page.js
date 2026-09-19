@@ -6,9 +6,12 @@
   let prodMap = null;
 
   function esc(s) {
-    return String(s || "").replace(/[&<>"']/g, function (c) {
-      return ({ "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;" })[c];
-    });
+    return String(s || "")
+      .replace(/&/g, "&" + "amp;")
+      .replace(/</g, "&" + "lt;")
+      .replace(/>/g, "&" + "gt;")
+      .replace(/"/g, "&" + "quot;")
+      .replace(/'/g, "&#39;");
   }
   function countsFor(id) {
     return listingCounts[id] || 0;
