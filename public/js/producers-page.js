@@ -118,7 +118,6 @@
     const q = (location.hash.split("?")[1] || "");
     const params = new URLSearchParams(q);
     const term = (params.get("q") || "").trim().toLowerCase();
-    const view = params.get("view") === "map" ? "map" : "list";
     let list = cache.slice().sort(function (a, b) {
       return String(a.name || "").localeCompare(String(b.name || ""));
     });
@@ -137,21 +136,14 @@
       var s = next.toString();
       location.hash = "#/producers" + (s ? "?" + s : "");
     }
-    var toggle = view === "map"
-      ? '<button class="btn btn-outline" type="button" id="prod-view">View as cards</button>'
-      : '<button class="btn btn-primary" type="button" id="prod-view">View on map</button>';
-    var body = view === "map"
-      ? '<div class="producers-map map-wrap" id="producers-map"></div>'
-      : '<div class="cards-3">' + (list.length ? list.map(card).join("") : "<div class='empty'>No producers match.</div>") + "</div>";
-    app.innerHTML = `<section class="section">
-      <div class="section-head"><div><h2>Producers</h2>
-      <p class="sub">Search to find other producers near you</p></div>${toggle}</div>
-      <div class="field" style="max-width:320px;margin:0 0 22px">
-        <label>Search ranches</label>
-        <input id="prod-q" placeholder="Name or location" value="${esc(term)}">
-      </div>
-      ${body}
-    </section>`;
+    var cards = list.length ? list.map(card).join("") : "<div class='empty'>No producers match.</div>";
+    app.innerHTML = "<section class='section'>" +
+      "<div class='section-head'><div><h2>Producers</h2>" +
+      "<p class='sub'>Search to find other producers near you</p></div></div>" +
+      "<div class='field' style='max-width:320px;margin:0 0 16px'><label>Search ranches</label>" +
+      "<input id='prod-q' placeholder='Name or location' value='" + esc(term) + "'></div>" +
+      "<div class='producers-map map-wrap' id='producers-map'></div>" +
+      "<div class='cards-3' style='margin-top:18px'>" + cards + "</div></section>";
     const input = document.getElementById("prod-q");
     if (input) {
       input.onkeydown = function (e) {
@@ -161,13 +153,7 @@
         }
       };
     }
-    const btn = document.getElementById("prod-view");
-    if (btn) {
-      btn.onclick = function () {
-        nextHash({ view: view === "map" ? "" : "map" });
-      };
-    }
-    if (view === "map") setTimeout(function () { paintMap(list); }, 40);
+    setTimeout(function () { paintMap(list); }, 40);
     return true;
   }
   async function load() {
