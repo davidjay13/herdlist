@@ -216,19 +216,19 @@
       "<form id='listing-edit-form' class='panel'><div class='form-grid'>" +
       "<div class='field full'><label>Photo</label>" +
       "<img id='edit-photo-preview' src='" + String(currentSrc).split("'").join("") + "' alt='listing photo' style='width:100%;max-height:260px;object-fit:cover;border-radius:16px;margin:0 0 12px;background:#dce8d8'>" +
-      "<div id='edit-dropzone' style='border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:16px;text-align:center;cursor:pointer'>" +
-      "<input id='edit-photo-input' type='file' accept='image/*' multiple style='display:none'>" +
-      "<strong style='display:block;color:#0f3f28'>Replace photo</strong>" +
-      "<span style='display:block;font-size:0.88rem;color:#3a4a3e'>Click or drop</span></div>" +
+      "<label id='edit-dropzone' class='media-drop' for='edit-photo-input'>" +
+      "<input id='edit-photo-input' type='file' accept='image/*' multiple>" +
+      "<strong>Replace photo</strong>" +
+      "<span>Tap to add from your camera or library</span></label>" +
       "<div style='margin-top:10px'><label>Photo link</label>" +
       "<input id='edit-photo-url' placeholder='https://'></div></div>" +
       "<div class='field full'><label>Video</label>" +
       (listing.video ? "<video controls playsinline src='" + String(listing.video).split("'").join("") + "' style='width:100%;max-height:220px;border-radius:12px;background:#142018;margin:0 0 10px'></video>" : "") +
-      "<div id='edit-video-drop' style='border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:16px;text-align:center;cursor:pointer'>" +
-      "<input id='edit-video-input' type='file' accept='video/mp4,video/webm,video/quicktime' style='display:none'>" +
-      "<strong style='display:block;color:#0f3f28'>Add video</strong>" +
-      "<span style='display:block;font-size:0.88rem;color:#3a4a3e'>Click or drop · 40 MB max</span>" +
-      "<div id='edit-video-name' class='sub' style='margin-top:8px;display:none'></div></div>" +
+      "<label id='edit-video-drop' class='media-drop' for='edit-video-input'>" +
+      "<input id='edit-video-input' type='file' accept='video/*,.mp4,.mov,.webm'>" +
+      "<strong>Add video</strong>" +
+      "<span>Tap to add from your camera or library</span>" +
+      "<div id='edit-video-name' class='sub' style='margin-top:8px;display:none'></div></label>" +
       "<div style='margin-top:10px'><label>Video link</label>" +
       "<input id='edit-video-url' placeholder='YouTube, Vimeo, or mp4 URL' value='" + esc(listing.video && String(listing.video).indexOf("http") === 0 ? listing.video : "") + "'></div>" +
       "<label style='display:flex;gap:8px;margin-top:10px;cursor:pointer'><input type='checkbox' id='edit-video-clear'> Remove video</label></div>" +
@@ -253,10 +253,6 @@
       }).slice(0, 4);
       if (pendingPhotos[0]) preview.src = URL.createObjectURL(pendingPhotos[0]);
     }
-    zone.onclick = function (e) {
-      if (e.target.closest("input")) return;
-      input.click();
-    };
     input.onchange = function () { useFiles(input.files); input.value = ""; };
     ["dragenter", "dragover", "dragleave", "drop"].forEach(function (evt) {
       zone.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); });
@@ -272,10 +268,10 @@
     var vinput = document.getElementById("edit-video-input");
     var vname = document.getElementById("edit-video-name");
     if (vzone && vinput) {
-      vzone.onclick = function (e) { if (!e.target.closest("input")) vinput.click(); };
       vinput.onchange = function () {
         var f = vinput.files && vinput.files[0];
-        if (f && String(f.type).indexOf("video/") === 0) {
+        var ok = f && (String(f.type).indexOf("video/") === 0 || /\.(mp4|mov|webm|m4v)$/i.test(f.name || ""));
+        if (ok) {
           pendingVideo = f;
           if (vname) {
             vname.style.display = "block";

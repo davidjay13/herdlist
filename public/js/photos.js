@@ -100,48 +100,67 @@
     picked = [];
     var grid = form.querySelector(".form-grid");
     if (!grid) return;
+    var mobile = window.matchMedia("(max-width: 980px)").matches;
+    var photoHint = mobile ? "Tap to add from your camera or library" : "Click or drop · up to 4";
+    var videoHint = mobile ? "Tap to add from your camera or library" : "Click or drop · 40 MB max";
     var wrap = document.createElement("div");
     wrap.className = "field full";
     wrap.innerHTML =
-      '<label>Photos</label>' +
-      '<div id="dropzone">' +
-      '<input id="photos" type="file" accept="image/*" multiple style="display:none">' +
-      '<div id="drop-hint">' +
+      "<label>Photos</label>" +
+      '<label id="dropzone" class="media-drop" for="photos">' +
+      '<input id="photos" type="file" accept="image/*" multiple>' +
       "<strong>Add photos</strong>" +
-      "<span>Click or drop · up to 4</span>" +
-      "</div>" +
-      '<div id="photo-preview" class="thumbs" style="margin-top:10px;flex-wrap:wrap"></div>' +
-      "</div>";
-    var desc = grid.querySelector("textarea") && grid.querySelector("textarea").closest(".field");
-    if (desc) grid.insertBefore(wrap, desc);
-    else grid.appendChild(wrap);
+      "<span>" + photoHint + "</span>" +
+      "</label>" +
+      '<div id="photo-preview" class="thumbs" style="margin-top:10px;flex-wrap:wrap"></div>';
 
     pickedVideo = null;
     var vwrap = document.createElement("div");
     vwrap.className = "field full";
     vwrap.innerHTML =
       "<label>Video</label>" +
-      '<div id="video-dropzone">' +
-      '<input id="listing-video" type="file" accept="video/mp4,video/webm,video/quicktime" style="display:none">' +
-      '<div id="video-hint"><strong>Add video</strong><span>Click or drop · 40 MB max</span></div>' +
-      '<div id="video-name" class="sub" style="margin-top:8px;display:none"></div></div>' +
+      '<label id="video-dropzone" class="media-drop" for="listing-video">' +
+      '<input id="listing-video" type="file" accept="video/*,.mp4,.mov,.webm">' +
+      "<strong>Add video</strong>" +
+      "<span>" + videoHint + "</span>" +
+      '<div id="video-name" class="sub" style="margin-top:8px;display:none"></div></label>' +
       '<div style="margin-top:10px"><label>Video link</label>' +
       '<input id="video-url" placeholder="YouTube, Vimeo, or mp4 URL"></div>';
-    if (desc) grid.insertBefore(vwrap, desc);
-    else grid.appendChild(vwrap);
+
+    var titleField = grid.querySelector('input[name="title"]');
+    titleField = titleField && titleField.closest(".field");
+    if (titleField && titleField.nextSibling) {
+      grid.insertBefore(wrap, titleField.nextSibling);
+      grid.insertBefore(vwrap, wrap.nextSibling);
+    } else {
+      var desc = grid.querySelector("textarea") && grid.querySelector("textarea").closest(".field");
+      if (desc) {
+        grid.insertBefore(wrap, desc);
+        grid.insertBefore(vwrap, desc);
+      } else {
+        grid.appendChild(wrap);
+        grid.appendChild(vwrap);
+      }
+    }
+
     var vzone = document.getElementById("video-dropzone");
     var vinput = document.getElementById("listing-video");
     var vname = document.getElementById("video-name");
-    vzone.style.cssText = "border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:18px;text-align:center;cursor:pointer";
     function setVideoFile(f) {
-      if (!f || String(f.type).indexOf("video/") !== 0) return;
+      if (!f) return;
+      var ok = String(f.type).indexOf("video/") === 0 || /\.(mp4|mov|webm|m4v)$/i.test(f.name || "");
+      if (!ok) return;
       pickedVideo = f;
-      vname.style.display = "block";
-      vname.textContent = f.name + " · " + Math.round(f.size / 1024 / 1024 * 10) / 10 + " MB";
+      if (vname) {
+        vname.style.display = "block";
+        vname.textContent = f.name + " · " + Math.round(f.size / 1024 / 1024 * 10) / 10 + " MB";
+      }
     }
-    vzone.onclick = function (e) { if (!e.target.closest("input")) vinput.click(); };
-    vinput.onchange = function () { setVideoFile(vinput.files && vinput.files[0]); vinput.value = ""; };
-    ["dragenter","dragover","dragleave","drop"].forEach(function (evt) {
+    vinput.addEventListener("change", function () {
+      setVideoFile(vinput.files && vinput.files[0]);
+      vinput.value = "";
+    });
+    ["dragenter", "dragover", "dragleave", "drop"].forEach(function (evt) {
       vzone.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); });
     });
     vzone.addEventListener("drop", function (e) {
@@ -151,17 +170,6 @@
 
     var zone = document.getElementById("dropzone");
     var input = document.getElementById("photos");
-    zone.style.cssText =
-      "border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:22px 18px;text-align:center;cursor:pointer;transition:0.15s ease";
-    var hint = document.getElementById("drop-hint");
-    hint.style.cssText = "color:#0f3f28";
-    hint.querySelector("strong").style.cssText = "display:block;font-size:1.05rem;margin-bottom:4px";
-    hint.querySelector("span").style.cssText = "display:block;font-size:0.88rem;color:#3a4a3e";
-
-    zone.addEventListener("click", function (e) {
-      if (e.target.closest("button")) return;
-      input.click();
-    });
     input.addEventListener("change", function () {
       addFiles(input.files);
       input.value = "";
