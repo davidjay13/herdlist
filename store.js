@@ -38,6 +38,16 @@ function emptyData() {
   return { users: [], sessions: [], producers: [], listings: [], follows: [], messages: [], nextUser: 1 };
 }
 
+function normalizeData(data) {
+  const base = emptyData();
+  const out = data && typeof data === "object" ? data : {};
+  Object.keys(base).forEach((k) => {
+    if (Array.isArray(base[k]) && !Array.isArray(out[k])) out[k] = [];
+  });
+  if (!out.nextUser) out.nextUser = 1;
+  return out;
+}
+
 function loadFile() {
   try {
     if (!fs.existsSync(FILE)) return null;
@@ -88,7 +98,7 @@ async function init(seedFn) {
       const row = await pgClient.query("SELECT payload FROM herd.app_state WHERE id = 1");
       let data;
       if (row.rows[0]) {
-        data = row.rows[0].payload;
+        data = normalizeData(row.rows[0].payload);
       } else {
         data = emptyData();
         seedFn(data);
@@ -128,6 +138,8 @@ async function init(seedFn) {
     } catch (e) {
       console.error("File store write failed", e.message);
     }
+  } else {
+    data = normalizeData(data);
   }
   console.log("Store: file");
   return fileStore(data);
