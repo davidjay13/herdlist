@@ -1,6 +1,43 @@
 (function () {
   const UPDATES = [
     {
+      v: "0.5.5",
+      date: "Sep 18, 2026",
+      items: [
+        "Account dashboard rebuilt as tiles: stats, Messages, Listing views, Local listings, Latest listings.",
+        "Industry news ticker at the top of the dashboard. Admins paste article links under Account → News; headlines are pulled from the page.",
+        "Herd Yard podcasts row under the ticker, showing the latest long episodes from youtube.com/@herdyard_USA.",
+        "Messages tile groups by conversation (one row per person, latest note) and uses their profile photo."
+      ]
+    },
+    {
+      v: "0.5.4",
+      date: "Sep 18, 2026",
+      items: [
+        "Message the ranch opens a compose box plus the ranch phone and email so buyers can write in-app or call.",
+        "Account → Messages is a Messenger-style inbox: conversation list on the left, chat bubbles on the right.",
+        "Chat avatars use ranch/buyer profile photos instead of initials.",
+        "Sent and received notes both show in the inbox, with replies staying on the thread."
+      ]
+    },
+    {
+      v: "0.5.3",
+      date: "Sep 18, 2026",
+      items: [
+        "Header and favicon switched to the single-color geometric bull mark (transparent SVG).",
+        "Logo cache-bust so browsers stop showing the old map-pin."
+      ]
+    },
+    {
+      v: "0.5.2",
+      date: "Sep 18, 2026",
+      items: [
+        "Imported catalog listings no longer appear under a personal My listings page; they stay in admin.",
+        "Hidden chip removed from listing manage.",
+        "#/updates no longer flashes and then dumps you back on the homepage."
+      ]
+    },
+    {
       v: "0.5.1",
       date: "Sep 18, 2026",
       items: [
