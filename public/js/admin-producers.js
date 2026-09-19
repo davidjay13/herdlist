@@ -296,8 +296,10 @@
     main.innerHTML =
       "<h2 class='page-title'>Emails</h2>" +
       "<p class='sub'>Every message Herd Yard has sent. Use this to spot typo addresses. " + rows.length + " shown of " + (emails || []).length + ".</p>" +
-      "<div class='field' style='max-width:360px;margin:16px 0'><label>Search</label>" +
+      "<div style='display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:16px 0'>" +
+      "<div class='field' style='max-width:360px;margin:0;flex:1'><label>Search</label>" +
       "<input id='mail-q' placeholder='Recipient or subject' value='" + esc(q) + "'></div>" +
+      "<button class='btn btn-outline' type='button' id='mail-test'>Send test to me</button></div>" +
       "<div class='panel'>" +
       (rows.length ? "<div class='row' style='display:flex;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#6b7a6e;font-weight:650;padding:0 0 8px'>" +
         "<span style='flex:1.4'>To</span><span style='flex:1.6'>Subject</span><span style='width:88px'>Status</span><span style='width:160px'>When</span></div>" +
@@ -318,6 +320,17 @@
         if (e.key === "Enter") paintEmails(emails);
       };
     }
+    var test = document.getElementById("mail-test");
+    if (test) test.onclick = function () {
+      test.disabled = true;
+      fetch("/api/admin/test-email", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: "{}" })
+        .then(function (r) { return r.json(); })
+        .then(function () {
+          return fetch("/api/admin/mail", { credentials: "include" }).then(function (r) { return r.json(); });
+        })
+        .then(function (data) { paintEmails((data && data.emails) || emails); })
+        .catch(function () { test.disabled = false; });
+    };
   }
 
   function paintNews(items) {
