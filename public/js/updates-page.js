@@ -2,6 +2,13 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.25",
+      date: "Sep 19, 2026",
+      items: [
+        "Homepage adds Helping You Sell Your Cattle for Top Prices and Build Your Producer Profile, matching the herdyard.com sections."
+      ]
+    },
+    {
       v: "0.5.24",
       date: "Sep 19, 2026",
       items: [

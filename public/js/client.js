@@ -113,6 +113,88 @@
         <ul><li>All producer features</li><li>Featured placement</li></ul>
         <a class="btn btn-outline btn-wide" href="#/faq">Contact us</a></div></div>`;
   }
+  function moneyFull(n) {
+    return "$" + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function sparkline(points) {
+    const vals = points.map((p) => p.value);
+    const max = Math.max.apply(null, vals) || 1;
+    const w = 520, h = 168, padX = 28, padY = 22, bot = 28;
+    const n = vals.length;
+    const xy = vals.map((v, i) => {
+      const x = padX + (i * (w - 2 * padX) / Math.max(1, n - 1));
+      const y = h - bot - (v / max) * (h - padY - bot);
+      return [x, y];
+    });
+    const d = xy.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+    const grid = [0.25, 0.5, 0.75, 1].map((t) => {
+      const y = h - bot - t * (h - padY - bot);
+      return `<line x1="${padX}" x2="${w - padX}" y1="${y}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>`;
+    }).join("");
+    const dots = xy.map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#1b6b45"/>`).join("");
+    const labels = points.map((p, i) => `<text x="${xy[i][0]}" y="${h - 8}" text-anchor="middle" font-size="11" fill="#6b7a6e">${esc(p.month)}</text>`).join("");
+    return `<svg class="hy-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">${grid}<path d="${d}" fill="none" stroke="#058661" stroke-width="2"/>${dots}${labels}</svg>`;
+  }
+  function checkRow(title, sub) {
+    return `<div class="hy-check"><i>✓</i><div><b>${esc(title)}</b><span>${esc(sub)}</span></div></div>`;
+  }
+  function homeExtras() {
+    const breeds = [{ name: "Angus", count: 31453 }, { name: "Black Angus", count: 2738 }, { name: "Red Angus", count: 1056 }];
+    const klasses = [{ name: "Bred - Early", count: 15483 }, { name: "Bred - Mid", count: 8592 }, { name: "Cow-Calf Pair", count: 3258 }];
+    const chart = [
+      { month: "Apr", value: 1651850 }, { month: "May", value: 1130225 }, { month: "Jun", value: 6208100 },
+      { month: "Jul", value: 10849400 }, { month: "Aug", value: 48329225 }, { month: "Sep", value: 15049275 }
+    ];
+    const rows = (list) => list.map((r) => `<div class="hy-stat-row"><span>${esc(r.name)}</span><b>${r.count.toLocaleString("en-US")}</b></div>`).join("");
+    return `<section class="hy-band"><div class="section">
+      <div class="hy-band-title"><h2>Helping You Sell Your Cattle for Top Prices</h2>
+      <p class="sub">Numbers since launching Herd Yard in March 2025</p></div>
+      <div class="hy-stat-cards">
+        <div class="hy-stat-card">
+          <p class="hy-stat-label">All Time Head</p>
+          <div class="hy-stat-value">39,208</div>
+          <div class="hy-stat-sub">Top All Time Breeds</div>${rows(breeds)}
+          <div class="hy-stat-sub">Top All Time Classes</div>${rows(klasses)}
+        </div>
+        <div class="hy-stat-card">
+          <p class="hy-stat-label">All Time Listings Value</p>
+          <div class="hy-stat-value">${moneyFull(139706194)}</div>
+          ${sparkline(chart)}
+        </div>
+      </div></div></section>
+      <section class="section">
+        <div class="hy-build">
+          <div class="hy-build-copy">
+            <h2>Build Your Producer Profile</h2>
+            <p>Join successful producers who've built their presence on Herd Yard. Create a profile that showcases your operation and connects you with serious buyers.</p>
+            ${checkRow("Build out your ranch profile", "Showcase your story, credentials, and operation details")}
+            ${checkRow("Link your social channels and website", "Connect all your online presence in one place")}
+            ${checkRow("Unlimited Free Listings", "Subscription members get free, unlimited listings")}
+            <div class="hy-build-cta"><a class="btn btn-primary btn-lg" href="#/signup">Sign Up Now</a></div>
+          </div>
+          <div class="hy-feature">
+            <div>
+              <div class="hy-feature-kicker">Featured Producer</div>
+              <h3>Meet ABN Ranch.</h3>
+              <p class="sub">See how producers are using Herd Yard to grow their business</p>
+              <div class="hy-feature-kpis">
+                <div><b>5</b><span>Active Listings</span></div>
+                <div><b>45</b><span>Listings Sold</span></div>
+                <div><b>5</b><span>Rating</span></div>
+              </div>
+              <a class="btn btn-outline btn-wide" href="#/ranch/abn-ranch">View Profile</a>
+            </div>
+            <div class="hy-quote">
+              <div class="hy-quote-who">
+                <img src="/april-lozoya.jpg" alt="April Lozoya">
+                <div><b>April Lazoya</b><span>ABN Ranch</span></div>
+              </div>
+              <blockquote>Excited to share a little about our family Red Wagyu ranch! As a proud cattlewoman, I love using Herd Yard to showcase our amazing seed stock. It's never been easier to connect with fellow ranchers.</blockquote>
+            </div>
+          </div>
+        </div>
+      </section>`;
+  }
   function home() {
     const recent = state.listings.slice(0, 6);
     app.innerHTML = `<section class="hero"><div class="hero-bg"></div><div class="hero-inner">
@@ -127,6 +209,7 @@
       <p class="sub">Private treaty cattle from ranches nationwide.</p></div>
       <a class="btn btn-primary" href="#/browse">Browse all \u2192</a></div>
       <div class="cards-3">${recent.map(listingCard).join("")}</div></section>
+      ${homeExtras()}
       <section class="section"><div class="section-head"><div><h2>Choose a plan</h2></div></div>${plansHTML()}</section>`;
   }
   let mapInst = null;
