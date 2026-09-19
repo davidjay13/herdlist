@@ -51,14 +51,14 @@ Or keep it running with pm2: `pm2 start http-server.js --name rangelist`
 
 ## Transactional email
 
-Set one of these on the DigitalOcean App Platform service:
+Uses **Postmark**. On the DigitalOcean App Platform service set:
 
-- `RESEND_API_KEY` (preferred)
-- or `SENDGRID_API_KEY`
+- `POSTMARK_SERVER_TOKEN` — Server API token from Postmark
 
 Optional:
 
-- `MAIL_FROM` — default `Herd Yard <hello@herd-yard.com>` (domain must be verified with the provider)
+- `MAIL_FROM` — default `Herd Yard <hello@herd-yard.com>` (must be a verified Postmark Sender Signature)
 - `MAIL_NOTIFY` — default `david@davidjay.com` (copy of new-account emails)
+- `POSTMARK_STREAM` — default `outbound`
 
 Sends on: account created, listing published, new message, ranch followed.

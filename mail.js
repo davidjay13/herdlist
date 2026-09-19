@@ -2,8 +2,12 @@ const SITE = "https://herd-yard.com";
 const FROM = process.env.MAIL_FROM || "Herd Yard <hello@herd-yard.com>";
 const NOTIFY = process.env.MAIL_NOTIFY || "david@davidjay.com";
 
+function postmarkToken() {
+  return process.env.POSTMARK_SERVER_TOKEN || process.env.POSTMARK_API_TOKEN || process.env.POSTMARK_API_KEY || "";
+}
+
 function configured() {
-  return !!(process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY);
+  return !!(postmarkToken() || process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY);
 }
 
 function usable(email) {
@@ -38,6 +42,30 @@ function wrap(preheader, heading, bodyHtml, ctaLabel, ctaHref) {
     '<p style="margin:28px 0 0;font-size:13px;color:#6b7a6e">Herd Yard — private-treaty cattle, no commission.<br><a href="' + SITE + '" style="color:#1b6b45">herd-yard.com</a></p>' +
     "</td></tr></table></td></tr></table></body></html>"
   );
+}
+
+async function sendViaPostmark(payload) {
+  const body = {
+    From: FROM,
+    To: payload.to,
+    Subject: payload.subject,
+    HtmlBody: payload.html,
+    TextBody: payload.text || payload.subject,
+    MessageStream: process.env.POSTMARK_STREAM || "outbound"
+  };
+  if (payload.bcc) body.Bcc = payload.bcc;
+  const r = await fetch("https://api.postmarkapp.com/email", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-Postmark-Server-Token": postmarkToken()
+    },
+    body: JSON.stringify(body)
+  });
+  const t = await r.text();
+  if (!r.ok) throw new Error("Postmark " + r.status + " " + t.slice(0, 240));
+  try { return JSON.parse(t); } catch (e) { return { ok: true }; }
 }
 
 async function sendViaResend(payload) {
@@ -92,10 +120,11 @@ async function sendViaSendgrid(payload) {
 async function send(payload) {
   if (!usable(payload.to)) return { skipped: true };
   if (!configured()) {
-    console.log("[mail] skipped (no RESEND_API_KEY or SENDGRID_API_KEY):", payload.subject, "→", payload.to);
+    console.log("[mail] skipped (no POSTMARK_SERVER_TOKEN):", payload.subject, "→", payload.to);
     return { skipped: true, reason: "not-configured" };
   }
   try {
+    if (postmarkToken()) return await sendViaPostmark(payload);
     if (process.env.RESEND_API_KEY) return await sendViaResend(payload);
     return await sendViaSendgrid(payload);
   } catch (err) {
