@@ -172,30 +172,46 @@
     var b = (parts[1] || parts[0] || "Y").charAt(0);
     return (a + b).toUpperCase();
   }
+  function photoSrc(src) {
+    if (!src) return "";
+    var s = String(src);
+    if (s.indexOf("unsplash.com") >= 0) return "";
+    return s;
+  }
+  function avatarHtml(src, name, size) {
+    size = size || 40;
+    var url = photoSrc(src);
+    if (url) {
+      return "<img src='" + String(url).split("'").join("") + "' alt='' style='width:" + size + "px;height:" + size + "px;border-radius:50%;object-fit:cover;background:#e6f2ea;flex:none'>";
+    }
+    return "<div style='width:" + size + "px;height:" + size + "px;border-radius:50%;background:#1b6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;font-size:" + Math.max(11, size / 2.4) + "px'>" + esc(initials(name)) + "</div>";
+  }
   function threadKey(msg) {
     var other = msg.direction === "sent" ? (msg.toUser || msg.toProducer || "ranch") : (msg.fromUser || "buyer");
     return String(msg.listingId || "x") + "::" + String(other);
   }
   function otherOf(msg) {
-    if (msg.direction === "sent") return { id: msg.toUser || msg.toProducer, name: msg.toName || "Ranch" };
-    return { id: msg.fromUser, name: msg.fromName || "Buyer" };
+    if (msg.direction === "sent") return { id: msg.toUser || msg.toProducer, name: msg.toName || "Ranch", avatar: msg.toAvatar };
+    return { id: msg.fromUser, name: msg.fromName || "Buyer", avatar: msg.fromAvatar };
   }
   function groupThreads(items) {
     var map = {};
     (items || []).forEach(function (msg) {
       var key = threadKey(msg);
+      var other = otherOf(msg);
       if (!map[key]) {
-        var other = otherOf(msg);
         map[key] = {
           key: key,
           listingId: msg.listingId,
           listingTitle: msg.listingTitle || "Listing",
           otherId: other.id,
           otherName: other.name,
+          otherAvatar: other.avatar,
           messages: []
         };
       }
       map[key].messages.push(msg);
+      if (!map[key].otherAvatar && other.avatar) map[key].otherAvatar = other.avatar;
     });
     return Object.keys(map).map(function (k) {
       var th = map[k];
@@ -222,7 +238,7 @@
       return "<button type='button' class='chat-row' data-thread='" + esc(th.key) + "' style='" +
         "display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:0;cursor:pointer;" +
         "padding:10px 12px;background:" + (on ? "#e7f0ea" : "transparent") + "'>" +
-        "<div style='width:40px;height:40px;border-radius:50%;background:#1b6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none'>" + esc(initials(th.otherName)) + "</div>" +
+        avatarHtml(th.otherAvatar, th.otherName, 40) +
         "<div style='min-width:0;flex:1'><div style='display:flex;justify-content:space-between;gap:8px'><b style='font-size:.95rem;color:#0f3f28'>" + esc(th.otherName) + "</b>" +
         "<span class='sub' style='font-size:.75rem;white-space:nowrap'>" + esc(when(th.last && th.last.at)) + "</span></div>" +
         "<div class='sub' style='white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" + esc(preview) + "</div></div></button>";
@@ -250,7 +266,7 @@
       bubbles = "<div style='margin:auto;color:#6b7a6e;text-align:center'>Select a conversation</div>";
     }
     var header = current
-      ? "<div style='display:flex;align-items:center;gap:10px'><div style='width:36px;height:36px;border-radius:50%;background:#1b6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700'>" + esc(initials(current.otherName)) + "</div>" +
+      ? "<div style='display:flex;align-items:center;gap:10px'>" + avatarHtml(current.otherAvatar, current.otherName, 36) +
         "<div><b>" + esc(current.otherName) + "</b><div class='sub'><a href='#/listing/" + esc(current.listingId) + "'>" + esc(current.listingTitle) + "</a></div></div></div>"
       : "<b>Messages</b>";
     var composer = current
