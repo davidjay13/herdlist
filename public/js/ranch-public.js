@@ -53,10 +53,10 @@
       });
     }
     var cover = String(p.cover || p.avatar || "").replace(/'/g, "%27");
-    var video = String(p.coverVideo || ((p.slug === "abn-ranch" || p.id === "hy26") ? "/abn-header.mp4" : "")).replace(/"/g, "");
+    var video = String(p.coverVideo || ((p.slug === "abn-ranch" || p.id === "hy26") ? "/abn-header.mp4?v=2" : "")).replace(/"/g, "");
     var banner = video
-      ? '<div class="ranch-banner ranch-banner-video" style="background-image:url(\'/abn-header.jpg\')">' +
-        '<video autoplay muted loop playsinline poster="/abn-header.jpg"><source src="' + video + '" type="video/mp4"></video></div>'
+      ? '<div class="ranch-banner ranch-banner-video" style="background-image:url(\'/abn-header.jpg?v=2\')">' +
+        '<video autoplay muted loop playsinline poster="/abn-header.jpg?v=2"><source src="' + video + '" type="video/mp4"></video></div>'
       : '<div class="ranch-banner" style="background-image:url(\'' + cover + '\')"></div>';
     app.innerHTML =
       '<div class="ranch-page" style="max-width:1200px;margin:0 auto;padding:12px 20px 72px">' +

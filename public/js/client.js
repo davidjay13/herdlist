@@ -174,8 +174,8 @@
           </div>
           <div class="hy-feature">
             <div class="hy-feature-banner">
-              <video autoplay muted loop playsinline poster="/abn-header.jpg">
-                <source src="/abn-header.mp4" type="video/mp4">
+              <video autoplay muted loop playsinline poster="/abn-header.jpg?v=2">
+                <source src="/abn-header.mp4?v=2" type="video/mp4">
               </video>
             </div>
             <div class="hy-feature-body">

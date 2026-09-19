@@ -217,7 +217,7 @@ module.exports = async function extraApi(ctx) {
       operations: p.operations || "",
       associations: p.associations || [],
       cover: p.cover,
-      coverVideo: p.coverVideo || ((p.slug === "abn-ranch" || p.id === "hy26") ? "/abn-header.mp4" : ""),
+      coverVideo: p.coverVideo || ((p.slug === "abn-ranch" || p.id === "hy26") ? "/abn-header.mp4?v=2" : ""),
       avatar: avatarSrc(p.avatar),
       lat: p.lat,
       lng: p.lng,
