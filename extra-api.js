@@ -1,5 +1,6 @@
 const mail = require("./mail");
 const weeklyMail = require("./weekly-mail");
+const videoStore = require("./video-store");
 
 const importedProducers = (() => {
   const rows = [];
@@ -248,6 +249,18 @@ module.exports = async function extraApi(ctx) {
     return true;
   }
 
+  if (url === "/api/upload/video" && method === "POST") {
+    const u = userFromCookie(req);
+    if (!u) return send(res, 401, { error: "Sign in required" }), true;
+    try {
+      const saved = await videoStore.saveFromReq(req);
+      send(res, 200, saved);
+    } catch (err) {
+      send(res, 400, { error: (err && err.message) || "Could not upload video." });
+    }
+    return true;
+  }
+
   if (url === "/api/producers" && method === "GET") {
     send(res, 200, { producers: db.data.producers.map(function (p) {
       return publicProducer(p, false);
@@ -370,6 +383,7 @@ module.exports = async function extraApi(ctx) {
     if (b.status) listing.status = String(b.status);
     if (b.description != null) listing.description = String(b.description);
     if (b.hidden != null) listing.hidden = !!b.hidden;
+    if (b.video !== undefined) listing.video = videoStore.validVideo(b.video);
     const uploaded = Array.isArray(b.images) ? b.images.filter(isImageValue).slice(0, 4) : [];
     if (isImageValue(b.image) && !uploaded.length) uploaded.push(b.image);
     if (uploaded.length) {

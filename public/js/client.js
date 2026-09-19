@@ -41,6 +41,25 @@
     }
     return raw ? raw.slice(5) : "listed";
   }
+  function videoKind(v) {
+    v = String(v || "").trim();
+    if (!v) return null;
+    var yt = v.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+    if (yt) return { type: "youtube", id: yt[1] };
+    var vm = v.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vm) return { type: "vimeo", id: vm[1] };
+    return { type: "file", src: v };
+  }
+  function videoHero(vid, poster) {
+    if (!vid) return "";
+    if (vid.type === "youtube") {
+      return '<iframe src="https://www.youtube.com/embed/' + esc(vid.id) + '" title="Listing video" allow="accelerometer;autoplay;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>';
+    }
+    if (vid.type === "vimeo") {
+      return '<iframe src="https://player.vimeo.com/video/' + esc(vid.id) + '" title="Listing video" allow="autoplay;fullscreen;picture-in-picture" allowfullscreen></iframe>';
+    }
+    return '<video id="hero-video" controls playsinline preload="metadata" poster="' + cssUrl(poster || "") + '" src="' + esc(vid.src) + '"></video>';
+  }
   function money(n) {
     if (n == null) return "Contact for Price";
     return "$" + Number(n).toLocaleString("en-US");
@@ -69,6 +88,7 @@
       <div class="thumb" style="background-image:url('${cssUrl(l.image)}')">
         <span class="badge">${esc(p ? p.name : "Ranch")}</span>
         <span class="days">${esc(daysBadge(l))}</span>
+        ${l.video ? '<span class="play-badge">Video</span>' : ""}
       </div>
       <div class="listing-body">
         <div class="price">${esc(priceLabel(l))}</div>
@@ -228,9 +248,11 @@
     }
     const p = l.producer || { name: "Ranch", slug: "", location: l.location, rating: "\u2014", avatar: l.image, id: l.producerId };
     const imgs = l.images && l.images.length ? l.images : [l.image];
+    const vid = videoKind(l.video);
+    const heroMedia = videoHero(vid, imgs[0]);
     app.innerHTML = `<div class="detail"><div>
-      <div class="gallery" id="hero-img" style="background-image:url('${cssUrl(imgs[0])}')"></div>
-      <div class="thumbs">${imgs.map((src,i)=>`<button class="${i===0?"on":""}" style="background-image:url('${cssUrl(src)}')" data-src="${esc(src)}"></button>`).join("")}</div>
+      <div class="gallery ${vid ? "has-video" : ""}" id="hero-img" ${vid ? "" : `style="background-image:url('${cssUrl(imgs[0])}')"`}>${heroMedia}</div>
+      <div class="thumbs">${vid ? `<button type="button" class="on thumb-video" data-video="1">Video</button>` : ""}${imgs.map((src,i)=>`<button type="button" class="${!vid && i===0?"on":""}" style="background-image:url('${cssUrl(src)}')" data-src="${esc(src)}"></button>`).join("")}</div>
       <h2 style="margin-top:22px">${esc(l.title)}</h2>
       <p class="meta">${esc(l.breed)} \u00b7 ${esc(l.klass)} \u00b7 ${esc(l.head)} ${esc(l.unit)} \u00b7 ${esc(l.location||"")}</p>
       <p>${esc(l.description||"")}</p>
@@ -244,7 +266,21 @@
       <div class="meta">${esc(p.location||"")}</div></div></div></aside></div>`;
     try { fetch("/api/listings/"+id+"/view", { method: "POST", credentials: "include" }); } catch (e) {}
     app.querySelectorAll(".thumbs button").forEach((b) => {
-      b.onclick = () => { app.querySelectorAll(".thumbs button").forEach((x)=>x.classList.remove("on")); b.classList.add("on"); $("#hero-img").style.backgroundImage = `url('${cssUrl(b.dataset.src)}')`; };
+      b.onclick = () => {
+        app.querySelectorAll(".thumbs button").forEach((x)=>x.classList.remove("on"));
+        b.classList.add("on");
+        const hero = $("#hero-img");
+        if (!hero) return;
+        if (b.getAttribute("data-video") === "1") {
+          hero.classList.add("has-video");
+          hero.style.backgroundImage = "";
+          hero.innerHTML = videoHero(vid, imgs[0]);
+        } else {
+          hero.classList.remove("has-video");
+          hero.innerHTML = "";
+          hero.style.backgroundImage = `url('${cssUrl(b.dataset.src)}')`;
+        }
+      };
     });
     $("#follow-btn").onclick = async () => {
       if (!state.user) { location.hash = "#/signup"; return; }

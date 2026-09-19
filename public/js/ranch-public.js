@@ -13,7 +13,8 @@
     return '<article class="listing-card" onclick="location.hash=\'#/listing/' + l.id + '\'">' +
       '<div class="thumb"><img src="' + img + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block">' +
       '<span class="badge">' + (p && p.name ? p.name : "Ranch") + '</span>' +
-      '<span class="days">' + (Number(l.daysLeft) > 0 ? (l.daysLeft + "d left") : "listed") + '</span></div>' +
+      '<span class="days">' + (Number(l.daysLeft) > 0 ? (l.daysLeft + "d left") : "listed") + '</span>' +
+      (l.video ? '<span class="play-badge">Video</span>' : "") + '</div>' +
       '<div class="listing-body"><div class="price">' + priceLabel(l) + '</div>' +
       '<div class="meta"><span>' + (l.breed || "") + '</span><span>' + (l.klass || "") + '</span><span>' + (l.head || "") + ' ' + (l.unit || "") + '</span></div>' +
       '<div class="meta" style="margin-top:4px">' + (l.location || "") + '</div></div></article>';

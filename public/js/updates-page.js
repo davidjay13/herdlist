@@ -2,6 +2,13 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.16",
+      date: "Sep 19, 2026",
+      items: [
+        "Listings can include a video: upload mp4/webm/mov (40 MB max) or paste a YouTube/Vimeo link. It plays on the listing page."
+      ]
+    },
+    {
       v: "0.5.15",
       date: "Sep 19, 2026",
       items: [

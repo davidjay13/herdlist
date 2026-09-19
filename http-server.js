@@ -12,6 +12,7 @@ const stripeBilling = require("./stripe-billing");
 const seo = require("./seo");
 const mail = require("./mail");
 const weeklyMail = require("./weekly-mail");
+const videoStore = require("./video-store");
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC = path.join(__dirname, "public");
@@ -60,7 +61,7 @@ function readBody(req) {
 
 function mime(file) {
   const ext = path.extname(file).toLowerCase();
-  return ({ ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml" }[ext] || "application/octet-stream");
+  return ({ ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime" }[ext] || "application/octet-stream");
 }
 
 function serveLogo(res) {
@@ -105,6 +106,18 @@ function serveStatic(req, res) {
     const body = seo.sitemapXml(db);
     res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=600" });
     return res.end(body);
+  }
+  if (urlPath.startsWith("/uploads/videos/")) {
+    const file = videoStore.diskFile(urlPath);
+    if (!file || !fs.existsSync(file)) { res.writeHead(404); return res.end("Not found"); }
+    const buf = fs.readFileSync(file);
+    res.writeHead(200, {
+      "Content-Type": videoStore.mimeFor(file),
+      "Content-Length": buf.length,
+      "Cache-Control": "public, max-age=86400",
+      "Accept-Ranges": "bytes"
+    });
+    return res.end(buf);
   }
   if (urlPath === "/" || urlPath === "/index.html" || seo.isSpaPath(urlPath)) return sendIndex(res, urlPath);
   const file = path.normalize(path.join(PUBLIC, urlPath));
@@ -216,7 +229,7 @@ const server = http.createServer(async (req, res) => {
       const uploaded = Array.isArray(b.images) ? b.images.filter((s) => typeof s === "string" && s.startsWith("data:image")).slice(0, 4) : [];
       if (typeof b.image === "string" && b.image.startsWith("data:image") && !uploaded.length) uploaded.push(b.image);
       const image = uploaded[0] || b.image || "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80";
-      const listing = { id, producerId: producer.id, userId: u.id, title, breed: b.breed || "Angus", klass: b.klass || "Cow-Calf Pair", category: b.category || "Cattle", head: Number(b.head || 1), unit: b.category === "Genetics" ? "Units" : "Head", price, priceType: price == null ? "contact" : "per_head", daysLeft: 60, listedAt: new Date().toISOString().slice(0, 10), location: b.location || "", lat: Number(b.lat || 39.8), lng: Number(b.lng || -98.5), status: "active", image, images: uploaded.length ? uploaded : [image], description: String(b.description || ""), details: { ListedBy: u.name } };
+      const listing = { id, producerId: producer.id, userId: u.id, title, breed: b.breed || "Angus", klass: b.klass || "Cow-Calf Pair", category: b.category || "Cattle", head: Number(b.head || 1), unit: b.category === "Genetics" ? "Units" : "Head", price, priceType: price == null ? "contact" : "per_head", daysLeft: 60, listedAt: new Date().toISOString().slice(0, 10), location: b.location || "", lat: Number(b.lat || 39.8), lng: Number(b.lng || -98.5), status: "active", image, images: uploaded.length ? uploaded : [image], video: videoStore.validVideo(b.video), description: String(b.description || ""), details: { ListedBy: u.name } };
       db.data.listings.unshift(listing);
       await db.save();
       mail.listingLive(u, listing);
@@ -302,6 +315,8 @@ init(seedJson)
   .then((store) => {
     db = store;
     mail.attach(db);
+    server.timeout = 180000;
+    server.headersTimeout = 180000;
     server.listen(PORT, () => {
       console.log("Herd Yard running on http://localhost:" + PORT + " persist=" + db.persist + " mail=" + mail.configured());
       if (mail.configured() && !db.data.mailSampleSentAt) {

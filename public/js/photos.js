@@ -1,5 +1,26 @@
 (function () {
   var picked = [];
+  var pickedVideo = null;
+
+  function uploadVideo(file) {
+    if (!file) return Promise.resolve("");
+    if (file.size > 40 * 1024 * 1024) return Promise.reject(new Error("Video must be 40 MB or smaller."));
+    return fetch("/api/upload/video", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": file.type || "video/mp4",
+        "X-File-Name": encodeURIComponent(file.name || "clip.mp4")
+      },
+      body: file
+    }).then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) throw new Error(data.error || "Video upload failed");
+        return data.url;
+      });
+    });
+  }
+
 
   function compressImage(file) {
     return new Promise(function (resolve, reject) {
@@ -95,6 +116,39 @@
     if (desc) grid.insertBefore(wrap, desc);
     else grid.appendChild(wrap);
 
+    pickedVideo = null;
+    var vwrap = document.createElement("div");
+    vwrap.className = "field full";
+    vwrap.innerHTML =
+      "<label>Video (optional)</label>" +
+      '<div id="video-dropzone">' +
+      '<input id="listing-video" type="file" accept="video/mp4,video/webm,video/quicktime" style="display:none">' +
+      '<div id="video-hint"><strong>Drop a video of the cattle</strong><span>mp4, webm, or mov · 40 MB max · or paste a YouTube link below</span></div>' +
+      '<div id="video-name" class="sub" style="margin-top:8px;display:none"></div></div>' +
+      '<div style="margin-top:10px"><label>Or paste a YouTube / Vimeo / mp4 link</label>' +
+      '<input id="video-url" placeholder="https://www.youtube.com/watch?v=..."></div>';
+    if (desc) grid.insertBefore(vwrap, desc);
+    else grid.appendChild(vwrap);
+    var vzone = document.getElementById("video-dropzone");
+    var vinput = document.getElementById("listing-video");
+    var vname = document.getElementById("video-name");
+    vzone.style.cssText = "border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:18px;text-align:center;cursor:pointer";
+    function setVideoFile(f) {
+      if (!f || String(f.type).indexOf("video/") !== 0) return;
+      pickedVideo = f;
+      vname.style.display = "block";
+      vname.textContent = f.name + " · " + Math.round(f.size / 1024 / 1024 * 10) / 10 + " MB";
+    }
+    vzone.onclick = function (e) { if (!e.target.closest("input")) vinput.click(); };
+    vinput.onchange = function () { setVideoFile(vinput.files && vinput.files[0]); vinput.value = ""; };
+    ["dragenter","dragover","dragleave","drop"].forEach(function (evt) {
+      vzone.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); });
+    });
+    vzone.addEventListener("drop", function (e) {
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      setVideoFile(f);
+    });
+
     var zone = document.getElementById("dropzone");
     var input = document.getElementById("photos");
     zone.style.cssText =
@@ -151,6 +205,19 @@
               body.image = images[0];
               body.images = images;
             }
+            var link = (document.getElementById("video-url") && document.getElementById("video-url").value || "").trim();
+            if (link) body.video = link;
+            if (!pickedVideo) return body;
+            var btn = form.querySelector("button");
+            if (btn) btn.textContent = "Uploading video...";
+            return uploadVideo(pickedVideo).then(function (url) {
+              if (url) body.video = url;
+              return body;
+            });
+          })
+          .then(function (body) {
+            var btn = form.querySelector("button");
+            if (btn) btn.textContent = "Publish listing";
             return fetch("/api/listings", {
               method: "POST",
               credentials: "include",

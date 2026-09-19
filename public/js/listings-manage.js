@@ -222,6 +222,16 @@
       "<span style='display:block;font-size:0.88rem;color:#3a4a3e'>or click to choose from your computer</span></div>" +
       "<div style='margin-top:10px'><label>Or paste an image URL</label>" +
       "<input id='edit-photo-url' placeholder='https://...'></div></div>" +
+      "<div class='field full'><label>Video (optional)</label>" +
+      (listing.video ? "<video controls playsinline src='" + String(listing.video).split("'").join("") + "' style='width:100%;max-height:220px;border-radius:12px;background:#142018;margin:0 0 10px'></video>" : "") +
+      "<div id='edit-video-drop' style='border:2px dashed #1b6b45;background:#e6f2ea;border-radius:16px;padding:16px;text-align:center;cursor:pointer'>" +
+      "<input id='edit-video-input' type='file' accept='video/mp4,video/webm,video/quicktime' style='display:none'>" +
+      "<strong style='display:block;color:#0f3f28'>Drop a video here</strong>" +
+      "<span style='display:block;font-size:0.88rem;color:#3a4a3e'>mp4, webm, or mov · 40 MB max</span>" +
+      "<div id='edit-video-name' class='sub' style='margin-top:8px'>" + esc(listing.video || "") + "</div></div>" +
+      "<div style='margin-top:10px'><label>Or paste a YouTube / Vimeo / mp4 link</label>" +
+      "<input id='edit-video-url' placeholder='https://...' value='" + esc(listing.video && String(listing.video).indexOf("http") === 0 ? listing.video : "") + "'></div>" +
+      "<label style='display:flex;gap:8px;margin-top:10px;cursor:pointer'><input type='checkbox' id='edit-video-clear'> Remove video</label></div>" +
       "<div class='field full'><label>Title</label><input name='title' value='" + esc(listing.title) + "' required></div>" +
       "<div class='field'><label>Breed</label><input name='breed' value='" + esc(listing.breed) + "'></div>" +
       "<div class='field'><label>Class</label><input name='klass' value='" + esc(listing.klass) + "'></div>" +
@@ -257,6 +267,31 @@
       if (v) preview.src = v;
     });
 
+    var pendingVideo = null;
+    var vzone = document.getElementById("edit-video-drop");
+    var vinput = document.getElementById("edit-video-input");
+    var vname = document.getElementById("edit-video-name");
+    if (vzone && vinput) {
+      vzone.onclick = function (e) { if (!e.target.closest("input")) vinput.click(); };
+      vinput.onchange = function () {
+        var f = vinput.files && vinput.files[0];
+        if (f && String(f.type).indexOf("video/") === 0) {
+          pendingVideo = f;
+          if (vname) vname.textContent = f.name + " · " + Math.round(f.size / 1024 / 1024 * 10) / 10 + " MB";
+        }
+        vinput.value = "";
+      };
+      vzone.addEventListener("dragover", function (e) { e.preventDefault(); });
+      vzone.addEventListener("drop", function (e) {
+        e.preventDefault();
+        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f && String(f.type).indexOf("video/") === 0) {
+          pendingVideo = f;
+          if (vname) vname.textContent = f.name;
+        }
+      });
+    }
+
     document.getElementById("listing-edit-form").onsubmit = function (e) {
       e.preventDefault();
       var body = Object.fromEntries(new FormData(e.target).entries());
@@ -277,6 +312,30 @@
             body.image = urlVal;
             body.images = [urlVal];
           }
+          var clearVid = document.getElementById("edit-video-clear");
+          var vlink = (document.getElementById("edit-video-url") && document.getElementById("edit-video-url").value || "").trim();
+          if (clearVid && clearVid.checked) body.video = "";
+          else if (vlink) body.video = vlink;
+          if (!pendingVideo || (clearVid && clearVid.checked)) return body;
+          if (btn) btn.textContent = "Uploading video...";
+          return fetch("/api/upload/video", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": pendingVideo.type || "video/mp4",
+              "X-File-Name": encodeURIComponent(pendingVideo.name || "clip.mp4")
+            },
+            body: pendingVideo
+          }).then(function (r) {
+            return r.json().then(function (d) {
+              if (!r.ok) throw new Error(d.error || "Video upload failed");
+              body.video = d.url;
+              return body;
+            });
+          });
+        })
+        .then(function (body) {
+          if (btn) btn.textContent = "Save listing";
           return fetch("/api/listings/" + listing.id, {
             method: "POST",
             credentials: "include",
