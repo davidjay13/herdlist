@@ -447,15 +447,15 @@ RL.TESTIMONIALS = [
 
 RL.FAQS = [
   {
-    q: "What is RangeList?",
-    a: "RangeList is a farm-to-farm marketplace for cattle and livestock genetics. Producers list animals on a map. Buyers search by breed, class, and location, then contact the ranch directly to close a private-treaty sale.",
+    q: "What is Herd Yard?",
+    a: "Herd Yard is a farm-to-farm marketplace for cattle and livestock genetics. Producers list animals on a map. Buyers search by breed, class, and location, then contact the ranch directly to close a private-treaty sale.",
   },
   {
     q: "Is this an auction?",
     a: "No. There is no bidding clock and no sale barn. You set the price — or list as contact-for-price — and negotiate off the farm.",
   },
   {
-    q: "Does RangeList take a commission on cattle?",
+    q: "Does Herd Yard take a commission on cattle?",
     a: "Not on private-treaty cattle sales. You pay a listing or membership fee. Optional e-commerce for semen and embryos carries a platform fee when payment runs through the site.",
   },
   {

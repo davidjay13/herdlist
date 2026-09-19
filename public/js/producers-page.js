@@ -76,7 +76,7 @@
     if (!app) return true;
     app.innerHTML = `<section class="section">
       <div class="section-head"><div><h2>Producers</h2>
-      <p class="sub">${list.length} ranch${list.length===1?"":"es"} on the platform.</p></div></div>
+      <p class="sub">Search to find other producers near you</p></div></div>
       <div class="field" style="max-width:320px;margin:0 0 22px">
         <label>Search ranches</label>
         <input id="prod-q" placeholder="Name or location" value="${esc(term)}">
