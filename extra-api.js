@@ -19,11 +19,12 @@ module.exports = async function extraApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword } = ctx;
   const ADMINS = ["david@davidjay.com"];
   const COW = "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80";
-  const LOGO = "/logo.png?v=36";
+  const LOGO = "/cowboy.svg?v=1";
   function isPlaceholderAvatar(v) {
     if (!v) return true;
     var s = String(v);
     if (s.indexOf("unsplash.com") >= 0) return true;
+    if (/logo\.(svg|png)/i.test(s)) return true;
     return false;
   }
   function avatarSrc(v) {

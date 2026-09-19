@@ -1,7 +1,7 @@
 module.exports = async function messagesApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie } = ctx;
   if (!db.data.messages) db.data.messages = [];
-  const LOGO = "/logo.svg?v=58";
+  const LOGO = "/cowboy.svg?v=1";
 
   function userName(id) {
     const user = (db.data.users || []).find((x) => x.id === id);
@@ -12,6 +12,7 @@ module.exports = async function messagesApi(ctx) {
     if (!v) return true;
     var s = String(v);
     if (s.indexOf("unsplash.com") >= 0) return true;
+    if (/logo\.(svg|png)/i.test(s)) return true;
     return false;
   }
   function avatarForUser(id) {

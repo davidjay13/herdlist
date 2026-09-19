@@ -135,7 +135,8 @@
     var cz = document.getElementById("cover-drop");
     var cf = document.getElementById("cover-file");
     var form = document.getElementById("dash-profile-form");
-    if (p.avatar) setBg(av, p.avatar);
+    if (p.avatar && photoSrc(p.avatar)) setBg(av, p.avatar);
+    else if (av) { av.style.background = "#d6dbd4 url(/cowboy.svg?v=1) center / cover no-repeat"; av.textContent = ""; }
     if (p.cover) {
       setBg(cz, p.cover);
       var lab = document.getElementById("cover-label");
@@ -210,15 +211,13 @@
     if (!src) return "";
     var s = String(src);
     if (s.indexOf("unsplash.com") >= 0) return "";
+    if (/logo\.(svg|png)/i.test(s)) return "";
     return s;
   }
   function avatarHtml(src, name, size) {
     size = size || 40;
-    var url = photoSrc(src);
-    if (url) {
-      return "<img src='" + String(url).split("'").join("") + "' alt='' style='width:" + size + "px;height:" + size + "px;border-radius:50%;object-fit:cover;background:#e6f2ea;flex:none'>";
-    }
-    return "<div style='width:" + size + "px;height:" + size + "px;border-radius:50%;background:#1b6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;font-size:" + Math.max(11, size / 2.4) + "px'>" + esc(initials(name)) + "</div>";
+    var url = photoSrc(src) || "/cowboy.svg?v=1";
+    return "<img src='" + String(url).split("'").join("") + "' alt='' style='width:" + size + "px;height:" + size + "px;border-radius:50%;object-fit:cover;background:#d6dbd4;flex:none'>";
   }
   function threadKey(msg) {
     var other = msg.direction === "sent" ? (msg.toUser || msg.toProducer || "ranch") : (msg.fromUser || "buyer");

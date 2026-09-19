@@ -3,11 +3,12 @@ module.exports = async function newsApi(ctx) {
   const ADMINS = ["david@davidjay.com"];
   if (!Array.isArray(db.data.news)) db.data.news = [];
 
-  const LOGO = "/logo.svg?v=58";
+  const LOGO = "/cowboy.svg?v=1";
   function isPlaceholder(v) {
     if (!v) return true;
     var s = String(v);
     if (s.indexOf("unsplash.com") >= 0) return true;
+    if (/logo\.(svg|png)/i.test(s)) return true;
     return false;
   }
   function userName(id) {

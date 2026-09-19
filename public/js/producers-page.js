@@ -37,7 +37,7 @@
   }
   function card(p) {
     const cover = p.cover || p.avatar || COW;
-    const avatar = p.avatar || "/logo.svg?v=47";
+    const avatar = p.avatar || "/cowboy.svg?v=1";
     const slug = p.slug || p.id;
     const n = countsFor(p.id);
     return `<article class="listing-card" onclick="location.hash='#/ranch/${esc(slug)}'">
