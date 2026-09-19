@@ -571,3 +571,17 @@ button, input, select, textarea { font-family: inherit; }
 @media (max-width: 980px) {
   .podcast-grid { grid-template-columns: 1fr; }
 }
+
+
+.producers-map {
+  height: 560px;
+  min-height: 420px;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #d5e4d4;
+}
+@media (max-width: 980px) {
+  .producers-map { height: 420px; min-height: 320px; }
+}
