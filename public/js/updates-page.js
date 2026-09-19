@@ -1,6 +1,38 @@
 (function () {
   const UPDATES = [
     {
+      v: "0.5.8",
+      date: "Sep 19, 2026",
+      items: [
+        "Mobile dashboard: Welcome at the top, horizontal account pills, sidebar no longer stacks over the tiles.",
+        "Dashboard stats are four compact squares on one row.",
+        "Mobile Browse drops the view toggles and always shows the map with listing cards underneath.",
+        "Category, Breed, and Class filters sit on one compact row and apply as you change them.",
+        "Mobile inbox is list-first, then a full-screen thread with a back control.",
+        "Homepage Browse all button stays on one line.",
+        "Tighter top padding on mobile so Producers and other pages sit under the header."
+      ]
+    },
+    {
+      v: "0.5.7",
+      date: "Sep 19, 2026",
+      items: [
+        "Header: Account removed from the main nav. After login, List Cattle is replaced by My Account, which opens the dashboard.",
+        "Industry news ticker scrolls left to right (slower). Admins can edit each story's headline and subtext.",
+        "Missing profile photos use the cowboy hat silhouette instead of the Herd Yard bull."
+      ]
+    },
+    {
+      v: "0.5.6",
+      date: "Sep 18, 2026",
+      items: [
+        "Producers directory has View on map, with a pin per ranch.",
+        "Admin Producers uses the same tiles as the public directory, with View and Edit. Admins can change ranch photos, contact, and about.",
+        "Latest Updates link added to the footer.",
+        "FAQ copy says Herd Yard. Producers subtitle is Search to find other producers near you."
+      ]
+    },
+    {
       v: "0.5.5",
       date: "Sep 18, 2026",
       items: [
