@@ -2,8 +2,18 @@ const https = require("https");
 const querystring = require("querystring");
 
 const PRICES = {
-  single: { price: "price_1UHD6ZDS4eKsMgCbUIaXEcdy", mode: "payment", returnPath: "/#/list" },
-  producer: { price: "price_1UHD6aDS4eKsMgCb5L7EmAEE", mode: "subscription", returnPath: "/#/account" },
+  single: {
+    price: "price_1UHD6ZDS4eKsMgCbUIaXEcdy",
+    mode: "payment",
+    returnPath: "/?paid=single",
+    methods: ["card"],
+  },
+  producer: {
+    price: "price_1UHD6aDS4eKsMgCb5L7EmAEE",
+    mode: "subscription",
+    returnPath: "/?paid=producer",
+    methods: ["card"],
+  },
 };
 
 function stripePost(path, fields) {
@@ -65,16 +75,19 @@ module.exports = async function stripeBilling(ctx) {
     const plan = PRICES[(b.plan || "single").toLowerCase()] || PRICES.single;
     const u = userFromCookie(req);
     const origin = (req.headers.origin && /^https?:\/\//.test(req.headers.origin))
-      ? req.headers.origin
+      ? req.headers.origin.replace(/\/$/, "")
       : "https://herd-yard.com";
     try {
-      const fields = flatten({
+      const payload = {
         ui_mode: "embedded",
         mode: plan.mode,
         line_items: [{ price: plan.price, quantity: 1 }],
         return_url: origin + plan.returnPath,
+        redirect_on_completion: "if_required",
+        payment_method_types: plan.methods,
         metadata: { plan: b.plan || "single", site: "herd-yard", userId: u ? String(u.id) : "" },
-      }, "", {});
+      };
+      const fields = flatten(payload, "", {});
       if (u && u.email) fields.customer_email = u.email;
       const session = await stripePost("/v1/checkout/sessions", fields);
       if (session.error) return send(res, 400, { error: session.error.message }), true;
