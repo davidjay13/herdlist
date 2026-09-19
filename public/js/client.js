@@ -36,7 +36,7 @@
     var mobileLogin = document.getElementById("mobile-login");
     if (mobileLogin) {
       mobileLogin.textContent = logged ? "My Account" : "Log in";
-      mobileLogin.setAttribute("href", logged ? "#/account/profile" : "#/signin");
+      mobileLogin.setAttribute("href", logged ? "#/account" : "#/signin");
     }
     var cta = document.querySelector(".mobile-menu .menu-cta");
     if (cta) cta.style.display = logged ? "none" : "";
@@ -290,7 +290,7 @@
   }
   window.addEventListener("hashchange", route);
   document.getElementById("sell-btn").onclick = () => (location.hash = "#/list");
-  document.getElementById("acct-btn").onclick = () => { location.hash = state.user ? "#/account/profile" : "#/signin"; };
+  document.getElementById("acct-btn").onclick = () => { location.hash = state.user ? "#/account" : "#/signin"; };
   (async function boot() {
     try { const me = await api("/api/me"); state.user = me.user; state.producer = me.producer; state.follows = me.follows||[]; } catch(e){}
     try { const r = await api("/api/listings"); state.listings = r.listings; r.listings.forEach((l)=>state.listingCache[l.id]=l); }
