@@ -131,7 +131,8 @@ button, input, select, textarea { font-family: inherit; }
 .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
 .section { padding: 72px 28px; max-width: 1180px; margin: 0 auto; }
-.section-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 28px; }
+.section-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; }
+.section-head .btn { white-space: nowrap; flex: none; }
 .section h2, .page-title {
   font-family: var(--serif);
   font-weight: 560;
