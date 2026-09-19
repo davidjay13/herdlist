@@ -171,6 +171,7 @@ button, input, select, textarea { font-family: inherit; }
 .sub { color: var(--muted); margin: 0; }
 
 .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
 .listing-card {
   background: var(--white);
   border: 1px solid var(--line);

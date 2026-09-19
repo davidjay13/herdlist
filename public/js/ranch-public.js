@@ -75,7 +75,7 @@
       stat("Rating", p.rating || "\u2014", (p.reviews || 0) + " reviews") +
       stat("Followers", p.followers || 0) +
       '</div>' +
-      '<div class="stats-grid" style="margin-top:18px">' +
+      '<div class="stats-grid" style="margin-top:18px;gap:18px">' +
       '<div class="panel"><h2 style="margin:0 0 10px">About the ranch</h2><p style="margin:0;white-space:pre-wrap">' + (p.about || "This producer has not added an about section yet.") + '</p></div>' +
       '<div class="panel"><h2 style="margin:0 0 10px">Contact</h2>' + contactHtml + '</div></div>' +
       '<section style="margin-top:28px"><div class="section-head"><div><h2>Current listings</h2><p class="sub">Live groups from this ranch.</p></div></div>' +
