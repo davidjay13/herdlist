@@ -136,7 +136,7 @@
     var cf = document.getElementById("cover-file");
     var form = document.getElementById("dash-profile-form");
     if (p.avatar && photoSrc(p.avatar)) setBg(av, p.avatar);
-    else if (av) { av.style.background = "#d6dbd4 url(/cowboy.svg?v=1) center / cover no-repeat"; av.textContent = ""; }
+    else if (av) { av.style.background = "#d6dbd4 url(/cowboy.svg?v=2) center / cover no-repeat"; av.textContent = ""; }
     if (p.cover) {
       setBg(cz, p.cover);
       var lab = document.getElementById("cover-label");
@@ -216,7 +216,7 @@
   }
   function avatarHtml(src, name, size) {
     size = size || 40;
-    var url = photoSrc(src) || "/cowboy.svg?v=1";
+    var url = photoSrc(src) || "/cowboy.svg?v=2";
     return "<img src='" + String(url).split("'").join("") + "' alt='' style='width:" + size + "px;height:" + size + "px;border-radius:50%;object-fit:cover;background:#d6dbd4;flex:none'>";
   }
   function threadKey(msg) {

@@ -3,7 +3,7 @@ module.exports = async function newsApi(ctx) {
   const ADMINS = ["david@davidjay.com"];
   if (!Array.isArray(db.data.news)) db.data.news = [];
 
-  const LOGO = "/cowboy.svg?v=1";
+  const LOGO = "/cowboy.svg?v=2";
   function isPlaceholder(v) {
     if (!v) return true;
     var s = String(v);

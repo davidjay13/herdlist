@@ -16,7 +16,7 @@
     return false;
   }
   function face(src) {
-    return isPlaceholder(src) ? "/cowboy.svg?v=1" : src;
+    return isPlaceholder(src) ? "/cowboy.svg?v=2" : src;
   }
   function editId() {
     var m = hash().match(/^#\/account\/producers\/edit\/([^/?]+)/);

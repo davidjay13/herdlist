@@ -1,7 +1,7 @@
 module.exports = async function messagesApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie } = ctx;
   if (!db.data.messages) db.data.messages = [];
-  const LOGO = "/cowboy.svg?v=1";
+  const LOGO = "/cowboy.svg?v=2";
 
   function userName(id) {
     const user = (db.data.users || []).find((x) => x.id === id);
