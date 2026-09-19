@@ -293,7 +293,8 @@
       var m = (location.hash || "").match(/[?&]t=([^&]+)/);
       if (m) active = decodeURIComponent(m[1]);
     } catch (e) {}
-    if (!active && threads[0]) active = threads[0].key;
+    var mobile = window.matchMedia("(max-width: 980px)").matches;
+    if (!active && threads[0] && !mobile) active = threads[0].key;
     var current = null;
     threads.forEach(function (th) { if (th.key === active) current = th; });
     var list = threads.length ? threads.map(function (th) {
@@ -331,23 +332,21 @@
       bubbles = "<div style='margin:auto;color:#6b7a6e;text-align:center'>Select a conversation</div>";
     }
     var header = current
-      ? "<div style='display:flex;align-items:center;gap:10px'>" + avatarHtml(current.otherAvatar, current.otherName, 36) +
-        "<div><b>" + esc(current.otherName) + "</b><div class='sub'><a href='#/listing/" + esc(current.listingId) + "'>" + esc(current.listingTitle) + "</a></div></div></div>"
+      ? "<div class='inbox-who'>" + avatarHtml(current.otherAvatar, current.otherName, 36) +
+        "<div class='grow'><b>" + esc(current.otherName) + "</b><div class='sub'><a href='#/listing/" + esc(current.listingId) + "'>" + esc(current.listingTitle) + "</a></div></div></div>"
       : "<b>Messages</b>";
     var composer = current
-      ? "<form id='chat-compose' data-listing='" + esc(current.listingId) + "' data-to='" + esc(current.otherId || "") + "' style='display:flex;gap:8px;align-items:center'>" +
-        "<input id='chat-input' name='body' placeholder='Aa' autocomplete='off' style='flex:1;border:1px solid #d8e0d6;background:#f0f2f5;border-radius:20px;padding:10px 14px;font:inherit'>" +
-        "<button class='btn btn-primary' type='submit' style='border-radius:20px'>Send</button></form>"
+      ? "<form id='chat-compose' class='inbox-compose' data-listing='" + esc(current.listingId) + "' data-to='" + esc(current.otherId || "") + "'>" +
+        "<input id='chat-input' name='body' placeholder='Message...' autocomplete='off'>" +
+        "<button class='btn btn-primary' type='submit'>Send</button></form>"
       : "";
-    return "<div style='display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 64px);background:#fff;border-left:1px solid #e6eee8'>" +
-      "<aside style='border-right:1px solid #e6eee8;display:flex;flex-direction:column;background:#fffcf7'>" +
-      "<div style='padding:16px 16px 10px'><b style='font-size:1.2rem'>Chats</b></div>" +
-      "<div style='overflow:auto;flex:1'>" + list + "</div></aside>" +
-      "<section style='display:flex;flex-direction:column;min-width:0'>" +
-      "<header style='padding:12px 16px;border-bottom:1px solid #e6eee8'>" + header + "</header>" +
-      "<div id='chat-thread' style='flex:1;overflow:auto;padding:16px 18px;background:#fff;display:flex;flex-direction:column'>" + bubbles + "</div>" +
-      "<div style='padding:10px 14px;border-top:1px solid #e6eee8;background:#fffcf7'>" + composer + "</div>" +
-      "</section></div>";
+    return "<div class='inbox-shell" + (current ? " has-thread" : " list-only") + "'>" +
+      "<aside class='inbox-list'><div class='inbox-list-head'><b>Chats</b></div>" +
+      "<div class='inbox-list-body'>" + list + "</div></aside>" +
+      "<section class='inbox-pane'>" +
+      "<header class='inbox-top'><a class='inbox-back' href='#/account/messages'>Chats</a>" + header + "</header>" +
+      "<div id='chat-thread' class='inbox-thread'>" + bubbles + "</div>" +
+      "<div class='inbox-foot'>" + composer + "</div></section></div>";
   }
   function bindMessages() {
     document.querySelectorAll(".chat-row").forEach(function (btn) {

@@ -48,7 +48,43 @@
   .dash-pill.on { background: #1b6b45; color: #fff; }
   .dash-home-hello { display: none !important; }
   #dash-main { padding: 16px !important; min-height: 0; }
-  #dash-main.is-messages { padding: 0 !important; }
+  #dash-main.is-messages {
+    padding: 0 !important;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .dash-col { flex: 1; min-height: 0; }
+  .dash-col:has(.is-messages) .dash-mobile-hello { display: none; }
+  .dash-col:has(.is-messages) .dash-mobile-top { padding: 8px 12px 8px; }
+  .inbox-shell {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: auto !important;
+    border-left: 0;
+  }
+  .inbox-shell.list-only .inbox-pane { display: none; }
+  .inbox-shell.has-thread .inbox-list { display: none; }
+  .inbox-list, .inbox-pane { flex: 1; min-height: 0; }
+  .inbox-back {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    font-weight: 650;
+    color: #1b6b45;
+    padding: 6px 0 6px 0;
+    margin-right: 4px;
+  }
+  .inbox-back::before { content: "‹ "; font-size: 1.2rem; line-height: 1; }
+  .inbox-list-head { padding: 12px 16px 6px; }
+  .inbox-top { padding: 10px 12px; }
+  .inbox-thread { padding: 12px; }
+  .inbox-foot { padding: 8px 10px 12px; }
+  .inbox-compose .btn { padding: 10px 14px; }
+
   .dash-kpis { grid-template-columns: repeat(4, 1fr) !important; gap: 6px; }
   .dash-kpi { padding: 8px 4px; border-radius: 10px; }
   .dash-kpi b { font-size: 1.05rem; }
