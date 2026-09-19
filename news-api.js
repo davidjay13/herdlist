@@ -373,7 +373,7 @@ module.exports = async function newsApi(ctx) {
     send(res, 200, {
       news: news,
       podcasts: podcasts,
-      messages: msgs.slice(0, 8).map(function (m) { return decorateMessage(m, user); }),
+      messages: msgs.slice(0, 40).map(function (m) { return decorateMessage(m, user); }),
       messageCount: msgs.length,
       local: local,
       latest: latest,

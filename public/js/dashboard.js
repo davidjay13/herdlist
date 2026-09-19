@@ -362,16 +362,34 @@
     var name = ((me.user && me.user.name) || "Producer").split(" ")[0];
     pack = pack || {};
     var msgs = pack.messages || [];
-    var msgRows = msgs.length ? msgs.slice(0, 5).map(function (m) {
-      var sent = m.direction === "sent" || m.fromUser === ((me.user && me.user.id) || -1);
-      var who = sent ? (m.toName || "Ranch") : (m.fromName || "Buyer");
-      var photo = photoSrc(sent ? m.toAvatar : m.fromAvatar);
-      var body = String(m.body || "");
+    var convos = [];
+    (function () {
+      var map = {};
+      (msgs || []).forEach(function (msg) {
+        var other = otherOf(msg);
+        var key = String(other.id || other.name || "x");
+        if (!map[key]) {
+          map[key] = { otherName: other.name, otherAvatar: other.avatar, last: msg, listingId: msg.listingId };
+        }
+        if (!map[key].otherAvatar && other.avatar) map[key].otherAvatar = other.avatar;
+        if ((msg.at || 0) >= (map[key].last.at || 0)) {
+          map[key].last = msg;
+          map[key].listingId = msg.listingId;
+        }
+      });
+      convos = Object.keys(map).map(function (k) { return map[k]; });
+      convos.sort(function (a, b) { return ((b.last && b.last.at) || 0) - ((a.last && a.last.at) || 0); });
+    })();
+    var msgRows = convos.length ? convos.slice(0, 5).map(function (c) {
+      var who = c.otherName || "Ranch";
+      var photo = photoSrc(c.otherAvatar);
+      var body = String((c.last && c.last.body) || "");
       if (body.length > 70) body = body.slice(0, 68) + "…";
       var face = photo
         ? "<img src='" + String(photo).split("'").join("") + "' alt=''>"
         : avatarHtml("", who, 46);
-      return "<a class='dash-mini' href='#/account/messages'>" + face +
+      var href = "#/account/messages?t=" + encodeURIComponent(threadKey(c.last));
+      return "<a class='dash-mini' href='" + href + "'>" + face +
         "<div class='grow'><b>" + esc(who) + "</b><div class='sub'>" + esc(body) + "</div></div></a>";
     }).join("") : "<div class='dash-empty'>No messages yet. Buyers can write you from a listing.</div>";
     var local = pack.local || [];
