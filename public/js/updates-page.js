@@ -2,6 +2,13 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.15",
+      date: "Sep 19, 2026",
+      items: [
+        "Browse cards no longer crop the price, breed, class, and location — the photo stays on top and the text sits fully under it."
+      ]
+    },
+    {
       v: "0.5.14",
       date: "Sep 19, 2026",
       items: [

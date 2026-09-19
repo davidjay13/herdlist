@@ -32,7 +32,14 @@
   function daysBadge(l) {
     var n = Number(l.daysLeft);
     if (n > 0) return n + "d left";
-    return l.listedAt ? "listed " + l.listedAt : "listed";
+    var raw = String(l.listedAt || "");
+    var d = Date.parse(raw);
+    if (d) {
+      try {
+        return new Date(d).toLocaleDateString([], { month: "short", day: "numeric" });
+      } catch (e) {}
+    }
+    return raw ? raw.slice(5) : "listed";
   }
   function money(n) {
     if (n == null) return "Contact for Price";

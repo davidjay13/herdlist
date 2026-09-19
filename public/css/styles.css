@@ -151,6 +151,11 @@ button, input, select, textarea { font-family: inherit; }
   box-shadow: var(--shadow);
   cursor: pointer;
   transition: transform 0.18s ease;
+  height: auto;
+  min-height: max-content;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
 }
 .listing-card:hover { transform: translateY(-3px); }
 .listing-card .thumb {
@@ -158,6 +163,7 @@ button, input, select, textarea { font-family: inherit; }
   background-size: cover;
   background-position: center;
   position: relative;
+  flex: 0 0 auto;
 }
 .badge {
   position: absolute;
@@ -180,7 +186,12 @@ button, input, select, textarea { font-family: inherit; }
   padding: 4px 9px;
   border-radius: 999px;
 }
-.listing-body { padding: 14px 16px 16px; }
+.listing-body {
+  padding: 14px 16px 16px;
+  flex: 0 0 auto;
+  min-height: 72px;
+  overflow: visible;
+}
 .price { font-weight: 650; font-size: 1.12rem; color: var(--green); margin: 0 0 6px; }
 .meta { color: var(--muted); font-size: 0.86rem; }
 .meta span + span::before { content: " · "; color: #b7c0b6; }
@@ -293,16 +304,21 @@ button, input, select, textarea { font-family: inherit; }
   padding: 18px;
   overflow: auto;
   align-content: start;
+  align-items: start;
+  grid-auto-rows: max-content;
 }
 .browse-layout.view-split .listings-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   min-height: 0;
   height: 100%;
   overflow: auto;
+  align-content: start;
+  align-items: start;
+  grid-auto-rows: max-content;
 }
-.browse-layout.view-split .listing-card .thumb { height: 118px; }
-.browse-layout.view-split .listing-body { display: block; padding: 10px 12px 12px; }
-.browse-layout.view-split .price { font-size: 1rem; }
+.browse-layout.view-split .listing-card .thumb { height: 132px; }
+.browse-layout.view-split .listing-body { display: block; padding: 12px 12px 14px; min-height: 78px; }
+.browse-layout.view-split .price { font-size: 1.02rem; }
 .leaflet-container { height: 100%; width: 100%; background: #dce8d8; }
 .hy-pin { background: transparent; border: 0; }
 .hy-dot {
