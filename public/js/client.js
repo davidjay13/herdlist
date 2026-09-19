@@ -98,7 +98,10 @@
   }
   function browse() {
     const params = new URLSearchParams(location.hash.split("?")[1] || "");
-    const q = { category: params.get("category") || "", breed: params.get("breed") || "", klass: params.get("klass") || "", view: params.get("view") || "split" };
+    const isMobile = window.matchMedia("(max-width: 980px)").matches;
+    let view = params.get("view") || (isMobile ? "list" : "split");
+    if (isMobile && view === "split") view = "list";
+    const q = { category: params.get("category") || "", breed: params.get("breed") || "", klass: params.get("klass") || "", view: view };
     const items = state.listings.filter((l) => (!q.category || l.category === q.category) && (!q.breed || l.breed === q.breed) && (!q.klass || l.klass === q.klass));
     const PAGE = 9;
     const pages = Math.max(1, Math.ceil(items.length / PAGE));
@@ -123,7 +126,7 @@
       <p class="sub" style="margin-top:16px">${items.length} listings</p></aside>
       <div class="browse-main"><div class="browse-toolbar"><div><b>Nationwide inventory</b></div>
       <div class="view-toggle">
-        <button class="btn ${q.view==="split"?"btn-primary":"btn-outline"}" data-view="split">Map + cards</button>
+        <button class="btn view-split-btn ${q.view==="split"?"btn-primary":"btn-outline"}" data-view="split">Map + cards</button>
         <button class="btn ${q.view==="map"?"btn-primary":"btn-outline"}" data-view="map">Map</button>
         <button class="btn ${q.view==="list"?"btn-primary":"btn-outline"}" data-view="list">Cards</button>
       </div></div>
@@ -148,7 +151,8 @@
       if ($("#f-cat").value) next.set("category", $("#f-cat").value);
       if ($("#f-breed").value) next.set("breed", $("#f-breed").value);
       if ($("#f-klass").value) next.set("klass", $("#f-klass").value);
-      if (q.view !== "split") next.set("view", q.view);
+      if (q.view && q.view !== "split") next.set("view", q.view);
+      if (isMobile && q.view === "list") next.set("view", "list");
       location.hash = "#/browse" + (next.toString() ? "?" + next : "");
     };
     app.querySelectorAll("[data-view]").forEach((b) => {

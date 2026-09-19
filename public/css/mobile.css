@@ -53,7 +53,13 @@
   .dash-kpi { padding: 8px 4px; border-radius: 10px; }
   .dash-kpi b { font-size: 1.05rem; }
   .dash-kpi span { font-size: .62rem; }
+  .view-split-btn { display: none !important; }
+  .browse-layout.view-split .map-wrap { display: none !important; }
+  .browse-layout.view-split .listings-col,
+  .browse-layout.view-split .listings-grid { display: grid !important; }
+  .browse-layout.view-split .browse-stage { display: block !important; height: auto !important; }
 }
+
 
 .menu-toggle {
   display: none;
