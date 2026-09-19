@@ -95,24 +95,23 @@
         return [p.name, p.location, p.owner, p.email, p.phone, p.slug].join(" ").toLowerCase().indexOf(term) >= 0;
       });
     }
+    var COW = "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1600&q=80";
     var cards = rows.map(function (p) {
       var n = counts[p.id] || 0;
-      var contact = [p.phone, p.email].filter(Boolean).join(" · ");
-      var badge = p.imported ? "Imported" : (p.userId ? "Claimed" : "Open");
-      var img = String(face(p.avatar)).split("'").join("");
-      var cover = isPlaceholder(p.cover) ? "" : String(p.cover).split("'").join("");
-      return "<article class='admin-prod-card'>" +
-        "<div class='admin-prod-cover'" + (cover ? " style='background-image:url(" + JSON.stringify(cover) + ")'" : "") + "></div>" +
-        "<div class='admin-prod-body'>" +
-        "<img class='admin-prod-av' src='" + img + "' alt=''>" +
-        "<div class='grow'>" +
-        "<div class='admin-prod-name'>" + esc(p.name || "Ranch") + "</div>" +
-        "<div class='sub'>" + esc(p.location || "Location not set") + (p.owner ? " · " + esc(p.owner) : "") + "</div>" +
-        "<div class='admin-prod-meta'><span>" + n + " listing" + (n === 1 ? "" : "s") + "</span><span>" + (p.sold || 0) + " sold</span><span>" + badge + "</span></div>" +
-        (contact ? "<div class='sub'>" + esc(contact) + "</div>" : "") +
-        "</div>" +
-        "<div class='admin-prod-actions'>" +
-        "<a class='btn btn-outline' href='#/ranch/" + esc(p.slug || p.id) + "'>View</a>" +
+      var cover = isPlaceholder(p.cover) ? (isPlaceholder(p.avatar) ? COW : p.avatar) : p.cover;
+      var avatar = face(p.avatar);
+      var slug = p.slug || p.id;
+      return "<article class='listing-card admin-prod-tile'>" +
+        "<div class='thumb' style='background-image:url(" + JSON.stringify(String(cover)) + ")'>" +
+        "<span class='badge'>" + esc(p.name || "Ranch") + "</span></div>" +
+        "<div class='listing-body'>" +
+        "<div style='display:flex;gap:10px;align-items:center;margin-bottom:8px'>" +
+        "<img src='" + String(avatar).split("'").join("") + "' alt='' style='width:36px;height:36px;border-radius:50%;object-fit:cover;background:#d6dbd4;border:1px solid #d8e0d6'>" +
+        "<div><div class='price' style='font-size:1rem;margin:0'>" + esc(p.name || "Ranch") + "</div>" +
+        "<div class='meta'>" + esc(p.location || "Location not set") + "</div></div></div>" +
+        "<div class='meta'><span>" + n + " listing" + (n === 1 ? "" : "s") + "</span><span>" + (p.sold || 0) + " sold</span><span>" + (p.imported ? "Imported" : "Claimed") + "</span></div>" +
+        "<div class='admin-prod-tile-actions'>" +
+        "<a class='btn btn-outline' href='#/ranch/" + esc(slug) + "'>View</a>" +
         "<a class='btn btn-primary' href='#/account/producers/edit/" + encodeURIComponent(p.id) + "'>Edit</a>" +
         "</div></div></article>";
     }).join("");
@@ -122,7 +121,7 @@
       "<p class='sub'>" + rows.length + " of " + (producers || []).length + " ranch profiles</p></div>" +
       "<div class='field' style='min-width:240px;margin:0'><label>Search</label>" +
       "<input id='prod-admin-q' placeholder='Name, location, email' value='" + esc(q) + "'></div></div>" +
-      "<div class='admin-prod-grid'>" + (cards || "<div class='panel'><p class='sub'>No producers match.</p></div>") + "</div>";
+      "<div class='cards-3'>" + (cards || "<div class='empty'>No producers match.</div>") + "</div>";
     var input = document.getElementById("prod-admin-q");
     if (input) {
       input.oninput = function () { paintProducers(producers, counts); };

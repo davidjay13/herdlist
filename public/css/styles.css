@@ -679,3 +679,12 @@ button, input, select, textarea { font-family: inherit; }
   .admin-prod-actions { margin-top: 8px; width: 100%; }
   .admin-prod-name { margin-top: 8px; }
 }
+
+.admin-prod-tile { cursor: default; }
+.admin-prod-tile:hover { transform: translateY(-3px); }
+.admin-prod-tile-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.admin-prod-tile-actions .btn { flex: 1; text-align: center; }
