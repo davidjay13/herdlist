@@ -1,6 +1,46 @@
 (function () {
   function esc(v) { return String(v || "").split("<").join(" "); }
   function hash() { return location.hash || ""; }
+  function toast(msg) {
+    var el = document.getElementById("toast");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = "block";
+    setTimeout(function () { el.style.display = "none"; }, 2400);
+  }
+  function isPlaceholder(src) {
+    if (!src) return true;
+    var s = String(src);
+    if (s.indexOf("unsplash.com") >= 0) return true;
+    if (/logo\.(svg|png)/i.test(s)) return true;
+    return false;
+  }
+  function face(src) {
+    return isPlaceholder(src) ? "/cowboy.svg?v=1" : src;
+  }
+  function editId() {
+    var m = hash().match(/^#\/account\/producers\/edit\/([^/?]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  function compress(file, max) {
+    return new Promise(function (resolve) {
+      if (!file || String(file.type).indexOf("image/") !== 0) return resolve(null);
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        var w = img.width, h = img.height;
+        var scale = Math.min(max / w, max / h, 1);
+        var c = document.createElement("canvas");
+        c.width = Math.round(w * scale);
+        c.height = Math.round(h * scale);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL("image/jpeg", 0.78));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
 
   function ensureLink() {
     var box = document.getElementById("admin-controls");
@@ -41,28 +81,153 @@
     });
   }
 
-  function paintProducers(producers) {
+  function paintProducers(producers, counts) {
     var main = document.getElementById("dash-main");
     if (!main) return;
+    counts = counts || {};
+    var q = ((document.getElementById("prod-admin-q") || {}).value || "");
+    var term = q.trim().toLowerCase();
     var rows = (producers || []).slice().sort(function (a, b) {
       return String(a.name || "").localeCompare(String(b.name || ""));
     });
+    if (term) {
+      rows = rows.filter(function (p) {
+        return [p.name, p.location, p.owner, p.email, p.phone, p.slug].join(" ").toLowerCase().indexOf(term) >= 0;
+      });
+    }
+    var cards = rows.map(function (p) {
+      var n = counts[p.id] || 0;
+      var contact = [p.phone, p.email].filter(Boolean).join(" · ");
+      var badge = p.imported ? "Imported" : (p.userId ? "Claimed" : "Open");
+      var img = String(face(p.avatar)).split("'").join("");
+      var cover = isPlaceholder(p.cover) ? "" : String(p.cover).split("'").join("");
+      return "<article class='admin-prod-card'>" +
+        "<div class='admin-prod-cover'" + (cover ? " style='background-image:url(" + JSON.stringify(cover) + ")'" : "") + "></div>" +
+        "<div class='admin-prod-body'>" +
+        "<img class='admin-prod-av' src='" + img + "' alt=''>" +
+        "<div class='grow'>" +
+        "<div class='admin-prod-name'>" + esc(p.name || "Ranch") + "</div>" +
+        "<div class='sub'>" + esc(p.location || "Location not set") + (p.owner ? " · " + esc(p.owner) : "") + "</div>" +
+        "<div class='admin-prod-meta'><span>" + n + " listing" + (n === 1 ? "" : "s") + "</span><span>" + (p.sold || 0) + " sold</span><span>" + badge + "</span></div>" +
+        (contact ? "<div class='sub'>" + esc(contact) + "</div>" : "") +
+        "</div>" +
+        "<div class='admin-prod-actions'>" +
+        "<a class='btn btn-outline' href='#/ranch/" + esc(p.slug || p.id) + "'>View</a>" +
+        "<a class='btn btn-primary' href='#/account/producers/edit/" + encodeURIComponent(p.id) + "'>Edit</a>" +
+        "</div></div></article>";
+    }).join("");
     main.innerHTML =
-      "<h2 class='page-title'>Producers</h2>" +
-      "<p class='sub'>" + rows.length + " ranch profiles</p>" +
-      "<div class='panel' style='margin-top:16px'>" +
-      (rows.length ? rows.map(function (p) {
-        var img = p.avatar || "/cowboy.svg?v=1";
-        var contact = [p.phone, p.email].filter(Boolean).join(" \u00b7 ");
-        return "<div class='row' style='align-items:center;gap:12px'>" +
-          (img ? "<img src='" + String(img).split("'").join("") + "' alt='' style='width:52px;height:52px;object-fit:cover;border-radius:10px'>" : "") +
-          "<span style='flex:1'><b>" + esc(p.name) + "</b><div class='sub'>" +
-          esc(p.location) + " \u00b7 sold " + (p.sold || 0) + "</div>" +
-          (contact ? "<div class='sub'>" + esc(contact) + "</div>" : "") +
-          "</span>" +
-          "<a class='btn btn-outline' href='#/ranch/" + esc(p.slug) + "'>View public profile</a></div>";
-      }).join("") : "<p class='sub'>No producers yet.</p>") +
-      "</div>";
+      "<div class='admin-prod-head'>" +
+      "<div><h2 class='page-title' style='margin:0'>Producers</h2>" +
+      "<p class='sub'>" + rows.length + " of " + (producers || []).length + " ranch profiles</p></div>" +
+      "<div class='field' style='min-width:240px;margin:0'><label>Search</label>" +
+      "<input id='prod-admin-q' placeholder='Name, location, email' value='" + esc(q) + "'></div></div>" +
+      "<div class='admin-prod-grid'>" + (cards || "<div class='panel'><p class='sub'>No producers match.</p></div>") + "</div>";
+    var input = document.getElementById("prod-admin-q");
+    if (input) {
+      input.oninput = function () { paintProducers(producers, counts); };
+      setTimeout(function () {
+        var el = document.getElementById("prod-admin-q");
+        if (el && term) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+      }, 0);
+    }
+  }
+
+  function paintProducerEdit(p) {
+    var main = document.getElementById("dash-main");
+    if (!main) return;
+    var avatarData = null;
+    var coverData = null;
+    var avSrc = face(p.avatar);
+    var coverSrc = isPlaceholder(p.cover) ? "" : p.cover;
+    main.innerHTML =
+      "<div class='admin-prod-head'><div>" +
+      "<p class='sub' style='margin:0 0 6px'><a href='#/account/producers'>← All producers</a></p>" +
+      "<h2 class='page-title' style='margin:0'>Edit " + esc(p.name || "ranch") + "</h2>" +
+      "<p class='sub'>Changes go live on the public ranch profile.</p></div>" +
+      "<a class='btn btn-outline' href='#/ranch/" + esc(p.slug || p.id) + "'>View public profile</a></div>" +
+      "<div id='admin-cover-drop' class='admin-cover-drop'" + (coverSrc ? " style='background-image:url(" + JSON.stringify(coverSrc) + ")'" : "") + ">" +
+      "<div id='admin-cover-label' class='admin-cover-label'>Drop header image or click to upload</div></div>" +
+      "<div class='panel' style='display:flex;gap:16px;align-items:center;margin-bottom:16px'>" +
+      "<button type='button' id='admin-avatar-btn' class='admin-avatar-btn' style='background-image:url(" + JSON.stringify(avSrc) + ")'></button>" +
+      "<div><b>Profile photo</b><div class='sub'>Gray cowboy shows until a photo is uploaded.</div></div></div>" +
+      "<form id='admin-prod-form' class='panel'><div class='form-grid'>" +
+      "<div class='field'><label>Ranch name</label><input name='ranchName' value='" + esc(p.name) + "' required></div>" +
+      "<div class='field'><label>Owner</label><input name='owner' value='" + esc(p.owner) + "'></div>" +
+      "<div class='field'><label>Location</label><input name='location' value='" + esc(p.location) + "' placeholder='City, ST'></div>" +
+      "<div class='field'><label>Phone</label><input name='phone' value='" + esc(p.phone) + "'></div>" +
+      "<div class='field'><label>Email</label><input name='email' value='" + esc(p.email) + "'></div>" +
+      "<div class='field'><label>Website</label><input name='website' value='" + esc(p.website) + "'></div>" +
+      "<div class='field full'><label>Associations</label><input name='associations' value='" + esc((p.associations || []).join(", ")) + "'></div>" +
+      "<div class='field full'><label>About</label><textarea name='about' rows='4'>" + esc(p.about) + "</textarea></div>" +
+      "<div class='field full'><label>Operations</label><textarea name='operations' rows='4'>" + esc(p.operations) + "</textarea></div></div>" +
+      "<div style='display:flex;gap:8px;margin-top:16px;flex-wrap:wrap'>" +
+      "<button class='btn btn-primary' type='submit'>Save ranch</button>" +
+      "<a class='btn btn-outline' href='#/account/producers'>Cancel</a></div></form>" +
+      "<input id='admin-avatar-file' type='file' accept='image/*' style='display:none'>" +
+      "<input id='admin-cover-file' type='file' accept='image/*' style='display:none'>";
+
+    var avBtn = document.getElementById("admin-avatar-btn");
+    var avFile = document.getElementById("admin-avatar-file");
+    var coverDrop = document.getElementById("admin-cover-drop");
+    var coverFile = document.getElementById("admin-cover-file");
+    if (avBtn && avFile) {
+      avBtn.onclick = function () { avFile.click(); };
+      avFile.onchange = function () {
+        if (!avFile.files[0]) return;
+        compress(avFile.files[0], 640).then(function (d) {
+          if (!d) return;
+          avatarData = d;
+          avBtn.style.backgroundImage = "url(" + JSON.stringify(d) + ")";
+        });
+      };
+    }
+    function takeCover(file) {
+      if (!file) return;
+      compress(file, 1400).then(function (d) {
+        if (!d) return;
+        coverData = d;
+        coverDrop.style.backgroundImage = "url(" + JSON.stringify(d) + ")";
+        coverDrop.style.backgroundSize = "cover";
+        var lab = document.getElementById("admin-cover-label");
+        if (lab) lab.textContent = "Header image updated";
+      });
+    }
+    if (coverDrop && coverFile) {
+      coverDrop.onclick = function () { coverFile.click(); };
+      coverFile.onchange = function () { takeCover(coverFile.files[0]); };
+      coverDrop.ondragover = function (e) { e.preventDefault(); coverDrop.classList.add("on"); };
+      coverDrop.ondragleave = function () { coverDrop.classList.remove("on"); };
+      coverDrop.ondrop = function (e) {
+        e.preventDefault();
+        coverDrop.classList.remove("on");
+        takeCover(e.dataTransfer.files[0]);
+      };
+    }
+    var form = document.getElementById("admin-prod-form");
+    if (form) form.onsubmit = function (e) {
+      e.preventDefault();
+      var fd = new FormData(form);
+      var body = {};
+      fd.forEach(function (v, k) { body[k] = v; });
+      if (avatarData) body.avatar = avatarData;
+      if (coverData) body.cover = coverData;
+      var btn = form.querySelector("button[type=submit]");
+      if (btn) btn.disabled = true;
+      fetch("/api/admin/producers/" + encodeURIComponent(p.id), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      }).then(function (r) {
+        return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Save failed"); return d; });
+      }).then(function () {
+        toast("Ranch profile saved.");
+        location.hash = "#/account/producers";
+      }).catch(function (err) {
+        toast(err.message);
+      }).then(function () { if (btn) btn.disabled = false; });
+    };
   }
 
   function paintAccounts(accounts) {
@@ -90,13 +255,14 @@
       (rows.length ? rows.map(function (a) {
         var badge = a.admin ? "Admin" : (a.imported ? "Imported" : "Signed up");
         return "<div class='row' style='align-items:center;gap:12px'>" +
-          "<img src='" + String(a.avatar || "/cowboy.svg?v=1").split("'").join("") + "' alt='' style='width:40px;height:40px;object-fit:contain;background:#fff;border-radius:8px;padding:3px'>" +
+          "<img src='" + String(face(a.avatar)).split("'").join("") + "' alt='' style='width:40px;height:40px;object-fit:cover;background:#d6dbd4;border-radius:8px'>" +
           "<span style='flex:1'><b>" + esc(a.name) + "</b>" +
-          "<div class='sub'>" + esc(a.email) + (a.phone ? " \u00b7 " + esc(a.phone) : "") + " \u00b7 id " + a.id + "</div></span>" +
+          "<div class='sub'>" + esc(a.email) + (a.phone ? " · " + esc(a.phone) : "") + " · id " + a.id + "</div></span>" +
           "<span class='sub'>" + esc(a.producerName || "no ranch") + "<br>" + esc(a.location) + "</span>" +
           "<span class='sub'>" + a.listingCount + " listings</span>" +
           "<span class='sub'>" + badge + "</span>" +
-          (a.slug ? "<a class='btn btn-outline' href='#/ranch/" + esc(a.slug) + "'>Profile</a>" : "") +
+          (a.producerId ? "<a class='btn btn-primary' href='#/account/producers/edit/" + encodeURIComponent(a.producerId) + "'>Edit</a>" : "") +
+          (a.slug ? "<a class='btn btn-outline' href='#/ranch/" + esc(a.slug) + "'>View</a>" : "") +
           "</div>";
       }).join("") : "<p class='sub'>No accounts in this view.</p>") +
       "</div>";
@@ -113,7 +279,7 @@
       "<p class='sub'>Paste article links. We pull the headline and show them in the dashboard ticker.</p>" +
       "<form id='news-form' class='panel' style='margin:16px 0'>" +
       "<div class='field full'><label>Article links</label>" +
-      "<textarea id='news-urls' rows='4' placeholder='https://www.drovers.com/....\nhttps://www.beefmagazine.com/....' style='width:100%'></textarea></div>" +
+      "<textarea id='news-urls' rows='4' placeholder='https://www.drovers.com/....' style='width:100%'></textarea></div>" +
       "<button class='btn btn-primary' type='submit' style='margin-top:12px'>Add headlines</button></form>" +
       "<div class='panel'>" +
       (rows.length ? rows.map(function (n) {
@@ -144,13 +310,29 @@
     ensureLink();
     mark();
     if (hash().indexOf("#/account/producers") === 0) {
-      fetch("/api/producers", { credentials: "include" })
-        .then(function (r) { return r.json(); })
-        .then(function (data) { paintProducers((data && data.producers) || []); })
-        .catch(function () {
-          var main = document.getElementById("dash-main");
-          if (main) main.innerHTML = "<p>Could not load producers.</p>";
+      Promise.all([
+        fetch("/api/producers", { credentials: "include" }).then(function (r) { return r.json(); }),
+        fetch("/api/listings", { credentials: "include" }).then(function (r) { return r.json(); }).catch(function () { return { listings: [] }; })
+      ]).then(function (pair) {
+        var producers = (pair[0] && pair[0].producers) || [];
+        var counts = {};
+        ((pair[1] && pair[1].listings) || []).forEach(function (l) {
+          if (!l || l.hidden || l.status === "sold") return;
+          counts[l.producerId] = (counts[l.producerId] || 0) + 1;
         });
+        var id = editId();
+        if (id) {
+          var found = producers.filter(function (p) { return p.id === id || p.slug === id; })[0];
+          if (found) return paintProducerEdit(found);
+          var main = document.getElementById("dash-main");
+          if (main) main.innerHTML = "<p>Ranch not found. <a href='#/account/producers'>Back to producers</a></p>";
+          return;
+        }
+        paintProducers(producers, counts);
+      }).catch(function () {
+        var main = document.getElementById("dash-main");
+        if (main) main.innerHTML = "<p>Could not load producers.</p>";
+      });
       return;
     }
     if (hash().indexOf("#/account/accounts") === 0) {

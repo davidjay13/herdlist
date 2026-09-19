@@ -586,3 +586,96 @@ button, input, select, textarea { font-family: inherit; }
 @media (max-width: 980px) {
   .producers-map { height: 420px; min-height: 320px; }
 }
+
+
+.admin-prod-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+}
+.admin-prod-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.admin-prod-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.admin-prod-cover {
+  height: 72px;
+  background: #d7eadc center / cover no-repeat;
+}
+.admin-prod-body {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 0 16px 16px;
+  margin-top: -28px;
+  position: relative;
+}
+.admin-prod-av {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: #d6dbd4;
+  border: 3px solid #fff;
+  flex: none;
+}
+.admin-prod-name {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 1.15rem;
+  margin: 28px 0 2px;
+}
+.admin-prod-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 6px 0 4px;
+  color: var(--muted);
+  font-size: .82rem;
+}
+.admin-prod-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+  flex: none;
+}
+.admin-cover-drop {
+  min-height: 180px;
+  border: 2px dashed var(--green);
+  border-radius: 16px;
+  margin: 0 0 16px;
+  background: #e6f2ea center / cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.admin-cover-drop.on { background-color: #d7eadc; }
+.admin-cover-label {
+  background: #fffcf7;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 560;
+}
+.admin-avatar-btn {
+  width: 88px;
+  height: 88px;
+  border: 0;
+  border-radius: 16px;
+  cursor: pointer;
+  background: #d6dbd4 center / cover no-repeat;
+}
+@media (max-width: 720px) {
+  .admin-prod-body { flex-wrap: wrap; }
+  .admin-prod-actions { margin-top: 8px; width: 100%; }
+  .admin-prod-name { margin-top: 8px; }
+}

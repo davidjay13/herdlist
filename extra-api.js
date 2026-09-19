@@ -232,6 +232,7 @@ module.exports = async function extraApi(ctx) {
         admin: isAdmin(user),
         imported: !!user.imported || email.indexOf("@herd-yard.local") >= 0,
         producerName: producer ? producer.name : "",
+        producerId: producer ? producer.id : "",
         slug: producer ? producer.slug : "",
         location: producer ? producer.location : "",
         listingCount: listingCount,
@@ -330,6 +331,35 @@ module.exports = async function extraApi(ctx) {
     if (typeof b.cover === "string" && (b.cover.startsWith("data:image") || b.cover.startsWith("http"))) producer.cover = b.cover;
     await db.save();
     send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "" }, producer: Object.assign({}, producer, { avatar: avatarSrc(producer.avatar) }) });
+    return true;
+  }
+
+
+  const adminProdMatch = url.match(/^\/api\/admin\/producers\/([^/]+)$/);
+  if (adminProdMatch && method === "POST") {
+    const u = userFromCookie(req);
+    if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
+    const key = decodeURIComponent(adminProdMatch[1]);
+    const producer = db.data.producers.find((p) => p.id === key || p.slug === key || String(p.hyId) === key);
+    if (!producer) return send(res, 404, { error: "Ranch not found" }), true;
+    const b = await readBody(req);
+    if (b.ranchName || b.name) producer.name = String(b.ranchName || b.name).trim();
+    if (b.owner !== undefined) producer.owner = String(b.owner || "").trim();
+    if (b.location !== undefined) producer.location = String(b.location || "").trim();
+    if (b.about !== undefined) producer.about = String(b.about || "");
+    if (b.operations !== undefined) producer.operations = String(b.operations || "");
+    if (b.phone !== undefined) producer.phone = String(b.phone || "").trim();
+    if (b.email !== undefined) producer.email = String(b.email || "").trim();
+    if (b.website !== undefined) producer.website = String(b.website || "").trim();
+    if (b.associations !== undefined) {
+      producer.associations = String(b.associations || "").split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    if (typeof b.avatar === "string" && (b.avatar.startsWith("data:image") || b.avatar.startsWith("http") || b.avatar.startsWith("/"))) producer.avatar = b.avatar;
+    if (typeof b.cover === "string" && (b.cover.startsWith("data:image") || b.cover.startsWith("http") || b.cover.startsWith("/"))) producer.cover = b.cover;
+    if (b.lat !== undefined) producer.lat = b.lat === "" || b.lat == null ? null : Number(b.lat);
+    if (b.lng !== undefined) producer.lng = b.lng === "" || b.lng == null ? null : Number(b.lng);
+    await db.save();
+    send(res, 200, { producer: Object.assign({}, producer, { avatar: avatarSrc(producer.avatar) }) });
     return true;
   }
 
