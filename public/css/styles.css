@@ -102,7 +102,7 @@ button, input, select, textarea { font-family: inherit; }
   inset: 0;
   background:
     linear-gradient(180deg, rgba(15, 32, 20, 0.35) 0%, rgba(15, 32, 20, 0.55) 70%),
-    url("https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=2000&q=80")
+    url("/og/home.jpg")
       center/cover no-repeat;
 }
 .hero-inner {
@@ -221,6 +221,7 @@ button, input, select, textarea { font-family: inherit; }
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+.listing-title { font-size: 0.95rem; font-weight: 600; margin: 8px 0 0; color: var(--ink); }
 .listing-body {
   padding: 14px 16px 16px;
   flex: 0 0 auto;

@@ -53,7 +53,7 @@ const PAGES = {
     desc: "Publish a private-treaty cattle listing on Herd Yard. Buyers can message the ranch in-app, by email, or by phone. No commission.",
     image: "/og/list.jpg",
     imageAlt: "List cattle on Herd Yard",
-    robots: "index,follow"
+    robots: "noindex,follow"
   },
   updates: {
     key: "updates",
@@ -80,7 +80,7 @@ const PAGES = {
     desc: "Join Herd Yard to list cattle, follow ranches, and message producers nationwide. Free to create an account.",
     image: "/og/signup.jpg",
     imageAlt: "Create a Herd Yard account",
-    robots: "index,follow"
+    robots: "noindex,follow"
   },
   listing: {
     key: "listing",
@@ -161,7 +161,8 @@ function forRequest(urlPath, db) {
         desc: desc,
         image: abs(l.image, "/og/listing.jpg"),
         imageAlt: l.title || "Cattle listing",
-        robots: "index,follow"
+        robots: "index,follow",
+        listing: l
       };
     }
   }
@@ -178,7 +179,8 @@ function forRequest(urlPath, db) {
         desc: (prod.about || (prod.name || "This ranch") + loc + " lists private-treaty cattle on Herd Yard.").replace(/\s+/g, " ").trim().slice(0, 180),
         image: abs(prod.cover || prod.avatar, "/og/ranch.jpg"),
         imageAlt: (prod.name || "Ranch") + " on Herd Yard",
-        robots: "index,follow"
+        robots: "index,follow",
+        producer: prod
       };
     }
   }
@@ -191,8 +193,21 @@ function forRequest(urlPath, db) {
   return Object.assign({}, PAGES.home);
 }
 
-function jsonLd(seo) {
-  const base = {
+function jsonLd(seo, db) {
+  const org = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Herd Yard",
+    url: SITE + "/",
+    logo: SITE + "/logo.svg",
+    description: PAGES.home.desc,
+    sameAs: [
+      "https://www.instagram.com/herdyard/",
+      "https://www.youtube.com/@herdyard_USA",
+      "https://www.facebook.com/herdyard"
+    ]
+  };
+  const site = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Herd Yard",
@@ -200,34 +215,158 @@ function jsonLd(seo) {
     description: PAGES.home.desc,
     potentialAction: {
       "@type": "SearchAction",
-      target: SITE + "/browse",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: SITE + "/browse?q={search_term_string}"
+      },
       "query-input": "required name=search_term_string"
     }
   };
-  if (seo.key === "home") {
-    return [
-      base,
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        name: "Herd Yard",
-        url: SITE + "/",
-        logo: SITE + "/logo.svg",
-        description: PAGES.home.desc
-      }
-    ];
+  if (seo.key === "home") return [site, org];
+  if (seo.key === "listing" && seo.listing) {
+    const l = seo.listing;
+    const offer = {
+      "@type": "Offer",
+      url: SITE + seo.path,
+      availability: "https://schema.org/InStock",
+      priceCurrency: "USD"
+    };
+    const price = Number(l.price);
+    if (price > 0) offer.price = String(price);
+    return {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: l.title || seo.title,
+      description: seo.desc,
+      image: abs(seo.image),
+      brand: { "@type": "Organization", name: "Herd Yard" },
+      offers: offer
+    };
+  }
+  if (seo.key === "ranch" && seo.producer) {
+    const p = seo.producer;
+    return {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: p.name || "Ranch",
+      url: SITE + seo.path,
+      description: seo.desc,
+      image: abs(seo.image),
+      address: p.location ? { "@type": "PostalAddress", addressLocality: p.location } : undefined
+    };
+  }
+  if (seo.key === "faq") {
+    return {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: FAQS.map(function (f) {
+        return { "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } };
+      })
+    };
   }
   return {
     "@context": "https://schema.org",
-    "@type": seo.key === "listing" ? "Offer" : seo.key === "ranch" ? "Organization" : "WebPage",
+    "@type": "WebPage",
     name: seo.title,
     description: seo.desc,
     url: SITE + seo.path,
-    image: abs(seo.image)
+    image: abs(seo.image),
+    isPartOf: { "@type": "WebSite", name: "Herd Yard", url: SITE + "/" }
   };
 }
 
-function inject(html, seo) {
+const FAQS = [
+  { q: "What is Herd Yard?", a: "Herd Yard is a farm-to-farm marketplace for cattle and livestock genetics. Producers list animals on a map. Buyers search by breed, class, and location, then contact the ranch directly to close a private-treaty sale." },
+  { q: "Is this an auction?", a: "No. There is no bidding clock and no sale barn. You set the price — or list as contact-for-price — and negotiate off the farm." },
+  { q: "Does Herd Yard take a commission on cattle?", a: "Not on private-treaty cattle sales. You pay a listing or membership fee. Optional e-commerce for semen and embryos carries a platform fee when payment runs through the site." },
+  { q: "How long does a listing stay up?", a: "Sixty days. If it hasn't sold, you can extend it at no extra cost until it does." },
+  { q: "Who can see my phone number?", a: "Only signed-in buyers. Guest visitors can browse listings and the map, but contact details stay gated so you are not flooded with junk messages." },
+  { q: "Can I list just one group of cattle?", a: "Yes. Single Listing is $45. If you sell throughout the year, Producer membership is $432 and includes unlimited listings plus a public ranch profile." }
+];
+
+function liveListings(db) {
+  return ((db && db.data && db.data.listings) || []).filter(function (l) {
+    return l && !l.hidden && l.status !== "sold";
+  });
+}
+
+function crawlerCard(l) {
+  const img = esc(String(l.image || "/og/listing.jpg").split("'").join(""));
+  const bits = [l.breed, l.klass, l.head ? l.head + " " + (l.unit || "head") : ""].filter(Boolean).join(" · ");
+  const price = l.price ? "$" + Number(l.price).toLocaleString() + " / head" : "Contact for price";
+  return (
+    '<a class="listing-card" href="/listing/' + esc(l.id) + '">' +
+    '<div class="thumb" style="background-image:url(\'' + img + '\')"></div>' +
+    '<div class="listing-body"><div class="price">' + esc(price) + "</div>" +
+    '<div class="meta">' + esc(bits) + "</div>" +
+    '<div class="meta" style="margin-top:4px">' + esc(l.location || "") + "</div>" +
+    "<h3 class=\"listing-title\">" + esc(l.title || "Cattle listing") + "</h3></div></a>"
+  );
+}
+
+function crawlerHtml(seo, db) {
+  const listings = liveListings(db).slice(0, 12);
+  const cards = listings.map(crawlerCard).join("");
+  if (seo.key === "listing" && seo.listing) {
+    const l = seo.listing;
+    const img = esc(String(l.image || "/og/listing.jpg").split("'").join(""));
+    return (
+      '<article class="section" style="max-width:860px">' +
+      "<h1>" + esc(l.title || "Cattle listing") + "</h1>" +
+      '<p class="lead">' + esc(seo.desc) + "</p>" +
+      '<img src="' + img + '" alt="' + esc(l.title || "Cattle") + '" style="width:100%;max-height:420px;object-fit:cover;border-radius:16px" />' +
+      "<p>" + esc([l.breed, l.klass, l.head, l.location].filter(Boolean).join(" · ")) + "</p>" +
+      "<p>" + esc((l.description || "").slice(0, 600)) + "</p>" +
+      '<p><a class="btn btn-primary" href="/browse">Browse more listings</a></p></article>'
+    );
+  }
+  if (seo.key === "ranch" && seo.producer) {
+    const p = seo.producer;
+    return (
+      '<section class="section"><h1>' + esc(p.name || "Ranch") + "</h1>" +
+      '<p class="lead">' + esc(seo.desc) + "</p>" +
+      "<p>" + esc(p.location || "") + "</p>" +
+      '<div class="cards-3">' + cards + "</div></section>"
+    );
+  }
+  if (seo.key === "browse") {
+    return (
+      '<section class="section"><h1>Browse cattle listings</h1>' +
+      '<p class="lead">' + esc(PAGES.browse.desc) + "</p>" +
+      '<div class="cards-3">' + cards + "</div></section>"
+    );
+  }
+  if (seo.key === "producers") {
+    const ranches = ((db && db.data && db.data.producers) || []).slice(0, 12);
+    const html = ranches.map(function (p) {
+      return '<a class="listing-card" href="/ranch/' + esc(p.slug || p.id) + '"><div class="listing-body"><h3>' + esc(p.name || "Ranch") + "</h3><p class=\"meta\">" + esc(p.location || "") + "</p></div></a>";
+    }).join("");
+    return '<section class="section"><h1>Cattle producers and ranches</h1><p class="lead">' + esc(PAGES.producers.desc) + '</p><div class="cards-3">' + html + "</div></section>";
+  }
+  if (seo.key === "faq") {
+    const items = FAQS.map(function (f) {
+      return "<details open><summary>" + esc(f.q) + "</summary><p>" + esc(f.a) + "</p></details>";
+    }).join("");
+    return '<section class="section faq" style="max-width:760px"><h1>Frequently asked</h1>' + items + "</section>";
+  }
+  if (seo.key === "pricing") {
+    return '<section class="section"><h1>Producer plans</h1><p class="lead">' + esc(PAGES.pricing.desc) + "</p><p>Single listing $45 · Producer $432/year · no commission on private-treaty cattle.</p></section>";
+  }
+  return (
+    '<section class="hero"><div class="hero-bg"></div><div class="hero-inner">' +
+    '<div class="kicker">Farm to farm · Private treaty</div>' +
+    "<h1>Zillow For Cattle</h1>" +
+    '<p class="lead">Connecting buyers and sellers nationwide. No commission on private-treaty cattle.</p>' +
+    '<div class="hero-cta"><a class="btn btn-light btn-lg" href="/signup">Create a free account</a>' +
+    '<a class="btn btn-primary btn-lg" href="/list">List cattle now</a></div></div></section>' +
+    '<section class="section"><div class="section-head"><div><h2>Recently listed</h2>' +
+    '<p class="sub">Private treaty cattle from ranches nationwide.</p></div>' +
+    '<a class="btn btn-primary" href="/browse">Browse all →</a></div>' +
+    '<div class="cards-3">' + cards + "</div></section>"
+  );
+}
+
+function inject(html, seo, db) {
   const img = abs(seo.image);
   const url = SITE + (seo.path || "/");
   const title = seo.title;
@@ -250,12 +389,19 @@ function inject(html, seo) {
   } else {
     html = html.replace("</title>", "</title>\n    <meta name=\"robots\" content=\"" + esc(seo.robots || "index,follow") + "\" />");
   }
-  const ld = "<script type=\"application/ld+json\">" + JSON.stringify(jsonLd(seo)) + "</script>";
+  const ld = "<script type=\"application/ld+json\">" + JSON.stringify(jsonLd(seo, db)) + "</script>";
   if (/application\/ld\+json/.test(html)) {
     html = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, ld);
   } else {
     html = html.replace("</head>", "    " + ld + "\n  </head>");
   }
+  if (seo.key === "home") {
+    if (!/rel="preload"[^>]+og\/home/.test(html)) {
+      html = html.replace("</head>", '    <link rel="preload" as="image" href="/og/home.jpg" />\n  </head>');
+    }
+  }
+  const inner = crawlerHtml(seo, db);
+  html = html.replace(/<main id="app"><\/main>/, '<main id="app">' + inner + "</main>");
   return html;
 }
 
@@ -276,16 +422,13 @@ function sitemapXml(db) {
     ["/browse", "0.9", "daily"],
     ["/producers", "0.9", "daily"],
     ["/pricing", "0.6", "weekly"],
-    ["/faq", "0.5", "monthly"],
-    ["/list", "0.7", "weekly"],
-    ["/updates", "0.4", "weekly"],
-    ["/signup", "0.5", "monthly"]
+    ["/faq", "0.7", "monthly"],
+    ["/updates", "0.3", "weekly"]
   ];
-  (db && db.data && db.data.listings || []).forEach(function (l) {
-    if (!l || l.hidden || l.status === "sold") return;
+  liveListings(db).forEach(function (l) {
     urls.push(["/listing/" + l.id, "0.8", "weekly"]);
   });
-  (db && db.data && db.data.producers || []).forEach(function (p) {
+  ((db && db.data && db.data.producers) || []).forEach(function (p) {
     if (!p || !(p.slug || p.id)) return;
     urls.push(["/ranch/" + (p.slug || p.id), "0.7", "weekly"]);
   });
@@ -296,7 +439,7 @@ function sitemapXml(db) {
 }
 
 function robotsTxt() {
-  return "User-agent: *\nAllow: /\nDisallow: /account\nDisallow: /signin\nSitemap: " + SITE + "/sitemap.xml\n";
+  return "User-agent: *\nAllow: /\nDisallow: /account\nDisallow: /signin\nDisallow: /list\nDisallow: /bugs\nSitemap: " + SITE + "/sitemap.xml\n";
 }
 
 module.exports = { PAGES, SITE, forRequest, inject, isSpaPath, sitemapXml, robotsTxt, abs };

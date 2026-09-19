@@ -209,7 +209,9 @@
         browseHash({ view: b.dataset.view, page: "1" });
       };
     });
-    if (q.view !== "list" && window.L) {
+    if (q.view !== "list") {
+      (window.loadLeaflet || function (cb) { cb(); })(function () {
+      if (!window.L) return;
       const USA = [[24.5, -125.0], [49.4, -66.9]];
       mapInst = L.map("map", { scrollWheelZoom: true, worldCopyJump: false, minZoom: 3, maxZoom: 12, attributionControl: true });
       if (mapInst.attributionControl) mapInst.attributionControl.setPrefix("");
@@ -231,6 +233,7 @@
       refit();
       setTimeout(refit, 80);
       setTimeout(refit, 350);
+      });
     }
   }
   function listingView(id) {

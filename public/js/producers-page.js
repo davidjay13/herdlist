@@ -75,6 +75,7 @@
     if (first && first.parentNode) first.parentNode.insertBefore(wrap, first.nextSibling);
   }
   function paintMap(list) {
+    (window.loadLeaflet || function (cb) { cb(); })(function () {
     if (!window.L) return;
     dropMap();
     var el = document.getElementById("producers-map");
@@ -108,6 +109,7 @@
     refit();
     setTimeout(refit, 80);
     setTimeout(refit, 350);
+    });
   }
   function page() {
     const hash = location.hash.replace(/^#/, "") || "/";
