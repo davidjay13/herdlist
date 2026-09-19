@@ -52,9 +52,11 @@
         imageAlt: p.name || "Ranch"
       });
     }
+    var cover = String(p.cover || p.avatar || "").replace(/'/g, "%27");
     app.innerHTML =
-      '<div class="profile-hero" style="height:340px;background-image:url(\'' + (p.cover || p.avatar || "") + '\');background-size:cover;background-position:center"></div>' +
-      '<div style="max-width:1100px;margin:-110px auto 0;padding:0 20px 72px;position:relative">' +
+      '<div class="ranch-page" style="max-width:1200px;margin:0 auto;padding:12px 20px 72px">' +
+      '<div class="ranch-banner" style="background-image:url(\'' + cover + '\')"></div>' +
+      '<div style="margin-top:16px">' +
       '<div class="panel" style="display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center">' +
       '<img class="av" src="' + (p.avatar || "/cowboy.svg?v=2") + '" alt="" style="width:112px;height:112px;border-radius:22px;object-fit:cover;border:4px solid #fffcf7;background:#d6dbd4">' +
       '<div><div class="kicker" style="color:#1b6b45">Public ranch profile</div>' +
@@ -77,7 +79,7 @@
       '<div class="panel"><h2 style="margin:0 0 10px">About the ranch</h2><p style="margin:0;white-space:pre-wrap">' + (p.about || "This producer has not added an about section yet.") + '</p></div>' +
       '<div class="panel"><h2 style="margin:0 0 10px">Contact</h2>' + contactHtml + '</div></div>' +
       '<section style="margin-top:28px"><div class="section-head"><div><h2>Current listings</h2><p class="sub">Live groups from this ranch.</p></div></div>' +
-      '<div class="cards-3">' + (items.length ? items.map(card).join("") : "<p class='sub'>No active listings.</p>") + '</div></section></div>';
+      '<div class="cards-3">' + (items.length ? items.map(card).join("") : "<p class='sub'>No active listings.</p>") + '</div></section></div></div>';
     document.getElementById("pub-msg").onclick = function () {
       if (items[0]) location.hash = "#/listing/" + items[0].id;
       else location.hash = "#/signin";

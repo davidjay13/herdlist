@@ -2,6 +2,13 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.24",
+      date: "Sep 19, 2026",
+      items: [
+        "Ranch header photos use the same 250× / 400px frame as herdyard.com on the public profile and in Profile settings, so imported covers crop correctly."
+      ]
+    },
+    {
       v: "0.5.23",
       date: "Sep 19, 2026",
       items: [

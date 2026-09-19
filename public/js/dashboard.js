@@ -132,8 +132,8 @@
     var p = me.producer || {};
     return "<h2 class='page-title'>Profile settings</h2>" +
       (p.slug ? "<p><a class='btn btn-outline' href='#/ranch/" + p.slug + "'>View public profile</a></p>" : "") +
-      "<div id='cover-drop' style='border:2px dashed #1b6b45;border-radius:16px;min-height:160px;margin:0 0 16px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#e6f2ea'>" +
-      "<div id='cover-label' style='background:#fffcf7;border-radius:999px;padding:8px 14px;font-weight:560'>Drop header image here or click to upload</div></div>" +
+      "<div id='cover-drop' class='ranch-banner ranch-banner-edit'>" +
+      "<div id='cover-label' class='ranch-banner-label'>Drop header image here or click to upload</div></div>" +
       "<div class='panel' style='display:flex;gap:16px;align-items:center;margin-bottom:16px'>" +
       "<button type='button' id='avatar-btn' style='width:88px;height:88px;border:0;border-radius:16px;cursor:pointer;font-size:1.8rem;color:#6b7a6e;background:#e6e2d8'>+</button>" +
       "<div><b>Profile photo</b><div class='sub'>Shown on your public profile</div></div></div>" +
