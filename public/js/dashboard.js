@@ -71,12 +71,42 @@
       img.src = url;
     });
   }
+  function pillOn(href) {
+    var h = (location.hash || "#/account").split("?")[0];
+    if (href === "#/account") return h === "#/account" || h === "#/account/";
+    return h.indexOf(href) === 0;
+  }
+  function mobileTopHtml() {
+    var name = ((lastMe && lastMe.user && lastMe.user.name) || "there").split(" ")[0];
+    var pills = [
+      ["#/account", "Dashboard"],
+      ["#/account/profile", "Profile"],
+      ["#/account/messages", "Messages"],
+      ["#/account/listings", "Listings"],
+      ["#/account/sold", "Sold"]
+    ];
+    if (isAdminMe()) {
+      pills = pills.concat([
+        ["#/account/global", "Global"],
+        ["#/account/producers", "Producers"],
+        ["#/account/news", "News"]
+      ]);
+    }
+    var links = pills.map(function (p) {
+      return "<a class='dash-pill" + (pillOn(p[0]) ? " on" : "") + "' href='" + p[0] + "'>" + p[1] + "</a>";
+    }).join("");
+    return "<div class='dash-mobile-top'>" +
+      "<div class='dash-mobile-hello'>" +
+      "<div><h2>Welcome, " + esc(name) + "</h2><p class='sub'>Your ranch desk</p></div>" +
+      "<a class='btn btn-primary' href='#/list'>+ List</a></div>" +
+      "<nav class='dash-pills'>" + links + "</nav></div>";
+  }
   function shellNow(inner, email) {
     var app = document.getElementById("app");
     if (!app) return;
     app.innerHTML =
-      "<div class='dash-shell' style='display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 64px);background:#f7f4ee'>" +
-      "<aside style='background:#fffcf7;border-right:1px solid #d8e0d6;padding:18px 0;display:flex;flex-direction:column'>" +
+      "<div class='dash-shell'>" +
+      "<aside class='dash-aside'>" +
       "<div style='padding:4px 20px 16px'><b>Account</b><div class='sub'>" + esc(email) + "</div></div>" +
       navItem("#/account", "home", "Dashboard") +
       navItem("#/account/profile", "profile", "Profile") +
@@ -87,7 +117,9 @@
       adminNavHtml() +
       "<div style='margin-top:auto;padding:12px'><a class='btn btn-primary btn-wide' href='#/list'>+ Create listing</a>" +
       "<a class='btn btn-outline btn-wide' href='#/pricing' style='margin-top:8px'>Upgrade</a></div></aside>" +
-      "<section id='dash-main' style='padding:" + (section() === "messages" ? "0" : "28px") + ";min-height:calc(100vh - 64px)'>" + (inner || "<p class='sub'>Loading...</p>") + "</section></div>";
+      "<div class='dash-col'>" +
+      mobileTopHtml() +
+      "<section id='dash-main' class='" + (section() === "messages" ? "is-messages" : "") + "'>" + (inner || "<p class='sub'>Loading...</p>") + "</section></div></div>";
   }
   function profileHtml(me) {
     var user = me.user || {};
@@ -429,8 +461,8 @@
         "<div class='grow'><b>" + esc(l.title) + "</b><div class='sub'>" + esc(l.location || "") + "</div></div>" +
         "<b>" + Number(l.views || 0).toLocaleString() + "</b></a>";
     }).join("") : "<div class='dash-empty'>Views show up as people open your listings.</div>";
-    return "<h2 class='page-title'>Welcome, " + esc(name) + "</h2>" +
-      "<p class='sub'>Your ranch desk — news, messages, and cattle nearby.</p>" +
+    return "<h2 class='page-title dash-home-hello'>Welcome, " + esc(name) + "</h2>" +
+      "<p class='sub dash-home-hello'>Your ranch desk — news, messages, and cattle nearby.</p>" +
       newsRibbon(pack.news) +
       podcastsRow(pack.podcasts) +
       "<div class='dash-kpis'>" +

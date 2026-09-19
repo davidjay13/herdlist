@@ -691,3 +691,21 @@ button, input, select, textarea { font-family: inherit; }
   margin-top: 12px;
 }
 .admin-prod-tile-actions .btn { flex: 1; text-align: center; }
+
+.dash-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 64px);
+  background: #f7f4ee;
+}
+.dash-aside {
+  background: #fffcf7;
+  border-right: 1px solid #d8e0d6;
+  padding: 18px 0;
+  display: flex;
+  flex-direction: column;
+}
+.dash-col { min-width: 0; display: flex; flex-direction: column; }
+#dash-main { padding: 28px; min-height: calc(100vh - 64px); }
+#dash-main.is-messages { padding: 0; }
+.dash-mobile-top { display: none; }
