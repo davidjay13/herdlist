@@ -2,6 +2,13 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.19",
+      date: "Sep 19, 2026",
+      items: [
+        "Homepage hero buttons stack vertically so the hero reads taller."
+      ]
+    },
+    {
       v: "0.5.18",
       date: "Sep 19, 2026",
       items: [

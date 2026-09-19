@@ -2,8 +2,9 @@
   .section-head .btn { padding: 10px 14px; font-size: 0.88rem; }
   .section { padding: 16px 16px 28px; }
   .section-head { margin-bottom: 12px; align-items: flex-start; }
-  .hero { min-height: 0; }
-  .hero-inner { padding: 28px 16px 24px; }
+  .hero { min-height: 72vh; }
+  .hero-inner { padding: 48px 16px 44px; }
+  .hero-cta { max-width: 100%; }
   .gallery { height: 240px; min-height: 240px; }
   .form-page { padding: 18px 16px 96px; }
   .media-drop {
