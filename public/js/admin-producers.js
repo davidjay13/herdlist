@@ -21,10 +21,18 @@
       b.style.cssText = "display:block;padding:8px 10px;border-radius:8px;font-weight:560;color:#3a4a3e";
       box.appendChild(b);
     }
+    if (!document.getElementById("nav-news")) {
+      var c = document.createElement("a");
+      c.id = "nav-news";
+      c.href = "#/account/news";
+      c.textContent = "News";
+      c.style.cssText = "display:block;padding:8px 10px;border-radius:8px;font-weight:560;color:#3a4a3e";
+      box.appendChild(c);
+    }
   }
 
   function mark() {
-    [["nav-producers", "#/account/producers"], ["nav-accounts", "#/account/accounts"]].forEach(function (pair) {
+    [["nav-producers", "#/account/producers"], ["nav-accounts", "#/account/accounts"], ["nav-news", "#/account/news"]].forEach(function (pair) {
       var a = document.getElementById(pair[0]);
       if (!a) return;
       var on = hash().indexOf(pair[1]) === 0;
@@ -96,6 +104,42 @@
     if (sel) sel.onchange = function () { paintAccounts(accounts); };
   }
 
+  function paintNews(items) {
+    var main = document.getElementById("dash-main");
+    if (!main) return;
+    var rows = items || [];
+    main.innerHTML =
+      "<h2 class='page-title'>Industry news</h2>" +
+      "<p class='sub'>Paste article links. We pull the headline and show them in the dashboard ticker.</p>" +
+      "<form id='news-form' class='panel' style='margin:16px 0'>" +
+      "<div class='field full'><label>Article links</label>" +
+      "<textarea id='news-urls' rows='4' placeholder='https://www.drovers.com/....\nhttps://www.beefmagazine.com/....' style='width:100%'></textarea></div>" +
+      "<button class='btn btn-primary' type='submit' style='margin-top:12px'>Add headlines</button></form>" +
+      "<div class='panel'>" +
+      (rows.length ? rows.map(function (n) {
+        return "<div class='row' style='align-items:center;gap:12px'>" +
+          "<span style='flex:1'><b>" + esc(n.title) + "</b><div class='sub'>" + esc(n.source) + " · <a href='" + String(n.url||"").split("'").join("") + "' target='_blank' rel='noopener'>Open</a></div></span>" +
+          "<button class='btn btn-outline news-del' data-id='" + esc(n.id) + "' type='button'>Remove</button></div>";
+      }).join("") : "<p class='sub'>No articles yet.</p>") +
+      "</div>";
+    var form = document.getElementById("news-form");
+    if (form) form.onsubmit = function (e) {
+      e.preventDefault();
+      var urls = (document.getElementById("news-urls") || {}).value || "";
+      fetch("/api/admin/news", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ urls: urls }) })
+        .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Could not add"); return d; }); })
+        .then(function (d) { paintNews(d.news || []); })
+        .catch(function (err) { alert(err.message); });
+    };
+    main.querySelectorAll(".news-del").forEach(function (btn) {
+      btn.onclick = function () {
+        fetch("/api/admin/news/" + encodeURIComponent(btn.getAttribute("data-id")), { method: "DELETE", credentials: "include" })
+          .then(function (r) { return r.json(); })
+          .then(function (d) { paintNews(d.news || []); });
+      };
+    });
+  }
+
   function load() {
     ensureLink();
     mark();
@@ -116,6 +160,16 @@
         .catch(function (e) {
           var main = document.getElementById("dash-main");
           if (main) main.innerHTML = "<p>" + esc(e.message || "Could not load accounts.") + "</p>";
+        });
+      return;
+    }
+    if (hash().indexOf("#/account/news") === 0) {
+      fetch("/api/news", { credentials: "include" })
+        .then(function (r) { return r.json(); })
+        .then(function (data) { paintNews((data && data.news) || []); })
+        .catch(function () {
+          var main = document.getElementById("dash-main");
+          if (main) main.innerHTML = "<p>Could not load news.</p>";
         });
     }
   }

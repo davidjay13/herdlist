@@ -187,6 +187,7 @@
       <div class="producer-mini"><img src="${p.avatar||l.image}" alt=""><div>
       <a href="#/ranch/${p.slug||p.id}"><b>${p.name}</b></a>
       <div class="meta">${p.location||""}</div></div></div></aside></div>`;
+    try { fetch("/api/listings/"+id+"/view", { method: "POST", credentials: "include" }); } catch (e) {}
     app.querySelectorAll(".thumbs button").forEach((b) => {
       b.onclick = () => { app.querySelectorAll(".thumbs button").forEach((x)=>x.classList.remove("on")); b.classList.add("on"); $("#hero-img").style.backgroundImage = `url('${b.dataset.src}')`; };
     });

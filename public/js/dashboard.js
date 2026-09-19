@@ -1,6 +1,8 @@
 (function () {
   var avatarData = null;
   var coverData = null;
+  var lastMe = null;
+  var dashPack = null;
   function toast(msg) {
     var el = document.getElementById("toast");
     if (!el) return;
@@ -14,6 +16,9 @@
     if (hash.indexOf("#/account/sold") === 0) return "sold";
     if (hash.indexOf("#/account/orders") === 0) return "orders";
     if (hash.indexOf("#/account/messages") === 0) return "messages";
+    if (hash.indexOf("#/account/news") === 0) return "admin";
+    if (hash.indexOf("#/account/producers") === 0) return "admin";
+    if (hash.indexOf("#/account/accounts") === 0) return "admin";
     return "home";
   }
   function esc(v) {
@@ -57,6 +62,7 @@
       navItem("#/account/orders", "orders", "Orders") +
       navItem("#/account/messages", "messages", "Messages") +
       "<a href='#/browse' style='display:block;padding:10px 20px;color:#3a4a3e;font-weight:560'>Browse</a>" +
+      ((lastMe && lastMe.admin) ? "<div id='admin-controls'></div>" : "") +
       "<div style='margin-top:auto;padding:12px'><a class='btn btn-primary btn-wide' href='#/list'>+ Create listing</a>" +
       "<a class='btn btn-outline btn-wide' href='#/pricing' style='margin-top:8px'>Upgrade</a></div></aside>" +
       "<section id='dash-main' style='padding:" + (section() === "messages" ? "0" : "28px") + ";min-height:calc(100vh - 64px)'>" + (inner || "<p class='sub'>Loading...</p>") + "</section></div>";
@@ -308,14 +314,71 @@
         .catch(function (err) { toast(err.message); });
     };
   }
-  function home(me, listings) {
+  function money(l) {
+    if (l && l.price != null && l.price !== "") return "$" + Number(l.price).toLocaleString();
+    return "Contact";
+  }
+  function miniRow(l) {
+    var img = l.image || "/logo.svg?v=58";
+    return "<a class='dash-mini' href='#/listing/" + esc(l.id) + "'>" +
+      "<img src='" + String(img).split("'").join("") + "' alt=''>" +
+      "<div class='grow'><b>" + esc(l.title) + "</b><div class='sub'>" + esc(l.location || l.breed || "") +
+      (l.views != null ? " · " + l.views + " views" : "") + "</div></div>" +
+      "<div class='sub'>" + esc(money(l)) + "</div></a>";
+  }
+  function newsRibbon(items) {
+    var list = items || [];
+    if (!list.length) {
+      return "<div class='news-ribbon'><div class='news-kicker'>Industry news</div>" +
+        "<div class='news-item'>Headlines will appear here after an admin pastes article links.</div></div>";
+    }
+    var doubled = list.concat(list);
+    var rows = doubled.map(function (n) {
+      return "<a class='news-item' href='" + String(n.url || "#").split("'").join("") + "' target='_blank' rel='noopener'>" +
+        "<span class='src'>" + esc(n.source || "News") + "</span>" +
+        "<span style='overflow:hidden;text-overflow:ellipsis'>" + esc(n.title) + "</span></a>";
+    }).join("");
+    return "<div class='news-ribbon'><div class='news-kicker'>Industry news</div><div class='news-window'><div class='news-track'>" + rows + "</div></div></div>";
+  }
+  function home(me, listings, pack) {
     var name = ((me.user && me.user.name) || "Producer").split(" ")[0];
-    var live = listings || [];
-    var rows = live.length ? live.map(function (l) {
-      return "<div class='row'><span>" + esc(l.title) + "</span><a href='#/listing/" + l.id + "'>Open</a></div>";
-    }).join("") : "<p class='sub'>No live listings</p>";
-    return "<h2 class='page-title'>Welcome, " + esc(name) + "</h2><p class='sub'>This is your ranch dashboard.</p>" +
-      "<div class='panel' style='margin-top:16px'><h3>Live listings</h3>" + rows + "</div>";
+    pack = pack || {};
+    var msgs = pack.messages || [];
+    var msgRows = msgs.length ? msgs.slice(0, 5).map(function (m) {
+      var sent = m.fromUser === ((me.user && me.user.id) || -1);
+      var who = sent ? (m.toName || "Ranch") : (m.fromName || "Buyer");
+      var body = String(m.body || "");
+      if (body.length > 70) body = body.slice(0, 68) + "…";
+      return "<a class='dash-mini' href='#/account/messages'>" +
+        "<div style='width:46px;height:46px;border-radius:10px;background:#1b6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none'>" +
+        esc((who || "HY").slice(0, 2).toUpperCase()) + "</div>" +
+        "<div class='grow'><b>" + esc(who) + "</b><div class='sub'>" + esc(body) + "</div></div></a>";
+    }).join("") : "<div class='dash-empty'>No messages yet. Buyers can write you from a listing.</div>";
+    var local = pack.local || [];
+    var latest = pack.latest || [];
+    var views = pack.views || [];
+    var viewRows = views.length ? views.slice(0, 5).map(function (l) {
+      return "<a class='dash-mini' href='#/listing/" + esc(l.id) + "'>" +
+        "<div class='grow'><b>" + esc(l.title) + "</b><div class='sub'>" + esc(l.location || "") + "</div></div>" +
+        "<b>" + Number(l.views || 0).toLocaleString() + "</b></a>";
+    }).join("") : "<div class='dash-empty'>Views show up as people open your listings.</div>";
+    return "<h2 class='page-title'>Welcome, " + esc(name) + "</h2>" +
+      "<p class='sub'>Your ranch desk — news, messages, and cattle nearby.</p>" +
+      newsRibbon(pack.news) +
+      "<div class='dash-kpis'>" +
+      "<div class='dash-kpi'><b>" + Number(pack.myListings || (listings || []).length) + "</b><span>Your listings</span></div>" +
+      "<div class='dash-kpi'><b>" + Number(pack.totalViews || 0).toLocaleString() + "</b><span>Listing views</span></div>" +
+      "<div class='dash-kpi'><b>" + Number(pack.messageCount || msgs.length) + "</b><span>Messages</span></div>" +
+      "<div class='dash-kpi'><b>" + Number(pack.followers || 0) + "</b><span>Followers</span></div></div>" +
+      "<div class='dash-tiles'>" +
+      "<section class='dash-tile'><h3>Messages <a href='#/account/messages'>Open inbox</a></h3>" + msgRows + "</section>" +
+      "<section class='dash-tile'><h3>Listing views</h3>" + viewRows + "</section>" +
+      "<section class='dash-tile'><h3>Local listings <a href='#/browse'>Browse</a></h3>" +
+      (local.length ? local.slice(0, 5).map(miniRow).join("") : "<div class='dash-empty'>No nearby listings yet. Add a location on your profile to match cattle in your area.</div>") +
+      "</section>" +
+      "<section class='dash-tile'><h3>Latest listings <a href='#/browse'>See all</a></h3>" +
+      (latest.length ? latest.slice(0, 5).map(miniRow).join("") : "<div class='dash-empty'>New cattle will show up here as they list.</div>") +
+      "</section></div>";
   }
   function load() {
     var hash = location.hash || "";
@@ -324,14 +387,17 @@
     Promise.all([
       fetch("/api/me", { credentials: "include" }).then(function (r) { return r.json(); }),
       fetch("/api/my/listings", { credentials: "include" }).then(function (r) { return r.json(); }).catch(function () { return { listings: [] }; }),
-      fetch("/api/messages", { credentials: "include" }).then(function (r) { return r.json(); }).catch(function () { return { messages: [] }; })
+      fetch("/api/messages", { credentials: "include" }).then(function (r) { return r.json(); }).catch(function () { return { messages: [] }; }),
+      fetch("/api/dashboard", { credentials: "include" }).then(function (r) { return r.json(); }).catch(function () { return {}; })
     ]).then(function (pair) {
       var me = pair[0] || {};
+      lastMe = me;
       if (!me.user) { location.hash = "#/signin"; return; }
       var listings = (pair[1] && pair[1].listings) || [];
       var inbox = pair[2] || { messages: [] };
+      dashPack = pair[3] || {};
       var s = section();
-      var inner = s === "profile" ? profileHtml(me) : s === "home" ? home(me, listings) : s === "messages" ? messagesHtml(inbox) : "<div class='panel'><h2>" + s + "</h2><p class='sub'>Coming next.</p></div>";
+      var inner = s === "profile" ? profileHtml(me) : s === "home" ? home(me, listings, dashPack) : s === "messages" ? messagesHtml(inbox) : s === "admin" ? "<p class='sub'>Loading admin…</p>" : "<div class='panel'><h2>" + s + "</h2><p class='sub'>Coming next.</p></div>";
       shellNow(inner, me.user.email || "");
       if (s === "profile") bindProfile(me);
       if (s === "messages") bindMessages();

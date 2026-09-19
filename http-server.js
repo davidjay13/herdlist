@@ -7,6 +7,7 @@ const { init, slugify, hashPassword, checkPassword } = require("./store");
 const { seedJson } = require("./seed-json");
 const extraApi = require("./extra-api");
 const messagesApi = require("./messages-api");
+const newsApi = require("./news-api");
 const stripeBilling = require("./stripe-billing");
 
 const PORT = process.env.PORT || 8080;
@@ -103,6 +104,7 @@ const server = http.createServer(async (req, res) => {
   const method = req.method;
   try {
     if (url === "/api/health") return send(res, 200, { ok: true, persist: db.persist });
+    if (await newsApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
     if (await extraApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
     if (await messagesApi({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;
     if (await stripeBilling({ url, method, req, res, db, send, readBody, userFromCookie, slugify, hashPassword, checkPassword })) return;

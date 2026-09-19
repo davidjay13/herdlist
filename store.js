@@ -35,7 +35,7 @@ function slugify(s) {
 }
 
 function emptyData() {
-  return { users: [], sessions: [], producers: [], listings: [], follows: [], messages: [], nextUser: 1 };
+  return { users: [], sessions: [], producers: [], listings: [], follows: [], messages: [], news: [], nextUser: 1 };
 }
 
 function normalizeData(data) {
