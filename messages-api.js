@@ -1,11 +1,31 @@
 module.exports = async function messagesApi(ctx) {
   const { url, method, req, res, db, send, readBody, userFromCookie } = ctx;
   if (!db.data.messages) db.data.messages = [];
+  const LOGO = "/logo.svg?v=58";
 
   function userName(id) {
     const user = (db.data.users || []).find((x) => x.id === id);
     if (user) return user.name || user.email || "Member";
     return "Member";
+  }
+  function isPlaceholder(v) {
+    if (!v) return true;
+    var s = String(v);
+    if (s.indexOf("unsplash.com") >= 0) return true;
+    return false;
+  }
+  function avatarForUser(id) {
+    const producer = (db.data.producers || []).find((p) => p.userId === id);
+    if (producer && !isPlaceholder(producer.avatar)) return producer.avatar;
+    const listing = (db.data.listings || []).find((l) => l.userId === id && l.image);
+    if (listing && listing.image && String(listing.image).indexOf("unsplash.com") < 0) return listing.image;
+    return LOGO;
+  }
+  function avatarForProducer(id) {
+    const producer = (db.data.producers || []).find((p) => p.id === id);
+    if (producer && !isPlaceholder(producer.avatar)) return producer.avatar;
+    if (producer) return avatarForUser(producer.userId);
+    return LOGO;
   }
   function decorateMessage(m, u) {
     const listing = (db.data.listings || []).find((l) => l.id === m.listingId) || null;
@@ -14,14 +34,18 @@ module.exports = async function messagesApi(ctx) {
       (listing && (db.data.producers || []).find((p) => p.id === listing.producerId)) ||
       null;
     const sent = m.fromUser === u.id;
+    const fromAvatar = avatarForUser(m.fromUser);
+    const toAvatar = producer ? avatarForProducer(producer.id) : avatarForUser(m.toUser || (producer && producer.userId));
     return {
       id: m.id || null,
       listingId: m.listingId,
       listingTitle: listing ? listing.title : "Listing",
       fromUser: m.fromUser,
       fromName: userName(m.fromUser),
+      fromAvatar: fromAvatar,
       toUser: m.toUser || (producer && producer.userId) || null,
       toName: producer ? producer.name : userName(m.toUser),
+      toAvatar: toAvatar,
       toProducer: m.toProducer || (listing && listing.producerId) || null,
       body: m.body || "",
       at: m.at || 0,
