@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Herd Yard - Zillow For Cattle</title>
     <meta name="description" content="Herd Yard is an online platform for selling cattle. Connecting buyers and sellers nationwide. No commission on private-treaty cattle." />
+    <meta name="robots" content="index,follow" />
     <link rel="canonical" href="https://herd-yard.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Herd Yard" />
@@ -31,6 +32,14 @@
     <link rel="stylesheet" href="css/mobile.css?v=91" />
   </head>
   <body>
+    <script>
+      (function () {
+        var p = location.pathname;
+        if (p !== "/" && p !== "/index.html" && p.indexOf("/api") !== 0 && p.indexOf("/og") !== 0 && p.indexOf(".") < 0) {
+          location.replace("/#" + p + (location.search || ""));
+        }
+      })();
+    </script>
     <header class="app-header">
       <a class="brand" href="#/">
         <img src="logo.svg?v=58" alt="Herd Yard" width="40" height="38" style="display:block;object-fit:contain;background:transparent" />
@@ -64,22 +73,23 @@
     <footer class="app-footer">
       <div><b>Herd Yard</b><div>Selling cattle online. Connecting buyers and sellers nationwide.</div></div>
       <div><a href="#/updates">Latest Updates</a></div>
-      <div>Map tiles Esri / OpenStreetMap.<div class="site-version">v0.5.8</div></div>
+      <div>Map tiles Esri / OpenStreetMap.<div class="site-version">v0.5.9</div></div>
     </footer>
     <div class="toast" id="toast"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/seo.js?v=92"></script>
     <script src="js/data.js?v=68"></script>
-    <script src="js/client.js?v=91"></script>
+    <script src="js/client.js?v=92"></script>
     <script src="js/messages-ui.js?v=60"></script>
     <script src="js/stripe-checkout.js?v=56"></script>
     <script src="js/photos.js?v=56"></script>
-    <script src="js/dashboard.js?v=85"></script>
+    <script src="js/dashboard.js?v=92"></script>
     <script src="js/listings-manage.js?v=69"></script>
     <script src="js/admin-producers.js?v=77"></script>
-    <script src="js/ranch-public.js?v=77"></script>
+    <script src="js/ranch-public.js?v=92"></script>
     <script src="js/cover-label.js?v=56"></script>
-    <script src="js/producers-page.js?v=91"></script>
-    <script src="js/updates-page.js?v=90"></script>
+    <script src="js/producers-page.js?v=92"></script>
+    <script src="js/updates-page.js?v=92"></script>
     <script>
       (function () {
         function toTop() {

@@ -102,6 +102,7 @@
       "<nav class='dash-pills'>" + links + "</nav></div>";
   }
   function shellNow(inner, email) {
+    if (window.HerdSeo) window.HerdSeo.apply("account");
     var app = document.getElementById("app");
     if (!app) return;
     app.innerHTML =

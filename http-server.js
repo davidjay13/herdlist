@@ -9,6 +9,7 @@ const extraApi = require("./extra-api");
 const messagesApi = require("./messages-api");
 const newsApi = require("./news-api");
 const stripeBilling = require("./stripe-billing");
+const seo = require("./seo");
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC = path.join(__dirname, "public");
@@ -81,14 +82,35 @@ function serveOg(res) {
   return res.end();
 }
 
+function sendIndex(res, urlPath) {
+  const file = path.join(PUBLIC, "index.html");
+  let html = fs.readFileSync(file, "utf8");
+  html = seo.inject(html, seo.forRequest(urlPath, db));
+  const buf = Buffer.from(html);
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Content-Length": buf.length, "Cache-Control": "no-cache" });
+  res.end(buf);
+}
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
-  if (urlPath === "/") urlPath = "/index.html";
   if (urlPath === "/logo.png" || urlPath === "/logo.svg" || urlPath === "/favicon.ico") return serveLogo(res);
   if (urlPath === "/og.jpg" || urlPath === "/social-card.png" || urlPath === "/social-card.jpg") return serveOg(res);
+  if (urlPath === "/robots.txt") {
+    const body = seo.robotsTxt();
+    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" });
+    return res.end(body);
+  }
+  if (urlPath === "/sitemap.xml") {
+    const body = seo.sitemapXml(db);
+    res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=600" });
+    return res.end(body);
+  }
+  if (urlPath === "/" || urlPath === "/index.html" || seo.isSpaPath(urlPath)) return sendIndex(res, urlPath);
   const file = path.normalize(path.join(PUBLIC, urlPath));
   if (!file.startsWith(PUBLIC)) { res.writeHead(403); return res.end(); }
-  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end("Not found"); }
+  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+    if (seo.isSpaPath(urlPath)) return sendIndex(res, urlPath);
+    res.writeHead(404); return res.end("Not found");
+  }
   const buf = fs.readFileSync(file);
   res.writeHead(200, { "Content-Type": mime(file), "Content-Length": buf.length });
   res.end(buf);

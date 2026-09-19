@@ -1,6 +1,15 @@
 (function () {
   const UPDATES = [
     {
+      v: "0.5.9",
+      date: "Sep 19, 2026",
+      items: [
+        "Unique title, description, and social thumbnail for each public page (home, browse, producers, listing, ranch, plans, FAQ, list, updates).",
+        "Listing and ranch pages use the cattle photo or ranch name in the preview card when shared.",
+        "Sitemap at /sitemap.xml and robots.txt. Account pages are noindex."
+      ]
+    },
+    {
       v: "0.5.8",
       date: "Sep 19, 2026",
       items: [
@@ -185,6 +194,7 @@
         </ul>
       </article>`;
     }).join("");
+    if (window.HerdSeo) window.HerdSeo.apply("updates");
     app.innerHTML = `<section class="section" style="max-width:760px">
       <h2>Updates</h2>
       <p class="sub">Shipped features on this Herd Yard build.</p>

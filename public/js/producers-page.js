@@ -154,6 +154,7 @@
         }
       };
     }
+    if (window.HerdSeo) window.HerdSeo.apply("producers");
     setTimeout(function () { paintMap(list); }, 40);
     return true;
   }

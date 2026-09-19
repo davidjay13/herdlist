@@ -194,6 +194,16 @@
   function listingView(id) {
     const l = state.listingCache[id] || state.listings.find((x) => x.id === id);
     if (!l) { app.innerHTML = `<section class="section"><h2>Listing not found</h2></section>`; return; }
+    if (window.HerdSeo) {
+      var bits = [l.breed, l.klass, l.location].filter(Boolean).join(" · ");
+      window.HerdSeo.apply("listing", {
+        title: (l.title || "Cattle listing") + " | Herd Yard",
+        desc: String(l.description || bits || "Private-treaty cattle listing on Herd Yard.").replace(/\s+/g, " ").trim().slice(0, 180),
+        image: l.image,
+        path: "/listing/" + id,
+        imageAlt: l.title || "Cattle listing"
+      });
+    }
     const p = l.producer || { name: "Ranch", slug: "", location: l.location, rating: "\u2014", avatar: l.image, id: l.producerId };
     const imgs = l.images && l.images.length ? l.images : [l.image];
     app.innerHTML = `<div class="detail"><div>
@@ -279,6 +289,13 @@
     const raw = location.hash.replace(/^#/, "") || "/";
     const parts = raw.split("?")[0].split("/").filter(Boolean);
     nav();
+    if (window.HerdSeo) {
+      if (!parts.length) window.HerdSeo.apply("home");
+      else if (parts[0]==="listing") window.HerdSeo.apply("listing", { path: "/listing/" + (parts[1]||"") });
+      else if (parts[0]==="ranch") window.HerdSeo.apply("ranch", { path: "/ranch/" + (parts[1]||"") });
+      else if (parts[0]==="account") window.HerdSeo.apply("account");
+      else window.HerdSeo.apply(parts[0]);
+    }
     if (mapInst) { mapInst.remove(); mapInst = null; }
     if (parts[0]==="listing" && parts[1] && !state.listingCache[parts[1]]) {
       try { const r = await api("/api/listings/"+parts[1]); state.listingCache[r.listing.id]=r.listing; } catch(e){}

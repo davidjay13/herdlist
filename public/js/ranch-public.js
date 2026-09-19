@@ -42,6 +42,15 @@
       contactLine("Website", p.website, p.website) +
       contactLine("Owner", p.owner);
     if (!contactHtml) contactHtml = "<p class='sub'>This ranch has not published contact details yet.</p>";
+    if (window.HerdSeo && p) {
+      window.HerdSeo.apply("ranch", {
+        title: (p.name || "Ranch") + " | Herd Yard",
+        desc: String(p.about || ((p.name || "This ranch") + (p.location ? " in " + p.location : "") + " lists private-treaty cattle on Herd Yard.")).replace(/\s+/g, " ").trim().slice(0, 180),
+        image: p.cover || p.avatar,
+        path: "/ranch/" + (p.slug || p.id || ""),
+        imageAlt: p.name || "Ranch"
+      });
+    }
     app.innerHTML =
       '<div class="profile-hero" style="height:340px;background-image:url(\'' + (p.cover || p.avatar || "") + '\');background-size:cover;background-position:center"></div>' +
       '<div style="max-width:1100px;margin:-110px auto 0;padding:0 20px 72px;position:relative">' +
