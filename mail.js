@@ -284,4 +284,43 @@ function followed(owner, followerName, ranchName) {
   });
 }
 
-module.exports = { configured, send, fire, welcome, sampleWelcome, listingLive, newMessage, followed, usable, attach };
+function weeklyStats(user, stats, highlights) {
+  stats = stats || {};
+  highlights = highlights || [];
+  const name = stats.name || user.name || "there";
+  const rows = [
+    ["Listing views this week", String(stats.weekViews || 0)],
+    ["Messages received", String(stats.messages || 0)],
+    ["New listings", String(stats.newListings || 0)],
+    ["New followers", String(stats.newFollowers || 0)],
+    ["Live listings", String(stats.liveCount || 0)]
+  ];
+  const table = rows.map(function (r) {
+    return '<tr><td style="padding:8px 0;border-bottom:1px solid #e6eee8;color:#3a4a3e">' + esc(r[0]) + '</td>' +
+      '<td style="padding:8px 0;border-bottom:1px solid #e6eee8;text-align:right;font-family:Georgia,serif;font-size:20px;color:#142018">' + esc(r[1]) + "</td></tr>";
+  }).join("");
+  const top = stats.topTitle
+    ? "<p style='margin:16px 0 0'>Most viewed: <b>" + esc(stats.topTitle) + "</b> (" + esc(String(stats.topViews || 0)) + " views).</p>"
+    : "";
+  const feats = highlights.slice(0, 3).map(function (h) {
+    return "<p style='margin:12px 0 0'><b>" + esc(h.title) + "</b><br>" + esc(h.body) + "</p>";
+  }).join("");
+  return send({
+    to: user.email,
+    subject: "Your Herd Yard week, " + name,
+    text: "This week on Herd Yard: " + (stats.weekViews || 0) + " listing views, " + (stats.messages || 0) + " messages, " + (stats.newListings || 0) + " new listings. " + SITE + "/account",
+    html: wrap(
+      "Your weekly ranch recap is in.",
+      "Your week on Herd Yard",
+      "<p>Hi " + esc(name) + ", here is how <b>" + esc(stats.ranch || "your ranch") + "</b> did this week.</p>" +
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0">' + table + "</table>" +
+        top +
+        "<p style='margin:28px 0 0;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#6b7a6e;font-weight:700'>Herd Yard highlights</p>" +
+        feats,
+      "Open dashboard",
+      SITE + "/account"
+    )
+  });
+}
+
+module.exports = { configured, send, fire, welcome, sampleWelcome, listingLive, newMessage, followed, weeklyStats, usable, attach };

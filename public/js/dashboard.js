@@ -145,6 +145,17 @@
       "<div class='field'><label>Associations</label><input name='associations' value='" + esc((p.associations || []).join(", ")) + "'></div>" +
       "<div class='field full'><label>About</label><textarea name='about' rows='4'>" + (p.about || "") + "</textarea></div>" +
       "<div class='field full'><label>Operations</label><textarea name='operations' rows='4'>" + (p.operations || "") + "</textarea></div></div>" +
+      "<div style='margin-top:22px'><h3 style='margin:0 0 4px'>Email preferences</h3>" +
+      "<p class='sub' style='margin:0 0 8px'>Opt in to what Herd Yard can send you. Unchecked means we will not send that mail.</p>" +
+      "<label style='display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-top:1px solid #e6eee8;cursor:pointer'>" +
+      "<input type='checkbox' name='emailWeeklyStats'" + (user.emailWeeklyStats ? " checked" : "") + " style='margin-top:4px;width:18px;height:18px'>" +
+      "<span><b>Weekly Account Stats</b><div class='sub'>Monday recap of listing views, messages, new listings, and followers.</div></span></label>" +
+      "<label style='display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-top:1px solid #e6eee8;cursor:pointer'>" +
+      "<input type='checkbox' name='emailUpdates'" + (user.emailUpdates ? " checked" : "") + " style='margin-top:4px;width:18px;height:18px'>" +
+      "<span><b>Herd Yard Updates</b><div class='sub'>Product news when we ship something useful for buyers and sellers.</div></span></label>" +
+      "<label style='display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-top:1px solid #e6eee8;cursor:pointer'>" +
+      "<input type='checkbox' name='emailPartners'" + (user.emailPartners ? " checked" : "") + " style='margin-top:4px;width:18px;height:18px'>" +
+      "<span><b>Partner Opportunities</b><div class='sub'>Occasional offers from livestock and ranch partners.</div></span></label></div>" +
       "<button class='btn btn-primary' style='margin-top:14px' type='submit'>Save profile</button></form>" +
       (isAdminMe(me) ? "<div class='panel' style='margin-top:16px'><h3 style='margin:0 0 8px'>Admin</h3><p class='sub'>Platform tools for Herd Yard.</p>" +
         "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:12px'>" +
@@ -222,6 +233,9 @@
     form.onsubmit = function (e) {
       e.preventDefault();
       var body = Object.fromEntries(new FormData(form).entries());
+      body.emailWeeklyStats = !!(form.querySelector("[name=emailWeeklyStats]") && form.querySelector("[name=emailWeeklyStats]").checked);
+      body.emailUpdates = !!(form.querySelector("[name=emailUpdates]") && form.querySelector("[name=emailUpdates]").checked);
+      body.emailPartners = !!(form.querySelector("[name=emailPartners]") && form.querySelector("[name=emailPartners]").checked);
       if (avatarData) body.avatar = avatarData;
       if (coverData) body.cover = coverData;
       fetch("/api/profile", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })

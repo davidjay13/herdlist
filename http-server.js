@@ -11,6 +11,7 @@ const newsApi = require("./news-api");
 const stripeBilling = require("./stripe-billing");
 const seo = require("./seo");
 const mail = require("./mail");
+const weeklyMail = require("./weekly-mail");
 
 const PORT = process.env.PORT || 8080;
 const PUBLIC = path.join(__dirname, "public");
@@ -137,7 +138,7 @@ const server = http.createServer(async (req, res) => {
       if (!u) return send(res, 200, { user: null, follows: [] });
       const producer = db.data.producers.find((p) => p.userId === u.id) || null;
       const follows = db.data.follows.filter((f) => f.userId === u.id).map((f) => f.producerId);
-      return send(res, 200, { user: { id: u.id, name: u.name, email: u.email }, producer, follows });
+      return send(res, 200, { user: { id: u.id, name: u.name, email: u.email, emailWeeklyStats: !!u.emailWeeklyStats, emailUpdates: !!u.emailUpdates, emailPartners: !!u.emailPartners }, producer, follows });
     }
 
     if (url === "/api/signup" && method === "POST") {
@@ -248,7 +249,7 @@ const server = http.createServer(async (req, res) => {
         await db.save();
         return send(res, 200, { following: false });
       }
-      db.data.follows.push({ userId: u.id, producerId: p.id });
+      db.data.follows.push({ userId: u.id, producerId: p.id, at: Date.now() });
       p.followers = (p.followers || 0) + 1;
       await db.save();
       var owner = db.data.users.find(function (x) { return x.id === p.userId; });
@@ -287,6 +288,15 @@ init(seedJson)
           console.error("[mail] sample welcome failed", err && err.message);
         });
       }
+      setInterval(function () {
+        if (!mail.configured()) return;
+        if (!weeklyMail.shouldSendMonday()) return;
+        weeklyMail.run(db, mail, {}).then(function (r) {
+          if (!r.skipped) console.log("[mail] weekly stats", r);
+        }).catch(function (err) {
+          console.error("[mail] weekly stats", err && err.message);
+        });
+      }, 30 * 60 * 1000);
     });
   })
   .catch((err) => {

@@ -1,4 +1,5 @@
 const mail = require("./mail");
+const weeklyMail = require("./weekly-mail");
 
 const importedProducers = (() => {
   const rows = [];
@@ -204,7 +205,7 @@ module.exports = async function extraApi(ctx) {
     const producer = db.data.producers.find((p) => p.userId === u.id) || null;
     const follows = db.data.follows.filter((f) => f.userId === u.id).map((f) => f.producerId);
     send(res, 200, {
-      user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "", admin: isAdmin(u) },
+      user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "", admin: isAdmin(u), emailWeeklyStats: !!u.emailWeeklyStats, emailUpdates: !!u.emailUpdates, emailPartners: !!u.emailPartners },
       producer: producer ? Object.assign({}, producer, { avatar: avatarSrc(producer.avatar) }) : null,
       follows,
       admin: isAdmin(u),
@@ -226,6 +227,28 @@ module.exports = async function extraApi(ctx) {
     const to = String((b && b.to) || u.email || "").trim();
     const r = await mail.sampleWelcome(to, u.name || "David");
     send(res, 200, { ok: !r.error && !r.skipped, result: r, to: to });
+    return true;
+  }
+
+  if (url === "/api/admin/weekly-stats" && method === "POST") {
+    const u = userFromCookie(req);
+    if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
+    const r = await weeklyMail.run(db, mail, { force: true });
+    send(res, 200, r);
+    return true;
+  }
+
+  if ((url === "/api/cron/weekly-stats") && (method === "GET" || method === "POST")) {
+    const q = new URL(req.url, "http://x").searchParams;
+    const key = q.get("key") || req.headers["x-cron-key"] || "";
+    const expect = process.env.CRON_SECRET || "";
+    if (!expect || key !== expect) return send(res, 401, { error: "Bad cron key" }), true;
+    if (!weeklyMail.shouldSendMonday()) {
+      send(res, 200, { skipped: true, reason: "not-monday-morning" });
+      return true;
+    }
+    const r = await weeklyMail.run(db, mail, {});
+    send(res, 200, r);
     return true;
   }
 
@@ -334,6 +357,15 @@ module.exports = async function extraApi(ctx) {
     const b = await readBody(req);
     if (b.name) u.name = String(b.name).trim();
     if (b.phone !== undefined) u.phone = String(b.phone || "").trim();
+    function flag(key) {
+      if (b[key] === undefined) return;
+      const v = b[key];
+      u[key] = v === true || v === 1 || v === "1" || v === "on" || v === "true";
+    }
+    const wasStats = !!u.emailWeeklyStats;
+    flag("emailWeeklyStats");
+    flag("emailUpdates");
+    flag("emailPartners");
     let producer = db.data.producers.find((p) => p.userId === u.id);
     if (!producer) {
       producer = { id: "u" + u.id, userId: u.id, slug: slugify(u.name) + "-" + u.id, name: u.name, owner: u.name, location: "", rating: 5, reviews: 0, sold: 0, followers: 0, about: "", operations: "", associations: [], cover: COW, avatar: LOGO };
@@ -349,8 +381,13 @@ module.exports = async function extraApi(ctx) {
     if (b.website !== undefined) producer.website = String(b.website || "").trim();
     if (typeof b.avatar === "string" && (b.avatar.startsWith("data:image") || b.avatar.startsWith("http"))) producer.avatar = b.avatar;
     if (typeof b.cover === "string" && (b.cover.startsWith("data:image") || b.cover.startsWith("http"))) producer.cover = b.cover;
+    if (u.emailWeeklyStats && !wasStats) {
+      try {
+        u.statsSnap = weeklyMail.snapshot(db, u);
+      } catch (e) {}
+    }
     await db.save();
-    send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "" }, producer: Object.assign({}, producer, { avatar: avatarSrc(producer.avatar) }) });
+    send(res, 200, { user: { id: u.id, name: u.name, email: u.email, phone: u.phone || "", emailWeeklyStats: !!u.emailWeeklyStats, emailUpdates: !!u.emailUpdates, emailPartners: !!u.emailPartners }, producer: Object.assign({}, producer, { avatar: avatarSrc(producer.avatar) }) });
     return true;
   }
 

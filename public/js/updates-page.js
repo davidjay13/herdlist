@@ -1,6 +1,14 @@
 (function () {
   const UPDATES = [
     {
+      v: "0.5.12",
+      date: "Sep 19, 2026",
+      items: [
+        "Profile email opt-ins: Weekly Account Stats, Herd Yard Updates, and Partner Opportunities.",
+        "Monday weekly recap email for opted-in accounts: views, messages, new listings, followers, plus three Herd Yard highlights."
+      ]
+    },
+    {
       v: "0.5.11",
       date: "Sep 19, 2026",
       items: [

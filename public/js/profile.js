@@ -67,6 +67,11 @@
       '<div class="field full"><label>About the ranch</label><textarea name="about" rows="4">' + (p.about || "") + '</textarea></div>' +
       '<div class="field full"><label>Operations</label><textarea name="operations" rows="4">' + (p.operations || "") + '</textarea></div>' +
       '</div>' +
+      '<div style="margin-top:22px"><h3 style="margin:0 0 4px">Email preferences</h3>' +
+      '<p class="sub">Opt in to what Herd Yard can send you.</p>' +
+      '<label style="display:flex;gap:12px;padding:12px 0;border-top:1px solid #e6eee8"><input type="checkbox" name="emailWeeklyStats"' + (user.emailWeeklyStats ? " checked" : "") + '><span><b>Weekly Account Stats</b><div class="sub">Monday recap of views, messages, listings, and followers.</div></span></label>' +
+      '<label style="display:flex;gap:12px;padding:12px 0;border-top:1px solid #e6eee8"><input type="checkbox" name="emailUpdates"' + (user.emailUpdates ? " checked" : "") + '><span><b>Herd Yard Updates</b><div class="sub">Product news when we ship something useful.</div></span></label>' +
+      '<label style="display:flex;gap:12px;padding:12px 0;border-top:1px solid #e6eee8"><input type="checkbox" name="emailPartners"' + (user.emailPartners ? " checked" : "") + '><span><b>Partner Opportunities</b><div class="sub">Occasional offers from livestock partners.</div></span></label>' +
       '<div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">' +
       '<button class="btn btn-primary" type="submit">Save profile</button>' +
       '<a class="btn btn-outline" href="#/list">Create listing</a>' +
@@ -123,6 +128,9 @@
     document.getElementById("profile-form").onsubmit = function (e) {
       e.preventDefault();
       var body = Object.fromEntries(new FormData(e.target).entries());
+      body.emailWeeklyStats = !!(e.target.querySelector("[name=emailWeeklyStats]") && e.target.querySelector("[name=emailWeeklyStats]").checked);
+      body.emailUpdates = !!(e.target.querySelector("[name=emailUpdates]") && e.target.querySelector("[name=emailUpdates]").checked);
+      body.emailPartners = !!(e.target.querySelector("[name=emailPartners]") && e.target.querySelector("[name=emailPartners]").checked);
       if (avatarData) body.avatar = avatarData;
       if (coverData) body.cover = coverData;
       fetch("/api/profile", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })

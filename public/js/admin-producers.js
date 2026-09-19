@@ -299,7 +299,8 @@
       "<div style='display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:16px 0'>" +
       "<div class='field' style='max-width:360px;margin:0;flex:1'><label>Search</label>" +
       "<input id='mail-q' placeholder='Recipient or subject' value='" + esc(q) + "'></div>" +
-      "<button class='btn btn-outline' type='button' id='mail-test'>Send test to me</button></div>" +
+      "<button class='btn btn-outline' type='button' id='mail-test'>Send test to me</button>" +
+      "<button class='btn btn-outline' type='button' id='mail-weekly'>Send weekly stats now</button></div>" +
       "<div class='panel'>" +
       (rows.length ? "<div class='row' style='display:flex;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#6b7a6e;font-weight:650;padding:0 0 8px'>" +
         "<span style='flex:1.4'>To</span><span style='flex:1.6'>Subject</span><span style='width:88px'>Status</span><span style='width:160px'>When</span></div>" +
@@ -330,6 +331,26 @@
         })
         .then(function (data) { paintEmails((data && data.emails) || emails); })
         .catch(function () { test.disabled = false; });
+    };
+    var weeklyBtn = document.getElementById("mail-weekly");
+    if (weeklyBtn) weeklyBtn.onclick = function () {
+      weeklyBtn.disabled = true;
+      fetch("/api/admin/weekly-stats", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: "{}" })
+        .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Send failed"); return d; }); })
+        .then(function (d) {
+          return fetch("/api/admin/mail", { credentials: "include" }).then(function (r) { return r.json(); }).then(function (data) {
+            paintEmails((data && data.emails) || emails);
+            var main = document.getElementById("dash-main");
+            if (main) {
+              var note = document.createElement("p");
+              note.className = "sub";
+              note.textContent = "Weekly stats sent to " + (d.sent || 0) + " opted-in account" + ((d.sent === 1) ? "" : "s") + ".";
+              var h = main.querySelector("h2");
+              if (h && h.parentNode) h.parentNode.insertBefore(note, h.nextSibling);
+            }
+          });
+        })
+        .catch(function (err) { weeklyBtn.disabled = false; alert(err.message || "Could not send"); });
     };
   }
 
