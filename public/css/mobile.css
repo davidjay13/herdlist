@@ -49,7 +49,10 @@
   .dash-home-hello { display: none !important; }
   #dash-main { padding: 16px !important; min-height: 0; }
   #dash-main.is-messages { padding: 0 !important; }
-  .dash-kpis { grid-template-columns: 1fr 1fr !important; }
+  .dash-kpis { grid-template-columns: repeat(4, 1fr) !important; gap: 6px; }
+  .dash-kpi { padding: 8px 4px; border-radius: 10px; }
+  .dash-kpi b { font-size: 1.05rem; }
+  .dash-kpi span { font-size: .62rem; }
 }
 
 .menu-toggle {
