@@ -195,6 +195,57 @@
         </div>
       </section>`;
   }
+  function homeStories() {
+    const quotes = [
+      {
+        author: "Kevin Witherstine",
+        position: "Owner and Operator",
+        ranch: "W Wagyu Ranch",
+        href: "#/ranch/w-wagyu-ranch",
+        img: "/kevin-witherstine.jpg",
+        quote: "Here at W Wagyu Ranch we've been using herdyard.com to list and sell our cattle, and it's been a game-changer. The site is super easy to use and navigate, with a clean, modern look that feels fresh compared to older traditional listing platforms. Best of all, the listing prices are very reasonable. Highly recommend for anyone in the cattle business looking for a straightforward, professional way to market their herd!"
+      },
+      {
+        author: "Clint Broyles",
+        position: "Owner and Operator",
+        ranch: "Ogden Cattle Co.",
+        href: "#/ranch/ogden-cattle-company",
+        img: "/ogden-profile.jpg",
+        quote: "We really enjoy the simplicity of listing on Herd Yard. The map feature has been a game changer in helping buyers locate us quickly. Plus, having our own profile on Herd Yard gives us a strong presence within the community, allowing us to connect with buyers across the country."
+      }
+    ];
+    const cards = quotes.map((t) =>
+      `<article class="hy-t-card"><img src="${t.img}" alt="${esc(t.author)}">` +
+      `<blockquote>${esc(t.quote)}</blockquote>` +
+      `<div class="hy-t-who"><b>${esc(t.author)}</b><span>${esc(t.position)}</span>` +
+      `<a href="${t.href}">${esc(t.ranch)}</a></div></article>`
+    ).join("");
+    return `<section class="section">
+      <div class="hy-trust-title"><h2>Trusted by Producers Nationwide</h2>
+      <p class="sub">See what our community of cattle producers has to say</p></div>
+      <div class="hy-trust-grid">${cards}</div>
+    </section>
+    <section class="hy-band"><div class="section hy-why">
+      <img class="hy-why-photo" src="/landing-about.jpg" alt="Farmer feeding cattle">
+      <div class="hy-why-copy">
+        <h2>Why Herd Yard</h2>
+        <p>We\u2019re making cattle sales simpler, smarter, and more profitable for farmers and ranchers. Our farm-to-farm platform connects buyers and sellers directly\u2014giving you control over your prices, your listings, and your transactions.</p>
+        <p>With Herd Yard Membership, you get access to a trusted network of cattle producers who prioritize healthier cows, transparent transactions, and fair pricing. You set your own prices, showcase your livestock with detailed listings and high-quality images, and reach the right buyers\u2014on your terms.</p>
+        <p>With a <strong>Herd Yard Producer Membership</strong>, you get:</p>
+        <ul>
+          <li><strong>Unlimited Listings:</strong> Showcase your cattle with detailed descriptions and high-quality images</li>
+          <li><strong>No Commissions on Private Treaty Transactions:</strong> Connect directly with buyers without paying Herd Yard a commission on your cattle sale.</li>
+          <li><strong>Access to Our Nationwide Network:</strong> Reach cattle buyers and producers across the country.</li>
+          <li><strong>60-Day Listing Run Time:</strong> Keep your cattle in front of buyers for 60 days.</li>
+          <li><strong>Free Extensions Until Sold:</strong> Need more time? Extend your listings at no additional cost.</li>
+          <li><strong>Optional Frozen Genetics E-Commerce:</strong> Sell semen and embryos through Herd Yard with integrated payment processing.*</li>
+        </ul>
+        <p>Whether you\u2019re expanding your herd, marketing genetics, or selling cattle, Herd Yard gives you more control, broader market access, and a simpler way to do business.</p>
+        <p class="hy-why-cta"><strong>Your herd. Your price. Your network. Let\u2019s get your cattle sold!</strong></p>
+        <p class="hy-why-note">*Frozen genetics e-commerce sales are subject to a 2.9% payment processing fee plus a 4.1% Herd Yard transaction fee (7% total). These fees do not apply to private treaty transactions completed outside Herd Yard\u2019s e-commerce checkout.</p>
+      </div>
+    </div></section>`;
+  }
   function home() {
     const recent = state.listings.slice(0, 6);
     app.innerHTML = `<section class="hero"><div class="hero-bg"></div><div class="hero-inner">
@@ -210,7 +261,8 @@
       <a class="btn btn-primary" href="#/browse">Browse all \u2192</a></div>
       <div class="cards-3">${recent.map(listingCard).join("")}</div></section>
       ${homeExtras()}
-      <section class="section"><div class="section-head"><div><h2>Choose a plan</h2></div></div>${plansHTML()}</section>`;
+      <section class="section"><div class="section-head"><div><h2>Choose a plan</h2></div></div>${plansHTML()}</section>
+      ${homeStories()}`;
   }
   let mapInst = null;
   const STATE_XY = { AL:[32.6,-86.7], AK:[64.2,-153.4], AZ:[34.3,-111.7], AR:[34.9,-92.4], CA:[36.8,-119.4], CO:[39.0,-105.5], CT:[41.6,-72.7], DE:[39.0,-75.5], FL:[27.8,-81.7], GA:[32.6,-83.4], HI:[20.8,-156.3], ID:[44.4,-114.6], IL:[40.0,-89.3], IN:[39.8,-86.3], IA:[42.0,-93.5], KS:[38.5,-98.3], KY:[37.5,-85.3], LA:[31.0,-92.0], ME:[45.3,-69.2], MD:[39.0,-76.8], MA:[42.2,-71.5], MI:[43.7,-84.5], MN:[46.3,-94.3], MS:[32.7,-89.7], MO:[38.4,-92.5], MT:[47.0,-110.4], NE:[41.5,-99.8], NV:[39.3,-116.6], NH:[43.7,-71.6], NJ:[40.2,-74.6], NM:[34.4,-106.1], NY:[42.9,-75.5], NC:[35.6,-79.4], ND:[47.4,-100.5], OH:[40.3,-82.8], OK:[35.6,-97.5], OR:[44.0,-120.5], PA:[40.9,-77.8], RI:[41.7,-71.5], SC:[33.9,-80.9], SD:[44.4,-100.2], TN:[35.9,-86.3], TX:[31.5,-99.3], UT:[39.3,-111.7], VT:[44.0,-72.7], VA:[37.5,-78.6], WA:[47.4,-120.5], WV:[38.6,-80.6], WI:[44.3,-89.8], WY:[43.0,-107.6] };
