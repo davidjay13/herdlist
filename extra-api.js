@@ -250,10 +250,17 @@ module.exports = async function extraApi(ctx) {
     return true;
   }
 
+  if (url === "/api/admin/listings" && method === "GET") {
+    const u = userFromCookie(req);
+    if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
+    send(res, 200, { listings: db.data.listings.map(withProducer), admin: true });
+    return true;
+  }
+
   if (url === "/api/my/listings" && method === "GET") {
     const u = userFromCookie(req);
     if (!u) return send(res, 401, { error: "Sign in required" }), true;
-    const list = isAdmin(u) ? db.data.listings : db.data.listings.filter((l) => l.userId === u.id);
+    const list = db.data.listings.filter((l) => l.userId === u.id);
     send(res, 200, { listings: list.map(withProducer), admin: isAdmin(u) });
     return true;
   }

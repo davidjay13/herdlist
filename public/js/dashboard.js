@@ -19,7 +19,29 @@
     if (hash.indexOf("#/account/news") === 0) return "admin";
     if (hash.indexOf("#/account/producers") === 0) return "admin";
     if (hash.indexOf("#/account/accounts") === 0) return "admin";
+    if (hash.indexOf("#/account/global") === 0) return "admin";
+    if (hash.indexOf("#/account/listings") === 0) return "listings";
     return "home";
+  }
+  function isAdminMe(me) {
+    me = me || lastMe || {};
+    var email = String((me.user && me.user.email) || "").toLowerCase();
+    return !!(me.admin || (me.user && me.user.admin) || email === "david@davidjay.com");
+  }
+  function adminNavHtml() {
+    if (!isAdminMe()) return "";
+    var h = location.hash || "";
+    function item(href, label, id) {
+      var on = h.indexOf(href) === 0;
+      return "<a id='" + id + "' href='" + href + "' style='display:block;padding:8px 10px;border-radius:8px;font-weight:560;background:" + (on ? "#d7eadc" : "transparent") + ";color:" + (on ? "#0f3f28" : "#3a4a3e") + "'>" + label + "</a>";
+    }
+    return "<div id='admin-controls' style='margin:8px 8px 4px;padding:8px 8px 6px;border-radius:12px;background:#eef4ef'>" +
+      "<div style='font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5c6f62;padding:4px 6px 6px'>Admin</div>" +
+      item("#/account/global", "Global Listings", "nav-global") +
+      item("#/account/producers", "Producers", "nav-producers") +
+      item("#/account/accounts", "Accounts", "nav-accounts") +
+      item("#/account/news", "News", "nav-news") +
+      "</div>";
   }
   function esc(v) {
     return String(v || "").split("<").join(" ");
@@ -62,7 +84,7 @@
       navItem("#/account/orders", "orders", "Orders") +
       navItem("#/account/messages", "messages", "Messages") +
       "<a href='#/browse' style='display:block;padding:10px 20px;color:#3a4a3e;font-weight:560'>Browse</a>" +
-      ((lastMe && lastMe.admin) ? "<div id='admin-controls'></div>" : "") +
+      adminNavHtml() +
       "<div style='margin-top:auto;padding:12px'><a class='btn btn-primary btn-wide' href='#/list'>+ Create listing</a>" +
       "<a class='btn btn-outline btn-wide' href='#/pricing' style='margin-top:8px'>Upgrade</a></div></aside>" +
       "<section id='dash-main' style='padding:" + (section() === "messages" ? "0" : "28px") + ";min-height:calc(100vh - 64px)'>" + (inner || "<p class='sub'>Loading...</p>") + "</section></div>";
@@ -88,6 +110,12 @@
       "<div class='field full'><label>About</label><textarea name='about' rows='4'>" + (p.about || "") + "</textarea></div>" +
       "<div class='field full'><label>Operations</label><textarea name='operations' rows='4'>" + (p.operations || "") + "</textarea></div></div>" +
       "<button class='btn btn-primary' style='margin-top:14px' type='submit'>Save profile</button></form>" +
+      (isAdminMe(me) ? "<div class='panel' style='margin-top:16px'><h3 style='margin:0 0 8px'>Admin</h3><p class='sub'>Platform tools for Herd Yard.</p>" +
+        "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:12px'>" +
+        "<a class='btn btn-outline' href='#/account/global'>Global Listings</a>" +
+        "<a class='btn btn-outline' href='#/account/producers'>Producers</a>" +
+        "<a class='btn btn-outline' href='#/account/accounts'>Accounts</a>" +
+        "<a class='btn btn-outline' href='#/account/news'>News</a></div></div>" : "") +
       "<input id='avatar-file' type='file' accept='image/*' style='display:none'>" +
       "<input id='cover-file' type='file' accept='image/*' style='display:none'>";
   }
@@ -436,7 +464,7 @@
       var inbox = pair[2] || { messages: [] };
       dashPack = pair[3] || {};
       var s = section();
-      var inner = s === "profile" ? profileHtml(me) : s === "home" ? home(me, listings, dashPack) : s === "messages" ? messagesHtml(inbox) : s === "admin" ? "<p class='sub'>Loading admin…</p>" : "<div class='panel'><h2>" + s + "</h2><p class='sub'>Coming next.</p></div>";
+      var inner = s === "profile" ? profileHtml(me) : s === "home" ? home(me, listings, dashPack) : s === "messages" ? messagesHtml(inbox) : (s === "admin" || s === "listings") ? "<p class='sub'>Loading…</p>" : "<div class='panel'><h2>" + s + "</h2><p class='sub'>Coming next.</p></div>";
       shellNow(inner, me.user.email || "");
       if (s === "profile") bindProfile(me);
       if (s === "messages") bindMessages();

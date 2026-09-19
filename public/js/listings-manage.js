@@ -71,21 +71,25 @@
     }
     var old = document.getElementById("nav-visibility");
     if (old && old.parentNode && old.parentNode.id !== "admin-controls") old.parentNode.removeChild(old);
-    if (!admin) {
-      var wrap = document.getElementById("admin-controls");
-      if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
-      return;
+    if (!admin) return;
+    var box = document.getElementById("admin-controls");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "admin-controls";
+      box.style.cssText = "margin:8px 8px 4px;padding:8px 8px 6px;border-radius:12px;background:#eef4ef";
+      box.innerHTML = "<div style='font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5c6f62;padding:4px 6px 6px'>Admin</div>";
+      var browse = aside.querySelector("a[href='#/browse']");
+      if (browse && browse.parentNode) browse.parentNode.insertBefore(box, browse);
+      else aside.appendChild(box);
     }
-    if (document.getElementById("admin-controls")) return;
-    var box = document.createElement("div");
-    box.id = "admin-controls";
-    box.style.cssText = "margin:8px 8px 4px;padding:8px 8px 6px;border-radius:12px;background:#eef4ef";
-    box.innerHTML =
-      "<div style='font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5c6f62;padding:4px 6px 6px'>Admin Controls</div>" +
-      "<a id='nav-global' href='#/account/global' style='display:block;padding:8px 10px;border-radius:8px;font-weight:560;color:#3a4a3e'>Global Listings</a>";
-    var browse = aside.querySelector("a[href='#/browse']");
-    if (browse && browse.parentNode) browse.parentNode.insertBefore(box, browse.nextSibling);
-    else aside.appendChild(box);
+    if (!document.getElementById("nav-global")) {
+      var g = document.createElement("a");
+      g.id = "nav-global";
+      g.href = "#/account/global";
+      g.textContent = "Global Listings";
+      g.style.cssText = "display:block;padding:8px 10px;border-radius:8px;font-weight:560;color:#3a4a3e";
+      box.appendChild(g);
+    }
   }
 
   function markNav() {
@@ -300,7 +304,7 @@
       fetch("/api/me", { credentials: "include" }).then(function (r) { return r.json(); }),
       fetch("/api/my/listings", { credentials: "include" }).then(function (r) { return r.json(); })
     ]).then(function (pair) {
-      admin = !!(pair[0] && pair[0].admin);
+      admin = !!(pair[0] && (pair[0].admin || (pair[0].user && (pair[0].user.admin || String(pair[0].user.email || "").toLowerCase() === "david@davidjay.com"))));
       cache = (pair[1] && pair[1].listings) || [];
       ensureNav();
       markNav();
