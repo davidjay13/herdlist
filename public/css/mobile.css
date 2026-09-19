@@ -54,6 +54,30 @@
   .dash-kpi b { font-size: 1.05rem; }
   .dash-kpi span { font-size: .62rem; }
   .view-toggle { display: none !important; }
+  .filters {
+    padding: 10px 12px 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line, #d8e0d6);
+  }
+  .filters h3,
+  .filters #apply-f,
+  .filters .filter-count { display: none; }
+  .filter-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .filters .field { margin: 0; }
+  .filters .field label {
+    font-size: 0.62rem;
+    letter-spacing: .04em;
+    margin-bottom: 3px;
+  }
+  .filters select {
+    padding: 7px 6px;
+    font-size: 0.78rem;
+    border-radius: 8px;
+  }
   .browse-toolbar { padding: 12px 16px; }
   .browse-toolbar > div:first-child { display: block; }
   .browse-layout .map-wrap,

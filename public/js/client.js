@@ -119,11 +119,13 @@
     }
     const viewCls = q.view === "map" ? "view-map" : q.view === "list" ? "view-list" : "view-split";
     app.innerHTML = `<div class="browse-layout ${viewCls}"><aside class="filters"><h3>Filter listings</h3>
+      <div class="filter-row">
       <div class="field"><label>Category</label><select id="f-cat"><option value="">All</option>${RL.CATEGORIES.map((c) => `<option ${c===q.category?"selected":""}>${c}</option>`).join("")}</select></div>
       <div class="field"><label>Breed</label><select id="f-breed"><option value="">All breeds</option>${RL.BREEDS.map((c) => `<option ${c===q.breed?"selected":""}>${c}</option>`).join("")}</select></div>
       <div class="field"><label>Class</label><select id="f-klass"><option value="">All classes</option>${RL.CLASSES.map((c) => `<option ${c===q.klass?"selected":""}>${c}</option>`).join("")}</select></div>
+      </div>
       <button class="btn btn-primary btn-wide" id="apply-f">Apply filters</button>
-      <p class="sub" style="margin-top:16px">${items.length} listings</p></aside>
+      <p class="sub filter-count">${items.length} listings</p></aside>
       <div class="browse-main"><div class="browse-toolbar"><div><b>Nationwide inventory</b></div>
       <div class="view-toggle">
         <button class="btn view-split-btn ${q.view==="split"?"btn-primary":"btn-outline"}" data-view="split"><span class="label-wide">Map + cards</span><span class="label-short">Split</span></button>
@@ -146,6 +148,12 @@
     const nxt = document.getElementById("pg-next");
     if (prev) prev.onclick = () => { if (page > 1) browseHash({ page: String(page - 1) }); };
     if (nxt) nxt.onclick = () => { if (page < pages) browseHash({ page: String(page + 1) }); };
+    if (isMobile) {
+      ["f-cat", "f-breed", "f-klass"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.onchange = function () { document.getElementById("apply-f").click(); };
+      });
+    }
     $("#apply-f").onclick = () => {
       const next = new URLSearchParams();
       if ($("#f-cat").value) next.set("category", $("#f-cat").value);
