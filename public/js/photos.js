@@ -93,16 +93,18 @@
   }
 
   function enhance() {
-    if ((location.hash || "").indexOf("#/list") !== 0) return;
+    if ((location.hash || "").indexOf("#/list") !== 0) return true;
     var form = document.getElementById("list-form");
-    if (!form || form.getAttribute("data-photos") === "1") return;
-    form.setAttribute("data-photos", "1");
-    picked = [];
+    if (!form) return false;
+    if (form.getAttribute("data-photos") === "1") return true;
     var grid = form.querySelector(".form-grid");
-    if (!grid) return;
+    if (!grid) return false;
+    picked = [];
+    pickedVideo = null;
     var mobile = window.matchMedia("(max-width: 980px)").matches;
     var photoHint = mobile ? "Tap to add from your camera or library" : "Click or drop · up to 4";
     var videoHint = mobile ? "Tap to add from your camera or library" : "Click or drop · 40 MB max";
+    if (!document.getElementById("photos")) {
     var wrap = document.createElement("div");
     wrap.className = "field full";
     wrap.innerHTML =
@@ -141,6 +143,7 @@
         grid.appendChild(vwrap);
       }
     }
+    }
 
     var vzone = document.getElementById("video-dropzone");
     var vinput = document.getElementById("listing-video");
@@ -155,10 +158,11 @@
         vname.textContent = f.name + " · " + Math.round(f.size / 1024 / 1024 * 10) / 10 + " MB";
       }
     }
-    vinput.addEventListener("change", function () {
+    if (vinput) vinput.addEventListener("change", function () {
       setVideoFile(vinput.files && vinput.files[0]);
       vinput.value = "";
     });
+    if (vzone) {
     ["dragenter", "dragover", "dragleave", "drop"].forEach(function (evt) {
       vzone.addEventListener(evt, function (e) { e.preventDefault(); e.stopPropagation(); });
     });
@@ -166,33 +170,37 @@
       var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
       setVideoFile(f);
     });
+    }
 
     var zone = document.getElementById("dropzone");
     var input = document.getElementById("photos");
-    input.addEventListener("change", function () {
+    if (input) input.addEventListener("change", function () {
       addFiles(input.files);
       input.value = "";
     });
-    ["dragenter", "dragover"].forEach(function (evt) {
-      zone.addEventListener(evt, function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        zone.style.background = "#d5eadc";
-        zone.style.borderColor = "#0f3f28";
+    if (zone) {
+      ["dragenter", "dragover"].forEach(function (evt) {
+        zone.addEventListener(evt, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.style.background = "#d5eadc";
+          zone.style.borderColor = "#0f3f28";
+        });
       });
-    });
-    ["dragleave", "drop"].forEach(function (evt) {
-      zone.addEventListener(evt, function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        zone.style.background = "#e6f2ea";
-        zone.style.borderColor = "#1b6b45";
+      ["dragleave", "drop"].forEach(function (evt) {
+        zone.addEventListener(evt, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.style.background = "#e6f2ea";
+          zone.style.borderColor = "#1b6b45";
+        });
       });
-    });
-    zone.addEventListener("drop", function (e) {
-      addFiles(e.dataTransfer && e.dataTransfer.files);
-    });
+      zone.addEventListener("drop", function (e) {
+        addFiles(e.dataTransfer && e.dataTransfer.files);
+      });
+    }
 
+    form.setAttribute("data-photos", "1");
     form.addEventListener(
       "submit",
       function (e) {
@@ -257,11 +265,13 @@
       },
       true
     );
+    return true;
   }
 
-  window.addEventListener("hashchange", function () {
-    setTimeout(enhance, 60);
-  });
-  setTimeout(enhance, 200);
-  setTimeout(enhance, 600);
+  function tick() {
+    if (enhance()) return;
+    setTimeout(tick, 250);
+  }
+  window.addEventListener("hashchange", function () { setTimeout(tick, 40); });
+  tick();
 })();

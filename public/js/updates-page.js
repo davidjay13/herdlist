@@ -2,6 +2,13 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.18",
+      date: "Sep 19, 2026",
+      items: [
+        "Photo and video upload now render in the List cattle form on phones, with a visible file picker."
+      ]
+    },
+    {
       v: "0.5.17",
       date: "Sep 19, 2026",
       items: [

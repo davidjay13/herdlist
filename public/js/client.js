@@ -296,6 +296,23 @@
     app.innerHTML = `<div class="form-page"><h2 class="page-title">List cattle</h2>
       <form id="list-form" class="panel" style="margin-top:18px"><div class="form-grid">
       <div class="field full"><label>Title</label><input name="title" required></div>
+      <div class="field full"><label>Photos</label>
+        <label id="dropzone" class="media-drop" for="photos">
+          <input id="photos" type="file" accept="image/*" multiple>
+          <span>Tap to add from your camera or library</span>
+        </label>
+        <div id="photo-preview" class="thumbs" style="margin-top:10px;flex-wrap:wrap"></div>
+      </div>
+      <div class="field full">
+        <div class="media-title">Add video</div>
+        <label id="video-dropzone" class="media-drop" for="listing-video">
+          <input id="listing-video" type="file" accept="video/*,.mp4,.mov,.webm">
+          <span>Tap to add from your camera or library</span>
+        </label>
+        <div id="video-name" class="sub" style="margin-top:8px;display:none"></div>
+        <div style="margin-top:12px"><label>Video link</label>
+        <input id="video-url" placeholder="YouTube, Vimeo, or mp4 URL"></div>
+      </div>
       <div class="field"><label>Breed</label><select name="breed">${RL.BREEDS.map((b)=>`<option>${b}</option>`).join("")}</select></div>
       <div class="field"><label>Class</label><select name="klass">${RL.CLASSES.map((b)=>`<option>${b}</option>`).join("")}</select></div>
       <div class="field"><label>Head</label><input name="head" type="number" min="1" value="25" required></div>
