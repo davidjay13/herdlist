@@ -10,6 +10,7 @@ const messagesApi = require("./messages-api");
 const newsApi = require("./news-api");
 const stripeBilling = require("./stripe-billing");
 const seo = require("./seo");
+const ogRanch = require("./og-ranch");
 const mail = require("./mail");
 const weeklyMail = require("./weekly-mail");
 const videoStore = require("./video-store");
@@ -118,6 +119,8 @@ function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split("?")[0]);
   if (urlPath === "/logo.png" || urlPath === "/logo.svg" || urlPath === "/favicon.ico") return serveLogo(res);
   if (urlPath === "/og.jpg" || urlPath === "/social-card.png" || urlPath === "/social-card.jpg") return serveOg(res);
+  const ranchOg = urlPath.match(/^\/og\/ranch\/([^/]+)\.(gif|jpg|jpeg)$/i);
+  if (ranchOg) return ogRanch.serve(req, res, ranchOg[1], ranchOg[2].toLowerCase(), db, headers);
   if (urlPath === "/robots.txt") {
     const body = seo.robotsTxt();
     res.writeHead(200, headers({ "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" }));

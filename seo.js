@@ -1,4 +1,5 @@
 const SITE = "https://herd-yard.com";
+const ogRanch = require("./og-ranch");
 
 const PAGES = {
   home: {
@@ -177,7 +178,7 @@ function forRequest(urlPath, db) {
         path: "/ranch/" + (prod.slug || parts[1]),
         title: (prod.name || "Ranch") + " | Herd Yard",
         desc: (prod.about || (prod.name || "This ranch") + loc + " lists private-treaty cattle on Herd Yard.").replace(/\s+/g, " ").trim().slice(0, 180),
-        image: abs(prod.cover || prod.avatar, "/og/ranch.jpg"),
+        image: abs(ogRanch.thumbPath(prod), "/og/ranch.jpg"),
         imageAlt: (prod.name || "Ranch") + " on Herd Yard",
         robots: "index,follow",
         producer: prod
@@ -388,6 +389,12 @@ function inject(html, seo, db) {
   html = html.replace(/<meta property="og:image" content="[^"]*"/g, '<meta property="og:image" content="' + esc(img) + '"');
   html = html.replace(/<meta property="og:image:secure_url" content="[^"]*"/, '<meta property="og:image:secure_url" content="' + esc(img) + '"');
   html = html.replace(/<meta property="og:image:alt" content="[^"]*"/, '<meta property="og:image:alt" content="' + esc(seo.imageAlt || title) + '"');
+  const imgType = /\.gif(\?|$)/i.test(String(seo.image || img)) ? "image/gif" : "image/jpeg";
+  html = html.replace(/<meta property="og:image:type" content="[^"]*"/, '<meta property="og:image:type" content="' + imgType + '"');
+  if (imgType === "image/gif") {
+    html = html.replace(/<meta property="og:image:width" content="[^"]*"/, '<meta property="og:image:width" content="800"');
+    html = html.replace(/<meta property="og:image:height" content="[^"]*"/, '<meta property="og:image:height" content="418"');
+  }
   html = html.replace(/<meta name="twitter:title" content="[^"]*"/, '<meta name="twitter:title" content="' + esc(title) + '"');
   html = html.replace(/<meta name="twitter:description" content="[^"]*"/, '<meta name="twitter:description" content="' + esc(desc) + '"');
   html = html.replace(/<meta name="twitter:image" content="[^"]*"/, '<meta name="twitter:image" content="' + esc(img) + '"');

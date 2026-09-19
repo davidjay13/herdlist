@@ -3,6 +3,7 @@ const weeklyMail = require("./weekly-mail");
 const videoStore = require("./video-store");
 const photoStore = require("./photo-store");
 const seo = require("./seo");
+const ogRanch = require("./og-ranch");
 
 const importedProducers = (() => {
   const rows = [];
@@ -218,6 +219,7 @@ module.exports = async function extraApi(ctx) {
       associations: p.associations || [],
       cover: p.cover,
       coverVideo: p.coverVideo || ((p.slug === "abn-ranch" || p.id === "hy26") ? "/abn-header.mp4?v=2" : ""),
+      ogImage: ogRanch.thumbPath(p),
       avatar: avatarSrc(p.avatar),
       lat: p.lat,
       lng: p.lng,

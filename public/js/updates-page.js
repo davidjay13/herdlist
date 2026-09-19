@@ -2,6 +2,13 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.30",
+      date: "Sep 19, 2026",
+      items: [
+        "Each public ranch profile now has its own share thumbnail. Video headers use a GIF."
+      ]
+    },
+    {
       v: "0.5.29",
       date: "Sep 19, 2026",
       items: [

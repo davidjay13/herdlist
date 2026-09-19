@@ -47,7 +47,7 @@
       window.HerdSeo.apply("ranch", {
         title: (p.name || "Ranch") + " | Herd Yard",
         desc: String(p.about || ((p.name || "This ranch") + (p.location ? " in " + p.location : "") + " lists private-treaty cattle on Herd Yard.")).replace(/\s+/g, " ").trim().slice(0, 180),
-        image: p.cover || p.avatar,
+        image: p.ogImage || p.cover || p.avatar,
         path: "/ranch/" + (p.slug || p.id || ""),
         imageAlt: p.name || "Ranch"
       });

@@ -45,6 +45,8 @@
     setAttr('meta[property="og:image"]', "content", img);
     setAttr('meta[property="og:image:secure_url"]', "content", img);
     setAttr('meta[property="og:image:alt"]', "content", page.imageAlt || title);
+    var typeEl = document.querySelector('meta[property="og:image:type"]');
+    if (typeEl) typeEl.setAttribute("content", /\.gif(\?|$)/i.test(page.image || img) ? "image/gif" : "image/jpeg");
     setAttr('meta[name="twitter:title"]', "content", title);
     setAttr('meta[name="twitter:description"]', "content", desc);
     setAttr('meta[name="twitter:image"]', "content", img);
