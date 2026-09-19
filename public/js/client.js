@@ -272,6 +272,8 @@
     if (parts[0]==="account") return;
     if (parts[0]==="pricing") return pricing();
     if (parts[0]==="faq") return faq();
+    if (parts[0]==="updates") return;
+    if (parts[0]==="producers") return;
     home();
   }
   window.addEventListener("hashchange", route);
