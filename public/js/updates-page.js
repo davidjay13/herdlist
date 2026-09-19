@@ -2,6 +2,14 @@
   // Add a new version block at the top of UPDATES in the same commit as every user-facing deploy.
   const UPDATES = [
     {
+      v: "0.5.21",
+      date: "Sep 19, 2026",
+      items: [
+        "Public pages now include real headings and listing cards in the first HTML so search engines can read the site without running the app.",
+        "Maps load only on Browse and Producers. Homepage hero uses a local photo. CSS and JS cache longer; security headers added."
+      ]
+    },
+    {
       v: "0.5.20",
       date: "Sep 19, 2026",
       items: [
