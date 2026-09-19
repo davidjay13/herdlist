@@ -115,7 +115,7 @@
 
   function card(l) {
     var img = photo(l);
-    var st = l.hidden ? "hidden" : (l.status || "active");
+    var st = l.status || "active";
     return "<article class='listing-card'>" +
       "<img src='" + String(img).split("'").join("") + "' alt='cattle' style='width:100%;height:190px;object-fit:cover;display:block;background:#dce8d8'>" +
       "<div class='listing-body'><div class='price'>" + esc(l.title) + "</div>" +
@@ -133,8 +133,7 @@
     var st = param("status", "all");
     var filtered = listings.filter(function (l) {
       if (st === "all") return true;
-      if (st === "hidden") return !!l.hidden;
-      if (st === "active") return !l.hidden && (l.status || "active") === "active";
+      if (st === "active") return (l.status || "active") === "active";
       return String(l.status || "active") === st;
     });
     function chip(key, label) {
@@ -145,7 +144,7 @@
       "<h2 class='page-title'>Listings</h2>" +
       "<p class='sub'>" + filtered.length + " of " + listings.length + "</p>" +
       "<div style='display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px'>" +
-      chip("all", "All") + chip("active", "Active") + chip("sold", "Sold") + chip("hidden", "Hidden") +
+      chip("all", "All") + chip("active", "Active") + chip("sold", "Sold") +
       "</div><div id='listings-board' class='cards-3'>" +
       (filtered.length ? filtered.map(card).join("") : "<p class='sub'>No listings in this view.</p>") +
       "</div>";
@@ -193,7 +192,7 @@
           "<img src='" + String(photo(l)).split("'").join("") + "' alt='' style='width:72px;height:52px;object-fit:cover;border-radius:8px'>" +
           "<span style='flex:1'><b>" + esc(l.title) + "</b><div class='sub'>" +
           esc(l.listedAt || "") + " · " + price + " · " + esc(l.status || "active") +
-          (l.hidden ? " · hidden" : "") + "</div></span>" +
+          "</div></span>" +
           "<a class='btn btn-outline' href='#/listing/" + l.id + "'>Open</a>" +
           "<a class='btn btn-outline' href='#/account/edit/" + l.id + "'>Edit</a></div>";
       }).join("") : "<p class='sub'>No listings</p>") +
@@ -306,10 +305,19 @@
       ensureNav();
       markNav();
       var id = editId();
+      function findListing(list) {
+        return (list || []).filter(function (l) { return l.id === id; })[0];
+      }
       if (id) {
-        var listing = cache.filter(function (l) { return l.id === id; })[0];
-        if (listing) paintEdit(listing);
-        return;
+        var listing = findListing(cache);
+        if (listing) return paintEdit(listing);
+        if (!admin) return;
+        return fetch("/api/admin/listings", { credentials: "include" })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            var found = findListing((d && d.listings) || []);
+            if (found) paintEdit(found);
+          });
       }
       if (hash().indexOf("#/account/listings") === 0) return paintBoard(cache);
       if (isGlobal()) {
@@ -318,7 +326,9 @@
           if (main) main.innerHTML = "<p>Admin only.</p>";
           return;
         }
-        return paintGlobal(cache);
+        return fetch("/api/admin/listings", { credentials: "include" })
+          .then(function (r) { return r.json(); })
+          .then(function (d) { paintGlobal((d && d.listings) || []); });
       }
     }).catch(function () {});
   }
