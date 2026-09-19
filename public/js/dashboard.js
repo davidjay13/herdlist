@@ -59,7 +59,7 @@
       "<a href='#/browse' style='display:block;padding:10px 20px;color:#3a4a3e;font-weight:560'>Browse</a>" +
       "<div style='margin-top:auto;padding:12px'><a class='btn btn-primary btn-wide' href='#/list'>+ Create listing</a>" +
       "<a class='btn btn-outline btn-wide' href='#/pricing' style='margin-top:8px'>Upgrade</a></div></aside>" +
-      "<section id='dash-main' style='padding:28px'>" + (inner || "<p class='sub'>Loading...</p>") + "</section></div>";
+      "<section id='dash-main' style='padding:" + (section() === "messages" ? "0" : "28px") + ";min-height:calc(100vh - 64px)'>" + (inner || "<p class='sub'>Loading...</p>") + "</section></div>";
   }
   function profileHtml(me) {
     var user = me.user || {};
@@ -161,58 +161,136 @@
     if (!ts) return "";
     var d = new Date(Number(ts));
     if (isNaN(d.getTime())) return "";
-    return d.toLocaleString();
+    var now = new Date();
+    var sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return d.toLocaleDateString([], { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  function initials(name) {
+    var parts = String(name || "HY").trim().split(/\s+/);
+    var a = (parts[0] || "H").charAt(0);
+    var b = (parts[1] || parts[0] || "Y").charAt(0);
+    return (a + b).toUpperCase();
+  }
+  function threadKey(msg) {
+    var other = msg.direction === "sent" ? (msg.toUser || msg.toProducer || "ranch") : (msg.fromUser || "buyer");
+    return String(msg.listingId || "x") + "::" + String(other);
+  }
+  function otherOf(msg) {
+    if (msg.direction === "sent") return { id: msg.toUser || msg.toProducer, name: msg.toName || "Ranch" };
+    return { id: msg.fromUser, name: msg.fromName || "Buyer" };
+  }
+  function groupThreads(items) {
+    var map = {};
+    (items || []).forEach(function (msg) {
+      var key = threadKey(msg);
+      if (!map[key]) {
+        var other = otherOf(msg);
+        map[key] = {
+          key: key,
+          listingId: msg.listingId,
+          listingTitle: msg.listingTitle || "Listing",
+          otherId: other.id,
+          otherName: other.name,
+          messages: []
+        };
+      }
+      map[key].messages.push(msg);
+    });
+    return Object.keys(map).map(function (k) {
+      var th = map[k];
+      th.messages.sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
+      th.last = th.messages[th.messages.length - 1];
+      return th;
+    }).sort(function (a, b) { return ((b.last && b.last.at) || 0) - ((a.last && a.last.at) || 0); });
   }
   function messagesHtml(pack) {
     var items = (pack && pack.messages) || [];
-    var filter = "all";
+    var threads = groupThreads(items);
+    var active = "";
     try {
-      var m = (location.hash || "").match(/[?&]dir=([^&]+)/);
-      if (m) filter = decodeURIComponent(m[1]);
+      var m = (location.hash || "").match(/[?&]t=([^&]+)/);
+      if (m) active = decodeURIComponent(m[1]);
     } catch (e) {}
-    var shown = items.filter(function (msg) {
-      if (filter === "sent") return msg.direction === "sent";
-      if (filter === "received") return msg.direction === "received";
-      return true;
-    });
-    function chip(key, label) {
-      var on = filter === key;
-      return "<a class='btn " + (on ? "btn-primary" : "btn-outline") + "' href='#/account/messages?dir=" + key + "'>" + label + "</a>";
+    if (!active && threads[0]) active = threads[0].key;
+    var current = null;
+    threads.forEach(function (th) { if (th.key === active) current = th; });
+    var list = threads.length ? threads.map(function (th) {
+      var on = th.key === active;
+      var preview = th.last ? th.last.body : "";
+      if (preview.length > 52) preview = preview.slice(0, 50) + "...";
+      return "<button type='button' class='chat-row' data-thread='" + esc(th.key) + "' style='" +
+        "display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:0;cursor:pointer;" +
+        "padding:10px 12px;background:" + (on ? "#e7f0ea" : "transparent") + "'>" +
+        "<div style='width:40px;height:40px;border-radius:50%;background:#1b6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none'>" + esc(initials(th.otherName)) + "</div>" +
+        "<div style='min-width:0;flex:1'><div style='display:flex;justify-content:space-between;gap:8px'><b style='font-size:.95rem;color:#0f3f28'>" + esc(th.otherName) + "</b>" +
+        "<span class='sub' style='font-size:.75rem;white-space:nowrap'>" + esc(when(th.last && th.last.at)) + "</span></div>" +
+        "<div class='sub' style='white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" + esc(preview) + "</div></div></button>";
+    }).join("") : "<p class='sub' style='padding:16px'>No chats yet.</p>";
+    var bubbles = "";
+    if (current) {
+      var lastDay = "";
+      bubbles = current.messages.map(function (msg) {
+        var sent = msg.direction === "sent";
+        var day = "";
+        try { day = new Date(Number(msg.at)).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }); } catch (e) {}
+        var stamp = "";
+        if (day && day !== lastDay) {
+          lastDay = day;
+          stamp = "<div style='text-align:center;color:#8a968d;font-size:.75rem;margin:14px 0 8px'>" + esc(day) + "</div>";
+        }
+        return stamp +
+          "<div style='display:flex;justify-content:" + (sent ? "flex-end" : "flex-start") + ";margin:4px 0'>" +
+          "<div style='max-width:72%;padding:8px 12px;border-radius:18px;white-space:pre-wrap;line-height:1.35;" +
+          (sent ? "background:#1b6b45;color:#fff;border-bottom-right-radius:4px" : "background:#e4e6eb;color:#050505;border-bottom-left-radius:4px") +
+          "'>" + esc(msg.body) +
+          "<div style='font-size:.68rem;opacity:.75;margin-top:4px'>" + esc(when(msg.at)) + "</div></div></div>";
+      }).join("");
+    } else {
+      bubbles = "<div style='margin:auto;color:#6b7a6e;text-align:center'>Select a conversation</div>";
     }
-    var rows = shown.length ? shown.map(function (msg) {
-      var other = msg.direction === "sent" ? (msg.toName || "Ranch") : (msg.fromName || "Buyer");
-      var replyTo = msg.direction === "received" ? msg.fromUser : msg.toUser;
-      return "<article class='panel' style='margin:0 0 12px;padding:14px 16px'>" +
-        "<div style='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap'>" +
-        "<div><b>" + esc(other) + "</b> <span class='sub'>" + (msg.direction === "sent" ? "Sent" : "Received") + "</span></div>" +
-        "<div class='sub'>" + esc(when(msg.at)) + "</div></div>" +
-        "<div class='sub' style='margin:4px 0 8px'><a href='#/listing/" + esc(msg.listingId) + "'>" + esc(msg.listingTitle) + "</a></div>" +
-        "<p style='margin:0;white-space:pre-wrap'>" + esc(msg.body) + "</p>" +
-        "<form class='msg-reply' data-listing='" + esc(msg.listingId) + "' data-to='" + esc(replyTo || "") + "' style='margin-top:10px;display:flex;gap:8px;flex-wrap:wrap'>" +
-        "<input name='body' placeholder='Reply...' style='flex:1;min-width:180px'>" +
-        "<button class='btn btn-outline' type='submit'>Reply</button></form>" +
-        "</article>";
-    }).join("") : "<p class='sub'>No messages yet. When a buyer messages a ranch, it will show up here.</p>";
-    return "<h2 class='page-title'>Messages</h2>" +
-      "<p class='sub'>Sent and received notes about listings.</p>" +
-      "<div style='display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px'>" +
-      chip("all", "All") + chip("received", "Received") + chip("sent", "Sent") +
-      "</div><div>" + rows + "</div>";
+    var header = current
+      ? "<div style='display:flex;align-items:center;gap:10px'><div style='width:36px;height:36px;border-radius:50%;background:#1b6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700'>" + esc(initials(current.otherName)) + "</div>" +
+        "<div><b>" + esc(current.otherName) + "</b><div class='sub'><a href='#/listing/" + esc(current.listingId) + "'>" + esc(current.listingTitle) + "</a></div></div></div>"
+      : "<b>Messages</b>";
+    var composer = current
+      ? "<form id='chat-compose' data-listing='" + esc(current.listingId) + "' data-to='" + esc(current.otherId || "") + "' style='display:flex;gap:8px;align-items:center'>" +
+        "<input id='chat-input' name='body' placeholder='Aa' autocomplete='off' style='flex:1;border:1px solid #d8e0d6;background:#f0f2f5;border-radius:20px;padding:10px 14px;font:inherit'>" +
+        "<button class='btn btn-primary' type='submit' style='border-radius:20px'>Send</button></form>"
+      : "";
+    return "<div style='display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 64px);background:#fff;border-left:1px solid #e6eee8'>" +
+      "<aside style='border-right:1px solid #e6eee8;display:flex;flex-direction:column;background:#fffcf7'>" +
+      "<div style='padding:16px 16px 10px'><b style='font-size:1.2rem'>Chats</b></div>" +
+      "<div style='overflow:auto;flex:1'>" + list + "</div></aside>" +
+      "<section style='display:flex;flex-direction:column;min-width:0'>" +
+      "<header style='padding:12px 16px;border-bottom:1px solid #e6eee8'>" + header + "</header>" +
+      "<div id='chat-thread' style='flex:1;overflow:auto;padding:16px 18px;background:#fff;display:flex;flex-direction:column'>" + bubbles + "</div>" +
+      "<div style='padding:10px 14px;border-top:1px solid #e6eee8;background:#fffcf7'>" + composer + "</div>" +
+      "</section></div>";
   }
   function bindMessages() {
-    document.querySelectorAll("form.msg-reply").forEach(function (form) {
-      form.onsubmit = function (e) {
-        e.preventDefault();
-        var input = form.querySelector("input[name=body]");
-        var body = input ? String(input.value || "").trim() : "";
-        if (!body) { toast("Write a reply first."); return; }
-        var payload = { listingId: form.getAttribute("data-listing"), toUser: form.getAttribute("data-to"), body: body };
-        fetch("/api/messages", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-          .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Could not send"); return d; }); })
-          .then(function () { toast("Reply sent."); load(); })
-          .catch(function (err) { toast(err.message); });
+    document.querySelectorAll(".chat-row").forEach(function (btn) {
+      btn.onclick = function () {
+        location.hash = "#/account/messages?t=" + encodeURIComponent(btn.getAttribute("data-thread") || "");
       };
     });
+    var thread = document.getElementById("chat-thread");
+    if (thread) thread.scrollTop = thread.scrollHeight;
+    var form = document.getElementById("chat-compose");
+    if (!form) return;
+    var input = document.getElementById("chat-input");
+    if (input) input.focus();
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      var body = input ? String(input.value || "").trim() : "";
+      if (!body) return;
+      var payload = { listingId: form.getAttribute("data-listing"), toUser: form.getAttribute("data-to"), body: body };
+      input.value = "";
+      fetch("/api/messages", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+        .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Could not send"); return d; }); })
+        .then(function () { load(); })
+        .catch(function (err) { toast(err.message); });
+    };
   }
   function home(me, listings) {
     var name = ((me.user && me.user.name) || "Producer").split(" ")[0];
