@@ -4,7 +4,6 @@
   .section-head { margin-bottom: 12px; align-items: flex-start; }
   .hero { min-height: 72vh; }
   .hero-inner { padding: 48px 16px 44px; }
-  .hero-cta { max-width: 100%; }
   .gallery { height: 240px; min-height: 240px; }
   .form-page { padding: 18px 16px 96px; }
   .media-drop {
