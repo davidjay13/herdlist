@@ -157,6 +157,63 @@
         .catch(function (err) { toast(err.message); });
     };
   }
+  function when(ts) {
+    if (!ts) return "";
+    var d = new Date(Number(ts));
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleString();
+  }
+  function messagesHtml(pack) {
+    var items = (pack && pack.messages) || [];
+    var filter = "all";
+    try {
+      var m = (location.hash || "").match(/[?&]dir=([^&]+)/);
+      if (m) filter = decodeURIComponent(m[1]);
+    } catch (e) {}
+    var shown = items.filter(function (msg) {
+      if (filter === "sent") return msg.direction === "sent";
+      if (filter === "received") return msg.direction === "received";
+      return true;
+    });
+    function chip(key, label) {
+      var on = filter === key;
+      return "<a class='btn " + (on ? "btn-primary" : "btn-outline") + "' href='#/account/messages?dir=" + key + "'>" + label + "</a>";
+    }
+    var rows = shown.length ? shown.map(function (msg) {
+      var other = msg.direction === "sent" ? (msg.toName || "Ranch") : (msg.fromName || "Buyer");
+      var replyTo = msg.direction === "received" ? msg.fromUser : msg.toUser;
+      return "<article class='panel' style='margin:0 0 12px;padding:14px 16px'>" +
+        "<div style='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap'>" +
+        "<div><b>" + esc(other) + "</b> <span class='sub'>" + (msg.direction === "sent" ? "Sent" : "Received") + "</span></div>" +
+        "<div class='sub'>" + esc(when(msg.at)) + "</div></div>" +
+        "<div class='sub' style='margin:4px 0 8px'><a href='#/listing/" + esc(msg.listingId) + "'>" + esc(msg.listingTitle) + "</a></div>" +
+        "<p style='margin:0;white-space:pre-wrap'>" + esc(msg.body) + "</p>" +
+        "<form class='msg-reply' data-listing='" + esc(msg.listingId) + "' data-to='" + esc(replyTo || "") + "' style='margin-top:10px;display:flex;gap:8px;flex-wrap:wrap'>" +
+        "<input name='body' placeholder='Reply...' style='flex:1;min-width:180px'>" +
+        "<button class='btn btn-outline' type='submit'>Reply</button></form>" +
+        "</article>";
+    }).join("") : "<p class='sub'>No messages yet. When a buyer messages a ranch, it will show up here.</p>";
+    return "<h2 class='page-title'>Messages</h2>" +
+      "<p class='sub'>Sent and received notes about listings.</p>" +
+      "<div style='display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px'>" +
+      chip("all", "All") + chip("received", "Received") + chip("sent", "Sent") +
+      "</div><div>" + rows + "</div>";
+  }
+  function bindMessages() {
+    document.querySelectorAll("form.msg-reply").forEach(function (form) {
+      form.onsubmit = function (e) {
+        e.preventDefault();
+        var input = form.querySelector("input[name=body]");
+        var body = input ? String(input.value || "").trim() : "";
+        if (!body) { toast("Write a reply first."); return; }
+        var payload = { listingId: form.getAttribute("data-listing"), toUser: form.getAttribute("data-to"), body: body };
+        fetch("/api/messages", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+          .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Could not send"); return d; }); })
+          .then(function () { toast("Reply sent."); load(); })
+          .catch(function (err) { toast(err.message); });
+      };
+    });
+  }
   function home(me, listings) {
     var name = ((me.user && me.user.name) || "Producer").split(" ")[0];
     var live = listings || [];
@@ -172,15 +229,18 @@
     shellNow("<p class='sub'>Loading dashboard...</p>", "");
     Promise.all([
       fetch("/api/me", { credentials: "include" }).then(function (r) { return r.json(); }),
-      fetch("/api/my/listings", { credentials: "include" }).then(function (r) { return r.json(); }).catch(function () { return { listings: [] }; })
+      fetch("/api/my/listings", { credentials: "include" }).then(function (r) { return r.json(); }).catch(function () { return { listings: [] }; }),
+      fetch("/api/messages", { credentials: "include" }).then(function (r) { return r.json(); }).catch(function () { return { messages: [] }; })
     ]).then(function (pair) {
       var me = pair[0] || {};
       if (!me.user) { location.hash = "#/signin"; return; }
       var listings = (pair[1] && pair[1].listings) || [];
+      var inbox = pair[2] || { messages: [] };
       var s = section();
-      var inner = s === "profile" ? profileHtml(me) : s === "home" ? home(me, listings) : "<div class='panel'><h2>" + s + "</h2><p class='sub'>Coming next.</p></div>";
+      var inner = s === "profile" ? profileHtml(me) : s === "home" ? home(me, listings) : s === "messages" ? messagesHtml(inbox) : "<div class='panel'><h2>" + s + "</h2><p class='sub'>Coming next.</p></div>";
       shellNow(inner, me.user.email || "");
       if (s === "profile") bindProfile(me);
+      if (s === "messages") bindMessages();
     }).catch(function () { shellNow("<p>Could not load account.</p>", ""); });
   }
   window.addEventListener("hashchange", load);
