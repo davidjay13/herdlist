@@ -405,7 +405,7 @@ function inject(html, seo, db) {
   }
   if (seo.key === "home") {
     if (!/rel="preload"[^>]+og\/home/.test(html)) {
-      html = html.replace("</head>", '    <link rel="preload" as="image" href="/og/home.jpg" />\n  </head>');
+      html = html.replace("</head>", '    <link rel="preload" as="image" href="/hero.jpg" />\n  </head>');
     }
   }
   const inner = crawlerHtml(seo, db);

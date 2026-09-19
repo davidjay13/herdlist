@@ -116,7 +116,7 @@ button, input, select, textarea { font-family: inherit; }
   inset: 0;
   background:
     linear-gradient(180deg, rgba(15, 32, 20, 0.35) 0%, rgba(15, 32, 20, 0.55) 70%),
-    url("/og/home.jpg")
+    url("/hero.jpg")
       center/cover no-repeat;
 }
 .hero-inner {
