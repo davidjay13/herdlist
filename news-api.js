@@ -139,11 +139,11 @@ module.exports = async function newsApi(ctx) {
   function seedNews() {
     if (db.data.news && db.data.news.length) return false;
     db.data.news = [
-      { id: "n1", url: "https://www.drovers.com/", title: "Drovers — cattle markets and ranch news", source: "Drovers", image: "", at: Date.now() - 86400000 * 4 },
-      { id: "n2", url: "https://www.beefmagazine.com/", title: "BEEF Magazine — industry headlines", source: "BEEF", image: "", at: Date.now() - 86400000 * 3 },
-      { id: "n3", url: "https://www.agweb.com/livestock/cattle", title: "AgWeb Cattle — livestock and market news", source: "AgWeb", image: "", at: Date.now() - 86400000 * 2 },
-      { id: "n4", url: "https://www.thefencepost.com/news/", title: "The Fence Post — western livestock news", source: "Fence Post", image: "", at: Date.now() - 86400000 },
-      { id: "n5", url: "https://www.cattlebusinessweekly.com/", title: "Cattle Business Weekly", source: "CBW", image: "", at: Date.now() - 3600000 },
+      { id: "n1", url: "https://www.drovers.com/", title: "Drovers — cattle markets and ranch news", source: "Drovers", subtext: "Cattle markets and ranch news", image: "", at: Date.now() - 86400000 * 4 },
+      { id: "n2", url: "https://www.beefmagazine.com/", title: "BEEF Magazine — industry headlines", source: "BEEF", subtext: "Industry headlines", image: "", at: Date.now() - 86400000 * 3 },
+      { id: "n3", url: "https://www.agweb.com/livestock/cattle", title: "AgWeb Cattle — livestock and market news", source: "AgWeb", subtext: "Livestock and market news", image: "", at: Date.now() - 86400000 * 2 },
+      { id: "n4", url: "https://www.thefencepost.com/news/", title: "The Fence Post — western livestock news", source: "Fence Post", subtext: "Western livestock news", image: "", at: Date.now() - 86400000 },
+      { id: "n5", url: "https://www.cattlebusinessweekly.com/", title: "Cattle Business Weekly", source: "CBW", subtext: "Weekly cattle business news", image: "", at: Date.now() - 3600000 },
     ];
     return true;
   }
@@ -166,8 +166,14 @@ module.exports = async function newsApi(ctx) {
     var title = metaContent(html, "og:title") || metaContent(html, "twitter:title") || pageTitle(html);
     var image = metaContent(html, "og:image") || metaContent(html, "twitter:image");
     var source = metaContent(html, "og:site_name") || hostOf(link);
+    var desc = metaContent(html, "og:description") || metaContent(html, "description");
     if (!title) title = hostOf(link) || link;
-    return { title: title.slice(0, 180), image: image.slice(0, 500), source: String(source).slice(0, 60) };
+    return {
+      title: title.slice(0, 180),
+      image: image.slice(0, 500),
+      source: String(source).slice(0, 60),
+      subtext: String(desc || source || "").slice(0, 180)
+    };
   }
 
 
@@ -292,26 +298,43 @@ module.exports = async function newsApi(ctx) {
     if (!u || !isAdmin(u)) return send(res, 403, { error: "Admin only" }), true;
     var b = await readBody(req);
     var raw = String(b.urls || b.url || "").split(/\s+/).map(function (s) { return s.trim(); }).filter(Boolean);
-    if (!raw.length) return send(res, 400, { error: "Paste one or more article links." }), true;
     var added = [];
-    for (var i = 0; i < raw.length && i < 20; i++) {
-      var link = raw[i];
-      if (!/^https?:\/\//i.test(link)) link = "https://" + link;
-      try { new URL(link); } catch (e) { continue; }
-      var exists = (db.data.news || []).some(function (n) { return n.url === link; });
-      if (exists) continue;
-      var meta = await scrape(link);
+    if (!raw.length) {
+      var headline = String(b.title || b.headline || "").trim();
+      if (!headline) return send(res, 400, { error: "Paste a link or enter a headline." }), true;
       var item = {
-        id: "n" + Date.now() + "-" + i,
-        url: link,
-        title: String(b.title || meta.title || link),
-        source: meta.source,
-        image: meta.image,
+        id: "n" + Date.now(),
+        url: String(b.link || "").trim(),
+        title: headline.slice(0, 180),
+        source: String(b.source || "News").slice(0, 60),
+        subtext: String(b.subtext || b.source || "").slice(0, 180),
+        image: "",
         at: Date.now(),
         addedBy: u.email,
       };
       db.data.news.unshift(item);
       added.push(item);
+    } else {
+      for (var i = 0; i < raw.length && i < 20; i++) {
+        var link = raw[i];
+        if (!/^https?:\/\//i.test(link)) link = "https://" + link;
+        try { new URL(link); } catch (e) { continue; }
+        var exists = (db.data.news || []).some(function (row) { return row.url === link; });
+        if (exists) continue;
+        var meta = await scrape(link);
+        var item = {
+          id: "n" + Date.now() + "-" + i,
+          url: link,
+          title: String(b.title || b.headline || meta.title || link).slice(0, 180),
+          source: meta.source,
+          subtext: String(b.subtext || meta.subtext || meta.source || "").slice(0, 180),
+          image: meta.image,
+          at: Date.now(),
+          addedBy: u.email,
+        };
+        db.data.news.unshift(item);
+        added.push(item);
+      }
     }
     await db.save();
     send(res, 200, { ok: true, added: added, news: db.data.news });
@@ -319,13 +342,25 @@ module.exports = async function newsApi(ctx) {
   }
 
   var delMatch = url.match(/^\/api\/admin\/news\/([^/]+)$/);
-  if (delMatch && method === "DELETE") {
+  if (delMatch && (method === "DELETE" || method === "POST")) {
     var admin = userFromCookie(req);
     if (!admin || !isAdmin(admin)) return send(res, 403, { error: "Admin only" }), true;
     var nid = decodeURIComponent(delMatch[1]);
-    db.data.news = (db.data.news || []).filter(function (n) { return n.id !== nid; });
+    if (method === "DELETE") {
+      db.data.news = (db.data.news || []).filter(function (row) { return row.id !== nid; });
+      await db.save();
+      send(res, 200, { ok: true, news: db.data.news });
+      return true;
+    }
+    var item = (db.data.news || []).find(function (row) { return row.id === nid; });
+    if (!item) return send(res, 404, { error: "Story not found" }), true;
+    var body = await readBody(req);
+    if (body.title !== undefined || body.headline !== undefined) item.title = String(body.title || body.headline || "").slice(0, 180);
+    if (body.subtext !== undefined) item.subtext = String(body.subtext || "").slice(0, 180);
+    if (body.source !== undefined) item.source = String(body.source || "").slice(0, 60);
+    if (body.url !== undefined) item.url = String(body.url || "").trim();
     await db.save();
-    send(res, 200, { ok: true, news: db.data.news });
+    send(res, 200, { ok: true, news: db.data.news, item: item });
     return true;
   }
 

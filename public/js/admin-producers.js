@@ -273,29 +273,64 @@
     var main = document.getElementById("dash-main");
     if (!main) return;
     var rows = items || [];
+    function val(v) {
+      return String(v || "").split("'").join("&#39;").split("<").join(" ");
+    }
     main.innerHTML =
       "<h2 class='page-title'>Industry news</h2>" +
-      "<p class='sub'>Paste article links. We pull the headline and show them in the dashboard ticker.</p>" +
+      "<p class='sub'>Paste article links or write a headline. Edit the ticker copy anytime.</p>" +
       "<form id='news-form' class='panel' style='margin:16px 0'>" +
+      "<div class='form-grid'>" +
+      "<div class='field full'><label>Headline</label><input id='news-headline' placeholder='Optional if you paste a link'></div>" +
+      "<div class='field full'><label>Subtext</label><input id='news-subtext' placeholder='Short line under the headline'></div>" +
       "<div class='field full'><label>Article links</label>" +
-      "<textarea id='news-urls' rows='4' placeholder='https://www.drovers.com/....' style='width:100%'></textarea></div>" +
-      "<button class='btn btn-primary' type='submit' style='margin-top:12px'>Add headlines</button></form>" +
-      "<div class='panel'>" +
+      "<textarea id='news-urls' rows='3' placeholder='https://www.drovers.com/....' style='width:100%'></textarea></div></div>" +
+      "<button class='btn btn-primary' type='submit' style='margin-top:12px'>Add to ticker</button></form>" +
+      "<div class='news-admin-list'>" +
       (rows.length ? rows.map(function (n) {
-        return "<div class='row' style='align-items:center;gap:12px'>" +
-          "<span style='flex:1'><b>" + esc(n.title) + "</b><div class='sub'>" + esc(n.source) + " · <a href='" + String(n.url||"").split("'").join("") + "' target='_blank' rel='noopener'>Open</a></div></span>" +
-          "<button class='btn btn-outline news-del' data-id='" + esc(n.id) + "' type='button'>Remove</button></div>";
-      }).join("") : "<p class='sub'>No articles yet.</p>") +
+        return "<form class='panel news-edit' data-id='" + val(n.id) + "'>" +
+          "<div class='form-grid'>" +
+          "<div class='field full'><label>Headline</label><input name='title' value='" + val(n.title) + "' required></div>" +
+          "<div class='field full'><label>Subtext</label><input name='subtext' value='" + val(n.subtext || n.source || "") + "'></div>" +
+          "<div class='field full'><label>Link</label><input name='url' value='" + val(n.url) + "' placeholder='https://'></div></div>" +
+          "<div style='display:flex;gap:8px;margin-top:12px;flex-wrap:wrap'>" +
+          "<button class='btn btn-primary' type='submit'>Save</button>" +
+          (n.url ? "<a class='btn btn-outline' href='" + val(n.url) + "' target='_blank' rel='noopener'>Open</a>" : "") +
+          "<button class='btn btn-outline news-del' data-id='" + val(n.id) + "' type='button'>Remove</button></div></form>";
+      }).join("") : "<div class='panel'><p class='sub'>No articles yet.</p></div>") +
       "</div>";
     var form = document.getElementById("news-form");
     if (form) form.onsubmit = function (e) {
       e.preventDefault();
-      var urls = (document.getElementById("news-urls") || {}).value || "";
-      fetch("/api/admin/news", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ urls: urls }) })
+      var body = {
+        urls: (document.getElementById("news-urls") || {}).value || "",
+        title: (document.getElementById("news-headline") || {}).value || "",
+        subtext: (document.getElementById("news-subtext") || {}).value || ""
+      };
+      fetch("/api/admin/news", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
         .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Could not add"); return d; }); })
         .then(function (d) { paintNews(d.news || []); })
         .catch(function (err) { alert(err.message); });
     };
+    main.querySelectorAll("form.news-edit").forEach(function (f) {
+      f.onsubmit = function (e) {
+        e.preventDefault();
+        var id = f.getAttribute("data-id");
+        var fd = new FormData(f);
+        var body = { title: fd.get("title"), subtext: fd.get("subtext"), url: fd.get("url") };
+        var btn = f.querySelector("button[type=submit]");
+        if (btn) btn.disabled = true;
+        fetch("/api/admin/news/" + encodeURIComponent(id), {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Save failed"); return d; }); })
+          .then(function (d) { paintNews(d.news || []); })
+          .catch(function (err) { alert(err.message); })
+          .then(function () { if (btn) btn.disabled = false; });
+      };
+    });
     main.querySelectorAll(".news-del").forEach(function (btn) {
       btn.onclick = function () {
         fetch("/api/admin/news/" + encodeURIComponent(btn.getAttribute("data-id")), { method: "DELETE", credentials: "include" })

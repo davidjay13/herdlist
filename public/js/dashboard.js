@@ -361,9 +361,11 @@
     }
     var doubled = list.concat(list);
     var rows = doubled.map(function (n) {
-      return "<a class='news-item' href='" + String(n.url || "#").split("'").join("") + "' target='_blank' rel='noopener'>" +
-        "<span class='src'>" + esc(n.source || "News") + "</span>" +
-        "<span style='overflow:hidden;text-overflow:ellipsis'>" + esc(n.title) + "</span></a>";
+      var href = String(n.url || "#").split("'").join("");
+      var sub = n.subtext || n.source || "";
+      return "<a class='news-item' href='" + href + "' target='_blank' rel='noopener'>" +
+        "<span style='overflow:hidden;text-overflow:ellipsis;font-weight:650'>" + esc(n.title) + "</span>" +
+        (sub ? "<span class='src'>" + esc(sub) + "</span>" : "") + "</a>";
     }).join("");
     return "<div class='news-ribbon'><div class='news-kicker'>Industry news</div><div class='news-window'><div class='news-track'>" + rows + "</div></div></div>";
   }
