@@ -8,27 +8,25 @@
   .gallery { height: 240px; min-height: 240px; }
   .form-page { padding: 18px 16px 96px; }
   .media-drop {
-    min-height: 0;
-    padding: 16px;
-    gap: 12px;
-    overflow: visible;
+    min-height: 112px;
+    padding: 26px 16px;
+    overflow: hidden;
     -webkit-tap-highlight-color: rgba(27, 107, 69, 0.15);
   }
   .media-drop strong { font-size: 1.12rem; }
   .media-drop > span,
-  .media-drop .media-drop-sub { font-size: 0.95rem; pointer-events: none; }
+  .media-drop .media-drop-sub { font-size: 0.95rem; }
   .media-drop input[type="file"] {
-    position: static !important;
-    opacity: 1 !important;
-    inset: auto !important;
+    position: absolute !important;
+    inset: 0 !important;
+    opacity: 0 !important;
     width: 100% !important;
-    height: 44px !important;
-    min-height: 44px !important;
-    font-size: 16px !important;
+    height: 100% !important;
+    font-size: 32px !important;
+    color: transparent !important;
+    background: transparent !important;
     border: 0 !important;
-    background: #fff !important;
-    padding: 8px 0 !important;
-    pointer-events: auto !important;
+    padding: 0 !important;
   }
 
 

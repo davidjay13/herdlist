@@ -488,7 +488,11 @@ button, input, select, textarea { font-family: inherit; }
   height: 100%;
   opacity: 0;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 32px;
+  color: transparent;
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 .auth-box {
   max-width: 420px;
