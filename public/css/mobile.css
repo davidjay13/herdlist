@@ -53,16 +53,40 @@
   .dash-kpi { padding: 8px 4px; border-radius: 10px; }
   .dash-kpi b { font-size: 1.05rem; }
   .dash-kpi span { font-size: .62rem; }
-  .browse-layout.view-split .map-wrap { display: none !important; }
-  .browse-layout.view-split .listings-col,
-  .browse-layout.view-split .listings-grid { display: grid !important; }
-  .browse-layout.view-split .browse-stage { display: block !important; height: auto !important; }
-  .browse-toolbar { padding: 10px 12px; gap: 8px; }
-  .browse-toolbar > div:first-child { display: none; }
-  .view-toggle { width: 100%; justify-content: stretch; }
-  .view-toggle .btn { flex: 1; max-width: none; padding: 8px 6px; font-size: 0.78rem; text-align: center; }
-  .view-toggle .label-wide { display: none; }
-  .view-toggle .label-short { display: inline; }
+  .view-toggle { display: none !important; }
+  .browse-toolbar { padding: 12px 16px; }
+  .browse-toolbar > div:first-child { display: block; }
+  .browse-layout .map-wrap,
+  .browse-layout.view-split .map-wrap,
+  .browse-layout.view-list .map-wrap,
+  .browse-layout.view-map .map-wrap {
+    display: block !important;
+    height: 260px !important;
+    min-height: 260px !important;
+    max-height: 260px !important;
+  }
+  .browse-layout .listings-col,
+  .browse-layout.view-map .listings-col,
+  .browse-layout.view-split .listings-col {
+    display: flex !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .browse-layout .listings-grid,
+  .browse-layout.view-map .listings-grid,
+  .browse-layout.view-split .listings-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .browse-layout.view-split .browse-stage,
+  .browse-layout.view-map .browse-stage {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
 }
 
 

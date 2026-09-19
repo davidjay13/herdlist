@@ -99,8 +99,8 @@
   function browse() {
     const params = new URLSearchParams(location.hash.split("?")[1] || "");
     const isMobile = window.matchMedia("(max-width: 980px)").matches;
-    let view = params.get("view") || (isMobile ? "list" : "split");
-    if (isMobile && view === "split") view = "list";
+    let view = params.get("view") || "split";
+    if (isMobile) view = "split";
     const q = { category: params.get("category") || "", breed: params.get("breed") || "", klass: params.get("klass") || "", view: view };
     const items = state.listings.filter((l) => (!q.category || l.category === q.category) && (!q.breed || l.breed === q.breed) && (!q.klass || l.klass === q.klass));
     const PAGE = 9;
@@ -151,8 +151,7 @@
       if ($("#f-cat").value) next.set("category", $("#f-cat").value);
       if ($("#f-breed").value) next.set("breed", $("#f-breed").value);
       if ($("#f-klass").value) next.set("klass", $("#f-klass").value);
-      if (q.view && q.view !== "split") next.set("view", q.view);
-      if (isMobile && q.view === "list") next.set("view", "list");
+      if (!isMobile && q.view && q.view !== "split") next.set("view", q.view);
       location.hash = "#/browse" + (next.toString() ? "?" + next : "");
     };
     app.querySelectorAll("[data-view]").forEach((b) => {
