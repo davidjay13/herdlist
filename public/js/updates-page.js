@@ -187,7 +187,7 @@
     }).join("");
     app.innerHTML = `<section class="section" style="max-width:760px">
       <h2>Updates</h2>
-      <p class="sub">Shipped features on this Herd Yard build. This page is unlisted.</p>
+      <p class="sub">Shipped features on this Herd Yard build.</p>
       <div style="margin-top:22px">${blocks}</div>
     </section>`;
     return true;
