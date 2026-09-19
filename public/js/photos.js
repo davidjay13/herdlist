@@ -101,28 +101,24 @@
     if (!grid) return false;
     picked = [];
     pickedVideo = null;
-    var mobile = window.matchMedia("(max-width: 980px)").matches;
-    var photoHint = mobile ? "Tap to add from your camera or library" : "Click or drop · up to 4";
-    var videoHint = mobile ? "Tap to add from your camera or library" : "Click or drop · 40 MB max";
     if (!document.getElementById("photos")) {
     var wrap = document.createElement("div");
     wrap.className = "field full";
     wrap.innerHTML =
-      "<label>Photos</label>" +
+      '<div class="media-title">Add a Photo</div>' +
       '<label id="dropzone" class="media-drop" for="photos">' +
       '<input id="photos" type="file" accept="image/*" multiple>' +
-      "<span>" + photoHint + "</span>" +
+      "<span>drop or click to upload</span>" +
       "</label>" +
       '<div id="photo-preview" class="thumbs" style="margin-top:10px;flex-wrap:wrap"></div>';
 
-    pickedVideo = null;
     var vwrap = document.createElement("div");
     vwrap.className = "field full";
     vwrap.innerHTML =
-      '<div class="media-title">Add video</div>' +
+      '<div class="media-title">Add a Video</div>' +
       '<label id="video-dropzone" class="media-drop" for="listing-video">' +
       '<input id="listing-video" type="file" accept="video/*,.mp4,.mov,.webm">' +
-      "<span>" + videoHint + "</span>" +
+      "<span>drop or click to upload</span>" +
       "</label>" +
       '<div id="video-name" class="sub" style="margin-top:8px;display:none"></div>' +
       '<div style="margin-top:12px"><label>Video link</label>' +

@@ -441,12 +441,13 @@ button, input, select, textarea { font-family: inherit; }
 .form-grid .full { grid-column: 1 / -1; }
 .media-title {
   display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 560;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: var(--ink);
+  margin: 4px 0 8px;
 }
 .media-drop {
   position: relative;

@@ -214,20 +214,18 @@
     main.innerHTML =
       "<h2 class='page-title'>Edit listing</h2>" +
       "<form id='listing-edit-form' class='panel'><div class='form-grid'>" +
-      "<div class='field full'><label>Photo</label>" +
+      "<div class='field full'><div class='media-title'>Add a Photo</div>" +
       "<img id='edit-photo-preview' src='" + String(currentSrc).split("'").join("") + "' alt='listing photo' style='width:100%;max-height:260px;object-fit:cover;border-radius:16px;margin:0 0 12px;background:#dce8d8'>" +
       "<label id='edit-dropzone' class='media-drop' for='edit-photo-input'>" +
       "<input id='edit-photo-input' type='file' accept='image/*' multiple>" +
-      "<strong>Replace photo</strong>" +
-      "<span>Tap to add from your camera or library</span></label>" +
+      "<span>drop or click to upload</span></label>" +
       "<div style='margin-top:10px'><label>Photo link</label>" +
       "<input id='edit-photo-url' placeholder='https://'></div></div>" +
-      "<div class='field full'><label>Video</label>" +
+      "<div class='field full'><div class='media-title'>Add a Video</div>" +
       (listing.video ? "<video controls playsinline src='" + String(listing.video).split("'").join("") + "' style='width:100%;max-height:220px;border-radius:12px;background:#142018;margin:0 0 10px'></video>" : "") +
       "<label id='edit-video-drop' class='media-drop' for='edit-video-input'>" +
       "<input id='edit-video-input' type='file' accept='video/*,.mp4,.mov,.webm'>" +
-      "<strong>Add video</strong>" +
-      "<span>Tap to add from your camera or library</span>" +
+      "<span>drop or click to upload</span>" +
       "<div id='edit-video-name' class='sub' style='margin-top:8px;display:none'></div></label>" +
       "<div style='margin-top:10px'><label>Video link</label>" +
       "<input id='edit-video-url' placeholder='YouTube, Vimeo, or mp4 URL' value='" + esc(listing.video && String(listing.video).indexOf("http") === 0 ? listing.video : "") + "'></div>" +
