@@ -3,6 +3,54 @@ module.exports = async function newsApi(ctx) {
   const ADMINS = ["david@davidjay.com"];
   if (!Array.isArray(db.data.news)) db.data.news = [];
 
+  const LOGO = "/logo.svg?v=58";
+  function isPlaceholder(v) {
+    if (!v) return true;
+    var s = String(v);
+    if (s.indexOf("unsplash.com") >= 0) return true;
+    return false;
+  }
+  function userName(id) {
+    const user = (db.data.users || []).find((x) => x.id === id);
+    if (user) return user.name || user.email || "Member";
+    return "Member";
+  }
+  function avatarForUser(id) {
+    const producer = (db.data.producers || []).find((p) => p.userId === id);
+    if (producer && !isPlaceholder(producer.avatar)) return producer.avatar;
+    return LOGO;
+  }
+  function avatarForProducer(id) {
+    const producer = (db.data.producers || []).find((p) => p.id === id);
+    if (producer && !isPlaceholder(producer.avatar)) return producer.avatar;
+    if (producer) return avatarForUser(producer.userId);
+    return LOGO;
+  }
+  function decorateMessage(m, u) {
+    const listing = (db.data.listings || []).find((l) => l.id === m.listingId) || null;
+    const producer =
+      (db.data.producers || []).find((p) => p.id === m.toProducer) ||
+      (listing && (db.data.producers || []).find((p) => p.id === listing.producerId)) ||
+      null;
+    const sent = m.fromUser === u.id;
+    return {
+      id: m.id || null,
+      listingId: m.listingId,
+      listingTitle: listing ? listing.title : "Listing",
+      fromUser: m.fromUser,
+      fromName: userName(m.fromUser),
+      fromAvatar: avatarForUser(m.fromUser),
+      toUser: m.toUser || (producer && producer.userId) || null,
+      toName: producer ? producer.name : userName(m.toUser),
+      toAvatar: producer ? avatarForProducer(producer.id) : avatarForUser(m.toUser),
+      toProducer: m.toProducer || (listing && listing.producerId) || null,
+      body: m.body || "",
+      at: m.at || 0,
+      direction: sent ? "sent" : "received",
+    };
+  }
+
+
   function isAdmin(u) {
     return !!(u && ADMINS.indexOf(String(u.email || "").toLowerCase()) >= 0);
   }
@@ -325,7 +373,7 @@ module.exports = async function newsApi(ctx) {
     send(res, 200, {
       news: news,
       podcasts: podcasts,
-      messages: msgs.slice(0, 8),
+      messages: msgs.slice(0, 8).map(function (m) { return decorateMessage(m, user); }),
       messageCount: msgs.length,
       local: local,
       latest: latest,

@@ -363,13 +363,15 @@
     pack = pack || {};
     var msgs = pack.messages || [];
     var msgRows = msgs.length ? msgs.slice(0, 5).map(function (m) {
-      var sent = m.fromUser === ((me.user && me.user.id) || -1);
+      var sent = m.direction === "sent" || m.fromUser === ((me.user && me.user.id) || -1);
       var who = sent ? (m.toName || "Ranch") : (m.fromName || "Buyer");
+      var photo = photoSrc(sent ? m.toAvatar : m.fromAvatar);
       var body = String(m.body || "");
       if (body.length > 70) body = body.slice(0, 68) + "…";
-      return "<a class='dash-mini' href='#/account/messages'>" +
-        "<div style='width:46px;height:46px;border-radius:10px;background:#1b6b45;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none'>" +
-        esc((who || "HY").slice(0, 2).toUpperCase()) + "</div>" +
+      var face = photo
+        ? "<img src='" + String(photo).split("'").join("") + "' alt=''>"
+        : avatarHtml("", who, 46);
+      return "<a class='dash-mini' href='#/account/messages'>" + face +
         "<div class='grow'><b>" + esc(who) + "</b><div class='sub'>" + esc(body) + "</div></div></a>";
     }).join("") : "<div class='dash-empty'>No messages yet. Buyers can write you from a listing.</div>";
     var local = pack.local || [];
