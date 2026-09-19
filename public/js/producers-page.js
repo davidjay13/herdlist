@@ -80,7 +80,8 @@
     var el = document.getElementById("producers-map");
     if (!el) return;
     var USA = [[24.5, -125.0], [49.4, -66.9]];
-    prodMap = L.map("producers-map", { scrollWheelZoom: true, worldCopyJump: false, minZoom: 3, maxZoom: 12 });
+    prodMap = L.map("producers-map", { scrollWheelZoom: true, worldCopyJump: false, minZoom: 3, maxZoom: 12, attributionControl: true });
+    if (prodMap.attributionControl) prodMap.attributionControl.setPrefix("");
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
       attribution: "Tiles &copy; Esri",
       maxZoom: 16

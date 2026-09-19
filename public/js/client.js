@@ -169,7 +169,8 @@
     });
     if (q.view !== "list" && window.L) {
       const USA = [[24.5, -125.0], [49.4, -66.9]];
-      mapInst = L.map("map", { scrollWheelZoom: true, worldCopyJump: false, minZoom: 3, maxZoom: 12 });
+      mapInst = L.map("map", { scrollWheelZoom: true, worldCopyJump: false, minZoom: 3, maxZoom: 12, attributionControl: true });
+      if (mapInst.attributionControl) mapInst.attributionControl.setPrefix("");
       L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
         attribution: "Tiles &copy; Esri",
         maxZoom: 16

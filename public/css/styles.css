@@ -771,3 +771,6 @@ button, input, select, textarea { font-family: inherit; }
   min-width: 0;
 }
 .inbox-compose .btn { border-radius: 20px; flex: none; }
+
+.leaflet-attribution-flag,
+.leaflet-control-attribution svg { display: none !important; }
