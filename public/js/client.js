@@ -28,7 +28,18 @@
     return money(l.price) + " / " + (l.unit === "Units" ? "Unit" : "Head");
   }
   function nav() {
-    $("#acct-label").textContent = state.user ? state.user.name.split(" ")[0] : "Account";
+    var logged = !!state.user;
+    var label = document.getElementById("acct-label");
+    if (label) label.textContent = logged ? "My Account" : "Log in";
+    var sell = document.getElementById("sell-btn");
+    if (sell) sell.style.display = logged ? "none" : "";
+    var mobileLogin = document.getElementById("mobile-login");
+    if (mobileLogin) {
+      mobileLogin.textContent = logged ? "My Account" : "Log in";
+      mobileLogin.setAttribute("href", logged ? "#/account/profile" : "#/signin");
+    }
+    var cta = document.querySelector(".mobile-menu .menu-cta");
+    if (cta) cta.style.display = logged ? "none" : "";
   }
   function listingCard(l) {
     const p = l.producer;
@@ -279,7 +290,7 @@
   }
   window.addEventListener("hashchange", route);
   document.getElementById("sell-btn").onclick = () => (location.hash = "#/list");
-  document.getElementById("acct-btn").onclick = () => { location.hash = state.user ? "#/account" : "#/signin"; };
+  document.getElementById("acct-btn").onclick = () => { location.hash = state.user ? "#/account/profile" : "#/signin"; };
   (async function boot() {
     try { const me = await api("/api/me"); state.user = me.user; state.producer = me.producer; state.follows = me.follows||[]; } catch(e){}
     try { const r = await api("/api/listings"); state.listings = r.listings; r.listings.forEach((l)=>state.listingCache[l.id]=l); }
