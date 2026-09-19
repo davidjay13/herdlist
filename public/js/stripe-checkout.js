@@ -13,7 +13,9 @@
       link: "https://buy.stripe.com/14A3cvcVT3azgcobsl8so02"
     }
   };
-  var mounting = false;
+  var checkoutObj = null;
+  var startedFor = "";
+  var busy = false;
 
   function planKey() {
     var q = new URLSearchParams((location.hash.split("?")[1] || ""));
@@ -25,16 +27,28 @@
     return (location.hash || "#/").replace(/^#\/?/, "").split("?")[0];
   }
 
+  function destroyCheckout() {
+    if (checkoutObj && typeof checkoutObj.destroy === "function") {
+      try { checkoutObj.destroy(); } catch (e) {}
+    }
+    checkoutObj = null;
+    startedFor = "";
+  }
+
   async function render() {
-    if (path() !== "checkout") return;
-    var app = document.getElementById("app");
-    if (!app) return;
-    if (document.getElementById("stripe-box") && document.getElementById("stripe-box").dataset.ready) return;
-    if (mounting) return;
-    mounting = true;
+    if (path() !== "checkout") {
+      destroyCheckout();
+      return;
+    }
     var key = planKey();
+    if (busy) return;
+    if (checkoutObj && startedFor === key && document.getElementById("stripe-box")) return;
+    busy = true;
+    destroyCheckout();
     var plan = PLANS[key];
-    app.innerHTML = `<div class="form-page" style="max-width:720px">
+    var app = document.getElementById("app");
+    if (!app) { busy = false; return; }
+    app.innerHTML = `<div class="form-page" id="hy-checkout-page" style="max-width:720px">
       <h2 class="page-title">Checkout</h2>
       <p class="sub">${plan.name} \u2014 ${plan.price}. ${plan.note}</p>
       <div id="stripe-box" class="panel" style="margin-top:18px;min-height:220px">Loading checkout\u2026</div>
@@ -43,11 +57,11 @@
     var box = document.getElementById("stripe-box");
     try {
       var cfg = await fetch("/api/billing-config", { credentials: "include" }).then(function (r) { return r.json(); });
+      if (path() !== "checkout") { busy = false; return; }
       if (!cfg || !cfg.embedded || !cfg.publishableKey) {
         box.innerHTML = `<p>Secure checkout is ready via Stripe.</p>
           <a class="btn btn-primary" href="${plan.link}">Continue to checkout</a>`;
-        box.dataset.ready = "1";
-        mounting = false;
+        busy = false;
         return;
       }
       var session = await fetch("/api/checkout", {
@@ -56,11 +70,11 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: key })
       }).then(function (r) { return r.json(); });
+      if (path() !== "checkout") { busy = false; return; }
       if (!session.clientSecret) {
         box.innerHTML = `<p>${session.error || "Could not start checkout."}</p>
           <a class="btn btn-primary" href="${plan.link}">Continue to checkout</a>`;
-        box.dataset.ready = "1";
-        mounting = false;
+        busy = false;
         return;
       }
       if (!window.Stripe) {
@@ -72,23 +86,30 @@
           document.head.appendChild(s);
         });
       }
+      if (path() !== "checkout") { busy = false; return; }
       var stripe = window.Stripe(cfg.publishableKey);
-      var checkout = await stripe.initEmbeddedCheckout({ clientSecret: session.clientSecret });
-      if (!document.getElementById("stripe-box")) {
-        mounting = false;
+      checkoutObj = await stripe.initEmbeddedCheckout({ clientSecret: session.clientSecret });
+      startedFor = key;
+      var mount = document.getElementById("stripe-box");
+      if (!mount) {
+        destroyCheckout();
+        busy = false;
         return;
       }
-      box.innerHTML = "";
-      checkout.mount("#stripe-box");
-      box.dataset.ready = "1";
+      mount.innerHTML = "";
+      checkoutObj.mount("#stripe-box");
     } catch (e) {
-      if (box) {
-        box.innerHTML = `<p>${(e && e.message) || "Checkout could not load."}</p>
+      var msg = (e && e.message) || "Checkout could not load.";
+      if (/multiple Embedded Checkout/i.test(msg)) {
+        destroyCheckout();
+      }
+      var el = document.getElementById("stripe-box");
+      if (el) {
+        el.innerHTML = `<p>${msg}</p>
           <a class="btn btn-primary" href="${plan.link}">Continue to checkout</a>`;
-        box.dataset.ready = "1";
       }
     }
-    mounting = false;
+    busy = false;
   }
 
   function wirePlans() {
@@ -106,20 +127,19 @@
   }
 
   window.addEventListener("hashchange", function () {
-    setTimeout(render, 20);
-    setTimeout(render, 120);
-    setTimeout(render, 400);
+    setTimeout(render, 80);
     setTimeout(wirePlans, 40);
   });
   var app = document.getElementById("app");
   if (app && window.MutationObserver) {
     new MutationObserver(function () {
-      if (path() === "checkout" && !document.getElementById("stripe-box")) render();
       wirePlans();
+      if (path() !== "checkout") return;
+      if (document.getElementById("hy-checkout-page")) return;
+      if (busy || checkoutObj) return;
+      render();
     }).observe(app, { childList: true });
   }
-  setTimeout(render, 40);
-  setTimeout(render, 250);
+  setTimeout(render, 80);
   setTimeout(wirePlans, 40);
-  setTimeout(wirePlans, 300);
 })();
